@@ -1,5 +1,6 @@
 var socket = io("https://xrchz.net:2009");
 
+const handDiv = document.getElementById('hand');
 const settingsButton = document.getElementById('joinGame');
 const playerList = document.getElementById('players');
 const gameInput = document.getElementById('game');
@@ -9,6 +10,10 @@ const log = document.getElementById('log');
 
 socket.on('updatePlayers', players => {
   playerList.innerHTML = players;
+});
+
+socket.on('updateHand', hand => {
+  handDiv.innerHTML = 'Hand: ' + hand.join(', ');
 });
 
 const gameName = () => gameInput.value.toUpperCase().substring(0, 2);

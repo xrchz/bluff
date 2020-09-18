@@ -41,6 +41,19 @@ function updatePlayers(gameName) {
   io.in(gameName).emit('updatePlayers', 'Players: ' + playerNames.join(', '));
 }
 
+function updateHand(player) {
+  io.in(player.id).emit('updateHand', player.hand.map(cardName));
+}
+
+function updateHands(gameName) {
+  const game = games[gameName];
+  for (const player of game.players) {
+    if (!game.missingPlayers.has(player.name)) {
+      updateHand(player)
+    }
+  }
+}
+
 function shuffleInPlace(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * i)
@@ -56,6 +69,13 @@ const King = 13;
 const Ace = 14;
 const Joker = 15;
 
+const cardName = r =>
+  r == Jack  ? 'J' :
+  r == Queen ? 'Q' :
+  r == King  ? 'K' :
+  r == Ace   ? 'A' :
+  r == Joker ? '?' : r;
+
 function makeDeck() {
   const deck = [];
   for (let r = 2; r <= Ace; r++) {
@@ -66,14 +86,6 @@ function makeDeck() {
   deck.push(Joker);
   deck.push(Joker);
   return deck;
-}
-
-function makeEmptyHand() {
-  const hand = [];
-  for (let r = 2; r <= Joker; r++) {
-    hand[r] = 0;
-  }
-  return hand;
 }
 
 io.on('connection', socket => {
@@ -100,7 +112,10 @@ io.on('connection', socket => {
           socket.gameName = gameName;
           socket.join(gameName);
           game.missingPlayers.delete(data.playerName);
+          const player = game.players.find(player => player.name == data.playerName);
+          player.id = socket.id;
           updatePlayers(gameName);
+          updateHand(player);
           for (const item of game.log) {
             socket.emit('appendLog', item);
           }
@@ -125,7 +140,7 @@ io.on('connection', socket => {
       if (game.players.every(player => player.name != socket.playerName)) {
         socket.join(gameName);
         socket.gameName = gameName;
-        game.players.push({name: socket.playerName});
+        game.players.push({name: socket.playerName, id: socket.id});
         socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName});
         updatePlayers(gameName);
         console.log("* Active games: " + Object.keys(games).join(', '));
@@ -151,12 +166,12 @@ io.on('connection', socket => {
     updatePlayers(gameName);
     console.log('* Dealing hands: ' + gameName);
     for (const player of game.players) {
-      player.hand = makeEmptyHand();
+      player.hand = [];
     }
     let i = 0;
     let j = 0;
     while(j < deck.length) {
-      game.players[i++].hand[deck[j++]]++;
+      game.players[i++].hand.push(deck[j++]);
       if (i == game.players.length) { i = 0; }
     }
     for (const player of game.players) {
@@ -169,6 +184,7 @@ io.on('connection', socket => {
     io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
     game.log.push('Waiting for ' + game.players[game.whoseTurn].name + '...');
     io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+    updateHands(gameName);
   });
 
   socket.on('disconnecting', () => {
