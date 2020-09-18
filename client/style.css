@@ -2,7 +2,7 @@
   height: 10vh;
   width: 80vw;
   resize: both;
-  overflow: scroll;
+  overflow-y: scroll;
 }
 #settings {
   height: 10vh;

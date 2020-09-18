@@ -88,13 +88,14 @@ const cardNum = c =>
   c == 'A' ? Ace :
   c == '?' ? Joker : parseInt(c);
 
-const sayRegExp = /^([2-9]|[TJQKA?])\1*$/;
+const sayRegExp = /^([2-9]|[TJQKA])\1*$/;
 
-function tryPlay(player, str) {
+function tryPlay(player, str, deck) {
   let cards = Array.from(str).map(cardNum).sort(asc);
+  const toDeck = [];
   const hand = player.hand.filter(card => {
     if ( cards.length > 0 && card == cards[0] ) {
-      cards.shift();
+      toDeck.push(cards.shift());
       return false;
     }
     else {
@@ -105,6 +106,7 @@ function tryPlay(player, str) {
     return false;
   }
   else {
+    Array.prototype.push.apply(deck, toDeck);
     player.hand = hand;
     return true;
   }
@@ -130,10 +132,13 @@ function changeTurn(gameName) {
   io.in(player.id).emit('showMove');
 }
 
-function findLastPlayerName(log) {
+function findLastPlay(log) {
   for (let i = log.length - 1; i > 0; i--) {
+    if (log[i].bluff) {
+      return false;
+    }
     if (log[i].who) {
-      return log[i].who;
+      return log[i];
     }
   }
 }
@@ -170,13 +175,14 @@ io.on('connection', socket => {
             socket.emit('showMove');
           }
           else {
-            const last = findLastPlayerName(game.log);
-            if (last && last != player.name) {
+            const last = findLastPlay(game.log);
+            if (last && last.who != player.name) {
               socket.emit('showBluff');
             }
           }
           for (const entry of game.log) {
-            socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) : entry);
+            socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) :
+                                     entry.bluff ? entry.msg : entry);
           }
           socket.emit('rejoinGame');
         }
@@ -216,6 +222,7 @@ io.on('connection', socket => {
     console.log('* Game starting: ' + gameName);
     const game = games[gameName];
     game.started = true;
+    game.deck = [];
     game.missingPlayers = new Set();
     game.log = [];
     console.log('* Shuffling deck and players: ' + gameName);
@@ -245,16 +252,52 @@ io.on('connection', socket => {
     changeTurn(gameName);
   });
 
+  socket.on('bluff', () => {
+    const gameName = socket.gameName;
+    const game = games[gameName];
+    const last = findLastPlay(game.log);
+    if (last) {
+      const legit = (last.say.length == last.act.length &&
+        Array.from(last.act).every(c => c == '?' || c == last.say[0]));
+      game.log.push(socket.playerName + ' accuses ' + last.who);
+      io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+      let loser;
+      if (legit) {
+        game.log.push('but ' + last.who + ' had innocently played ' + last.act);
+        io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+        loser = socket.playerName;
+      }
+      else {
+        game.log.push('and catches them bluffing with ' + last.act);
+        io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+        loser = last.who;
+      }
+      game.log.push({bluff: true, msg: loser + ' takes the deck to hand'});
+      io.in(gameName).emit('appendLog', game.log[game.log.length - 1].msg);
+      const player = game.players.find(player => player.name == loser);
+      player.hand = player.hand.concat(game.deck).sort(asc);
+      game.deck = [];
+      updateHand(player);
+      io.in(gameName).emit('hideBluff');
+      changeTurn(gameName);
+    }
+    else {
+      socket.emit('errorMsg', 'Error: There was no play to call bluff on');
+    }
+  });
+
   socket.on('move', data => {
     const gameName = socket.gameName;
     const game = games[gameName];
     if (game.players[game.whoseTurn].name == socket.playerName) {
       const player = game.players[game.whoseTurn];
       if ( sayRegExp.test(data.say) ) {
-        if ( tryPlay(player, data.play) ) {
+        if ( tryPlay(player, data.play, game.deck) ) {
           const entry = {pub: socket.playerName + ' claims ' + data.say,
                          who: socket.playerName,
-                         pri: ' (actually ' + data.play + ')'};
+                         pri: ' (actually ' + data.play + ')',
+                         say: data.say,
+                         act: data.play};
           game.log.push(entry);
           socket.to(gameName).emit('appendLog', entry.pub);
           socket.emit('appendLog', entry.pub + entry.pri);

@@ -33,6 +33,10 @@ socket.on('showBluff', () => {
   bluffButton.hidden = false;
 });
 
+socket.on('hideBluff', () => {
+  bluffButton.hidden = true;
+});
+
 const gameName = () => gameInput.value.toUpperCase().substring(0, 2);
 settingsButton.onclick = () => { socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value}); };
 
@@ -40,6 +44,8 @@ moveButton.onclick = () => {
   errorMsg.innerHTML = "";
   socket.emit('move', {say: sayInput.value.toUpperCase(), play: playInput.value.toUpperCase()});
 };
+
+bluffButton.onclick = () => { socket.emit('bluff'); };
 
 socket.on('rejoinGame', () => {
   gameInput.disabled = true;
