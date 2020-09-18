@@ -33,9 +33,44 @@ function randomGameName() {
 }
 
 function updatePlayers(gameName) {
-  let players = Object.keys(games[gameName].players);
-  io.in(gameName).emit('updatePlayers', 'Current players: ' + players.join(', '));
-  return players;
+  const playerNames = games[gameName].players.map(player => player.name);
+  io.in(gameName).emit('updatePlayers', 'Players: ' + playerNames.join(', '));
+  return playerNames;
+}
+
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * i)
+    const t = array[i]
+    array[i] = array[j]
+    array[j] = t
+  }
+}
+
+const Jack = 11;
+const Queen = 12;
+const King = 13;
+const Ace = 14;
+const Joker = 15;
+
+function makeDeck() {
+  const deck = [];
+  for (let r = 2; r <= Ace; r++) {
+    for (let i = 0; i < 4; i++) {
+      deck.push(r);
+    }
+  }
+  deck.push(Joker);
+  deck.push(Joker);
+  return deck;
+}
+
+function makeEmptyHand() {
+  const hand = [];
+  for (let r = 2; r <= Joker; r++) {
+    hand[r] = 0;
+  }
+  return hand;
 }
 
 io.on('connection', socket => {
@@ -46,21 +81,41 @@ io.on('connection', socket => {
     let game;
     let gameName = data.gameName;
     if (!(gameName in games)) {
-      game = { players: {} };
+      game = { players: [] };
       gameName = randomGameName();
       games[gameName] = game;
     }
     else { game = games[gameName]; }
+    if (game.started) {
+      if (game.missingPlayers.has(data.playerName)) {
+        if (Object.keys(socket.rooms).length == 1) {
+          socket.playerName = data.playerName;
+          socket.gameName = gameName;
+          socket.join(gameName);
+          updatePlayers(gameName);
+          for (const item of game.log) {
+            socket.emit('appendLog', item);
+          }
+          return socket.emit('rejoinGame');
+        }
+        else {
+          return socket.emit('errorMsg', 'Error: somehow this connection is already used in another game');
+        }
+      }
+      else {
+        return socket.emit('errorMsg', 'Game ' + gameName + ' has already started');
+      }
+    }
     if (!data.playerName) {
       socket.playerName = 'Player'+Math.floor(Math.random()*20);
       console.log("* Generated random name: " + socket.playerName + " (" + socket.id +")");
     }
     else { socket.playerName = data.playerName; }
-    if (!(socket.playerName in game.players)) {
+    if (!(game.players.map(player => player.name).includes(socket.playerName))) {
       socket.join(gameName);
       socket.gameName = gameName;
-      game.players[socket.playerName] = {};
-      socket.emit('updateGame', {gameName: gameName, playerName: socket.playerName});
+      game.players.push({name: socket.playerName});
+      socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName});
       updatePlayers(gameName);
       console.log("* Active games: " + Object.keys(games).join(', '));
     }
@@ -70,14 +125,53 @@ io.on('connection', socket => {
     }
   });
 
+  socket.on('startGame', () => {
+    const gameName = socket.gameName;
+    console.log('* Game starting: ' + gameName);
+    const game = games[gameName];
+    game.started = true;
+    game.missingPlayers = new Set();
+    game.log = [];
+    console.log('* Shuffling deck and players: ' + gameName);
+    const deck = makeDeck();
+    shuffleInPlace(deck);
+    shuffleInPlace(game.players);
+    updatePlayers(gameName);
+    console.log('* Dealing hands: ' + gameName);
+    for (const player of game.players) {
+      player.hand = makeEmptyHand();
+    }
+    let i = 0;
+    let j = 0;
+    while(j < deck.length) {
+      game.players[i++].hand[deck[j++]]++;
+      if (i == game.players.length) { i = 0; }
+    }
+    for (const player of game.players) {
+      player.hand.sort( (a, b) => a - b );
+    }
+    console.log('* Ready: ' + gameName);
+    game.whoseTurn = 0;
+    io.in(gameName).emit('startGame');
+    game.log.push('The game begins!');
+    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+    game.log.push('Waiting for ' + game.players[game.whoseTurn].name + '...');
+    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+  });
+
   socket.on('disconnecting', () => {
     console.log("* Player exiting: " + socket.playerName + " (" + socket.id +")");
-    let game = games[socket.gameName];
+    const game = games[socket.gameName];
     if (game) {
-      delete game.players[socket.playerName];
-      let players = updatePlayers(socket.gameName);
-      if(players.length == 0) {
-        delete games[socket.gameName];
+      if (!game.started) {
+        game.players = game.players.filter( player => player.name != socket.playerName );
+        const players = updatePlayers(socket.gameName);
+        if(players.length == 0) {
+          delete games[socket.gameName];
+        }
+      }
+      else {
+        game.missingPlayers.add(socket.playerName);
       }
     }
     console.log("* Active games: " + Object.keys(games).join(', '));
