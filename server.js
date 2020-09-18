@@ -63,6 +63,9 @@ function shuffleInPlace(array) {
   }
 }
 
+const asc = (a, b) => a - b;
+
+const Ten = 10;
 const Jack = 11;
 const Queen = 12;
 const King = 13;
@@ -70,11 +73,42 @@ const Ace = 14;
 const Joker = 15;
 
 const cardName = r =>
+  r == Ten   ? 'T' :
   r == Jack  ? 'J' :
   r == Queen ? 'Q' :
   r == King  ? 'K' :
   r == Ace   ? 'A' :
   r == Joker ? '?' : r;
+
+const cardNum = c =>
+  c == 'T' ? Ten :
+  c == 'J' ? Jack :
+  c == 'Q' ? Queen :
+  c == 'K' ? King :
+  c == 'A' ? Ace :
+  c == '?' ? Joker : parseInt(c);
+
+const sayRegExp = /^([2-9]|[TJQKA?])\1*$/;
+
+function tryPlay(player, str) {
+  let cards = Array.from(str).map(cardNum).sort(asc);
+  const hand = player.hand.filter(card => {
+    if ( cards.length > 0 && card == cards[0] ) {
+      cards.shift();
+      return false;
+    }
+    else {
+      return true;
+    }
+  });
+  if (cards.length > 0) {
+    return false;
+  }
+  else {
+    player.hand = hand;
+    return true;
+  }
+}
 
 function makeDeck() {
   const deck = [];
@@ -86,6 +120,22 @@ function makeDeck() {
   deck.push(Joker);
   deck.push(Joker);
   return deck;
+}
+
+function changeTurn(gameName) {
+  const game = games[gameName];
+  const player = game.players[game.whoseTurn];
+  game.log.push('Waiting for ' + player.name + '...');
+  io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+  io.in(player.id).emit('showMove');
+}
+
+function findLastPlayerName(log) {
+  for (let i = log.length - 1; i > 0; i--) {
+    if (log[i].who) {
+      return log[i].who;
+    }
+  }
 }
 
 io.on('connection', socket => {
@@ -116,8 +166,17 @@ io.on('connection', socket => {
           player.id = socket.id;
           updatePlayers(gameName);
           updateHand(player);
-          for (const item of game.log) {
-            socket.emit('appendLog', item);
+          if (game.players[game.whoseTurn].name == player.name) {
+            socket.emit('showMove');
+          }
+          else {
+            const last = findLastPlayerName(game.log);
+            if (last && last != player.name) {
+              socket.emit('showBluff');
+            }
+          }
+          for (const entry of game.log) {
+            socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) : entry);
           }
           socket.emit('rejoinGame');
         }
@@ -175,16 +234,49 @@ io.on('connection', socket => {
       if (i == game.players.length) { i = 0; }
     }
     for (const player of game.players) {
-      player.hand.sort( (a, b) => a - b );
+      player.hand.sort(asc);
     }
     console.log('* Ready: ' + gameName);
     game.whoseTurn = 0;
     io.in(gameName).emit('startGame');
     game.log.push('The game begins!');
     io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-    game.log.push('Waiting for ' + game.players[game.whoseTurn].name + '...');
-    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
     updateHands(gameName);
+    changeTurn(gameName);
+  });
+
+  socket.on('move', data => {
+    const gameName = socket.gameName;
+    const game = games[gameName];
+    if (game.players[game.whoseTurn].name == socket.playerName) {
+      const player = game.players[game.whoseTurn];
+      if ( sayRegExp.test(data.say) ) {
+        if ( tryPlay(player, data.play) ) {
+          const entry = {pub: socket.playerName + ' claims ' + data.say,
+                         who: socket.playerName,
+                         pri: ' (actually ' + data.play + ')'};
+          game.log.push(entry);
+          socket.to(gameName).emit('appendLog', entry.pub);
+          socket.emit('appendLog', entry.pub + entry.pri);
+          updateHand(player);
+          socket.emit('hideMove');
+          socket.emit('hideBluff');
+          game.whoseTurn++;
+          if (game.whoseTurn == game.players.length) { game.whoseTurn = 0; }
+          changeTurn(gameName);
+          socket.to(gameName).emit('showBluff');
+        }
+        else {
+          socket.emit('errorMsg', 'You cannot play that with your hand');
+        }
+      }
+      else {
+        socket.emit('errorMsg', 'Error: What you say is not valid: ensure all cards are the same');
+      }
+    }
+    else {
+      socket.emit('errorMsg', 'Error: Tried to move when it is not your turn');
+    }
   });
 
   socket.on('disconnecting', () => {

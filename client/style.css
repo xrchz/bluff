@@ -2,11 +2,12 @@
   height: 10vh;
   width: 80vw;
   resize: both;
+  overflow: scroll;
 }
 #settings {
   height: 10vh;
   width: 80vw;
 }
-#game {
+#game, #say, #play {
   text-transform: uppercase;
 }
