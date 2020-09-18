@@ -1,0 +1,12 @@
+#log {
+  height: 10vh;
+  width: 80vw;
+  resize: both;
+}
+#settings {
+  height: 10vh;
+  width: 80vw;
+}
+#game {
+  text-transform: uppercase;
+}
