@@ -25,7 +25,7 @@ function randomLetter() {
   return String.fromCharCode(65 + Math.random() * 26);
 }
 
-function randomGameName() {
+function randomUnusedGameName() {
   if (Object.keys(games).length == 26 * 26) return 'Overflow';
   let name;
   do { name = randomLetter() + randomLetter(); } while (name in games);
@@ -83,12 +83,16 @@ io.on('connection', socket => {
   socket.on('joinGame', data => {
     let game;
     let gameName = data.gameName;
+    if (!gameName) {
+      gameName = randomUnusedGameName();
+    }
     if (!(gameName in games)) {
       game = { players: [] };
-      gameName = randomGameName();
       games[gameName] = game;
     }
-    else { game = games[gameName]; }
+    else {
+      game = games[gameName];
+    }
     if (game.started) {
       if (game.missingPlayers.has(data.playerName)) {
         if (Object.keys(socket.rooms).length == 1) {
@@ -100,32 +104,36 @@ io.on('connection', socket => {
           for (const item of game.log) {
             socket.emit('appendLog', item);
           }
-          return socket.emit('rejoinGame');
+          socket.emit('rejoinGame');
         }
         else {
-          return socket.emit('errorMsg', 'Error: somehow this connection is already used in another game');
+          socket.emit('errorMsg', 'Error: somehow this connection is already used in another game');
         }
       }
       else {
-        return socket.emit('errorMsg', 'Game ' + gameName + ' has already started');
+        socket.emit('errorMsg', 'Game ' + gameName + ' has already started');
       }
     }
-    if (!data.playerName) {
-      socket.playerName = 'Player'+Math.floor(Math.random()*20);
-      console.log("* Generated random name: " + socket.playerName + " (" + socket.id +")");
-    }
-    else { socket.playerName = data.playerName; }
-    if (!(game.players.map(player => player.name).includes(socket.playerName))) {
-      socket.join(gameName);
-      socket.gameName = gameName;
-      game.players.push({name: socket.playerName});
-      socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName});
-      updatePlayers(gameName);
-      console.log("* Active games: " + Object.keys(games).join(', '));
-    }
     else {
-      console.log('* Failed to join game: player name taken');
-      socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName);
+      if (!data.playerName) {
+        socket.playerName = 'Player'+Math.floor(Math.random()*20);
+        console.log("* Generated random name: " + socket.playerName + " (" + socket.id +")");
+      }
+      else {
+        socket.playerName = data.playerName;
+      }
+      if (game.players.every(player => player.name != socket.playerName)) {
+        socket.join(gameName);
+        socket.gameName = gameName;
+        game.players.push({name: socket.playerName});
+        socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName});
+        updatePlayers(gameName);
+        console.log("* Active games: " + Object.keys(games).join(', '));
+      }
+      else {
+        console.log('* Failed to join game: player name taken');
+        socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName);
+      }
     }
   });
 
