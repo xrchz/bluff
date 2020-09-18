@@ -33,9 +33,12 @@ function randomGameName() {
 }
 
 function updatePlayers(gameName) {
-  const playerNames = games[gameName].players.map(player => player.name);
+  const game = games[gameName];
+  const func = game.missingPlayers ?
+    (player => game.missingPlayers.has(player.name) ? player.name + ' (d/c)' : player.name) :
+    (player => player.name);
+  const playerNames = game.players.map(func);
   io.in(gameName).emit('updatePlayers', 'Players: ' + playerNames.join(', '));
-  return playerNames;
 }
 
 function shuffleInPlace(array) {
@@ -92,6 +95,7 @@ io.on('connection', socket => {
           socket.playerName = data.playerName;
           socket.gameName = gameName;
           socket.join(gameName);
+          game.missingPlayers.delete(data.playerName);
           updatePlayers(gameName);
           for (const item of game.log) {
             socket.emit('appendLog', item);
@@ -165,13 +169,14 @@ io.on('connection', socket => {
     if (game) {
       if (!game.started) {
         game.players = game.players.filter( player => player.name != socket.playerName );
-        const players = updatePlayers(socket.gameName);
-        if(players.length == 0) {
+        updatePlayers(socket.gameName);
+        if(game.players.length == 0) {
           delete games[socket.gameName];
         }
       }
       else {
         game.missingPlayers.add(socket.playerName);
+        updatePlayers(socket.gameName);
       }
     }
     console.log("* Active games: " + Object.keys(games).join(', '));
