@@ -23,6 +23,8 @@ socket.on('updateHand', hand => {
 
 socket.on('showMove', () => {
   moveDiv.hidden = false;
+  sayInput.value = '';
+  playInput.value = '';
 });
 
 socket.on('hideMove', () => {

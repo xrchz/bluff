@@ -127,9 +127,15 @@ function makeDeck() {
 function changeTurn(gameName) {
   const game = games[gameName];
   const player = game.players[game.whoseTurn];
-  game.log.push('Waiting for ' + player.name + '...');
-  io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-  io.in(player.id).emit('showMove');
+  if (game.pendingWinner && game.pendingWinner.hand.length == 0) {
+    game.log.push(game.pendingWinner.name + ' wins!');
+    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+  }
+  else {
+    game.log.push('Waiting for ' + player.name + '...');
+    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+    io.in(player.id).emit('showMove');
+  }
 }
 
 function findLastPlay(log) {
@@ -219,37 +225,42 @@ io.on('connection', socket => {
 
   socket.on('startGame', () => {
     const gameName = socket.gameName;
-    console.log('* Game starting: ' + gameName);
     const game = games[gameName];
-    game.started = true;
-    game.deck = [];
-    game.missingPlayers = new Set();
-    game.log = [];
-    console.log('* Shuffling deck and players: ' + gameName);
-    const deck = makeDeck();
-    shuffleInPlace(deck);
-    shuffleInPlace(game.players);
-    updatePlayers(gameName);
-    console.log('* Dealing hands: ' + gameName);
-    for (const player of game.players) {
-      player.hand = [];
+    if (game.players.length > 1) {
+      console.log('* Game starting: ' + gameName);
+      game.started = true;
+      game.deck = [];
+      game.missingPlayers = new Set();
+      game.log = [];
+      console.log('* Shuffling deck and players: ' + gameName);
+      const deck = makeDeck();
+      shuffleInPlace(deck);
+      shuffleInPlace(game.players);
+      updatePlayers(gameName);
+      console.log('* Dealing hands: ' + gameName);
+      for (const player of game.players) {
+        player.hand = [];
+      }
+      let i = 0;
+      let j = 0;
+      while(j < deck.length) {
+        game.players[i++].hand.push(deck[j++]);
+        if (i == game.players.length) { i = 0; }
+      }
+      for (const player of game.players) {
+        player.hand.sort(asc);
+      }
+      console.log('* Ready: ' + gameName);
+      game.whoseTurn = 0;
+      io.in(gameName).emit('startGame');
+      game.log.push('The game begins!');
+      io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+      updateHands(gameName);
+      changeTurn(gameName);
     }
-    let i = 0;
-    let j = 0;
-    while(j < deck.length) {
-      game.players[i++].hand.push(deck[j++]);
-      if (i == game.players.length) { i = 0; }
+    else {
+      socket.emit('errorMsg', 'Not enough players to start the game');
     }
-    for (const player of game.players) {
-      player.hand.sort(asc);
-    }
-    console.log('* Ready: ' + gameName);
-    game.whoseTurn = 0;
-    io.in(gameName).emit('startGame');
-    game.log.push('The game begins!');
-    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-    updateHands(gameName);
-    changeTurn(gameName);
   });
 
   socket.on('bluff', () => {
@@ -304,10 +315,17 @@ io.on('connection', socket => {
           updateHand(player);
           socket.emit('hideMove');
           socket.emit('hideBluff');
+          socket.to(gameName).emit('showBluff');
           game.whoseTurn++;
           if (game.whoseTurn == game.players.length) { game.whoseTurn = 0; }
-          changeTurn(gameName);
-          socket.to(gameName).emit('showBluff');
+          if (player.hand.length == 0) {
+            game.log.push(player.name + ' wins unless they are caught...');
+            io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+            game.pendingWinner = player;
+          }
+          else {
+            changeTurn(gameName);
+          }
         }
         else {
           socket.emit('errorMsg', 'You cannot play that with your hand');
