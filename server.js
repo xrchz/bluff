@@ -42,47 +42,31 @@ io.on('connection', socket => {
   console.log("* * * A new connection has been made.");
   console.log("* ID of new socket object: " + socket.id);
 
-  socket.on('changeName', name => {
-    console.log("* Changing name from " + socket.playerName + " to " + name);
-    socket.playerName = name;
-    socket.emit('updateName', socket.playerName);
-  });
-
-  if (!socket.playerName) {
-    socket.playerName = 'Player'+Math.floor(Math.random()*20);
-    socket.emit('updateName', socket.playerName);
-  }
-
-  socket.on('newGame', () => {
-    let gameName = randomGameName();
-    let game = {
-      players: { [socket.playerName]: {} }
-    };
-    games[gameName] = game;
-    socket.join(gameName);
-    socket.gameName = gameName;
-    socket.emit('updateGame', gameName);
-    updatePlayers(gameName);
-  });
-
-  socket.on('joinGame', gameName => {
-    if (gameName in games) {
-      let game = games[gameName];
-      if (!(socket.playerName in game.players)) {
-        socket.join(gameName);
-        socket.gameName = gameName;
-        game.players[socket.playerName] = {};
-        socket.emit('updateGame', gameName);
-        updatePlayers(gameName);
-      }
-      else {
-        console.log('* Failed to join game: player name taken');
-        socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName);
-      }
+  socket.on('joinGame', data => {
+    let game;
+    let gameName = data.gameName;
+    if (!(gameName in games)) {
+      game = { players: {} };
+      gameName = randomGameName();
+      games[gameName] = game;
+    }
+    else { game = games[gameName]; }
+    if (!data.playerName) {
+      socket.playerName = 'Player'+Math.floor(Math.random()*20);
+      console.log("* Generated random name: " + socket.playerName + " (" + socket.id +")");
+    }
+    else { socket.playerName = data.playerName; }
+    if (!(socket.playerName in game.players)) {
+      socket.join(gameName);
+      socket.gameName = gameName;
+      game.players[socket.playerName] = {};
+      socket.emit('updateGame', {gameName: gameName, playerName: socket.playerName});
+      updatePlayers(gameName);
+      console.log("* Active games: " + Object.keys(games).join(', '));
     }
     else {
-      console.log('* Failed to join game: does not exist');
-      socket.emit('errorMsg', 'Game ' + gameName + ' does not exist');
+      console.log('* Failed to join game: player name taken');
+      socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName);
     }
   });
 
@@ -96,6 +80,7 @@ io.on('connection', socket => {
         delete games[socket.gameName];
       }
     }
+    console.log("* Active games: " + Object.keys(games).join(', '));
   });
 
 });
