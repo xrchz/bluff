@@ -2,6 +2,8 @@ body {
   font-size: large;
   background-color: DarkSeaGreen;
   color: Indigo;
+  margin-left: 2.5vw;
+  width: 95vw;
 }
 input {
   font-size: large;
@@ -19,7 +21,6 @@ input[type=button] {
 }
 #log {
   height: 20vh;
-  width: 80vw;
   resize: both;
   overflow-y: scroll;
   list-style-type: none;
@@ -37,6 +38,13 @@ input[type=button] {
   height: 20vh;
   width: 80vw;
   margin-top: 1vh;
+}
+#hand {
+  font-size: larger;
+  margin-top: 2vh;
+}
+#move {
+  font-size: larger;
 }
 #hand a, #say, #play {
   letter-spacing: 0.25em;
