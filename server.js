@@ -11,7 +11,7 @@ var app = express();
 var server = https.createServer(options, app)
 var io = require('socket.io')(server);
 
-app.get('/', function(req, res) {
+app.get((req, res) => {
   res.sendFile(__dirname + '/client/index.html');
 });
 app.use(express.static(__dirname + '/client'));
@@ -20,6 +20,15 @@ server.listen(1909, "0.0.0.0");
 console.log('server started on https://xrchz.net:1909');
 
 var games = {};
+
+function randomNormal(samples) {
+  if (!samples) { samples = 6; }
+  let t = 0;
+  for(let n = 0; n < samples; n++) {
+    t += Math.random();
+  }
+  return t / samples - 0.5;
+}
 
 function randomLetter() {
   return String.fromCharCode(65 + Math.random() * 26);
@@ -45,13 +54,19 @@ function updateHand(player) {
   io.in(player.id).emit('updateHand', player.hand.map(cardName));
 }
 
-function updateHands(gameName) {
-  const game = games[gameName];
+function updateHands(game) {
   for (const player of game.players) {
-    if (!game.missingPlayers.has(player.name)) {
-      updateHand(player)
-    }
+    updateHand(player)
   }
+}
+
+function observePile(player, length) {
+  player.pileLength = length == 0 ? 0 :
+    Math.max(1, Math.round(length + randomNormal() * Math.sqrt(2 * length)));
+}
+
+function updatePile(player) {
+  io.in(player.id).emit('updatePile', player.pileLength);
 }
 
 function shuffleInPlace(array) {
@@ -90,12 +105,12 @@ const cardNum = c =>
 
 const sayRegExp = /^([2-9]|[TJQKA])\1*$/;
 
-function tryPlay(player, str, deck) {
+function tryPlay(player, str, pile) {
   let cards = Array.from(str).map(cardNum).sort(asc);
-  const toDeck = [];
+  const toPile = [];
   const hand = player.hand.filter(card => {
     if ( cards.length > 0 && card == cards[0] ) {
-      toDeck.push(cards.shift());
+      toPile.push(cards.shift());
       return false;
     }
     else {
@@ -106,7 +121,7 @@ function tryPlay(player, str, deck) {
     return false;
   }
   else {
-    Array.prototype.push.apply(deck, toDeck);
+    Array.prototype.push.apply(pile, toPile);
     player.hand = hand;
     return true;
   }
@@ -177,6 +192,7 @@ io.on('connection', socket => {
           const player = game.players.find(player => player.name == data.playerName);
           player.id = socket.id;
           updatePlayers(gameName);
+          updatePile(player);
           updateHand(player);
           const current = game.players[game.whoseTurn];
           if (current.name == player.name) {
@@ -230,7 +246,7 @@ io.on('connection', socket => {
     if (game.players.length > 1) {
       console.log('* Game starting: ' + gameName);
       game.started = true;
-      game.deck = [];
+      game.pile = [];
       game.missingPlayers = new Set();
       game.log = [];
       console.log('* Shuffling deck and players: ' + gameName);
@@ -250,13 +266,15 @@ io.on('connection', socket => {
       }
       for (const player of game.players) {
         player.hand.sort(asc);
+        player.pileLength = 0;
+        updatePile(player);
       }
       console.log('* Ready: ' + gameName);
       game.whoseTurn = 0;
       io.in(gameName).emit('startGame');
       game.log.push('The game begins!');
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-      updateHands(gameName);
+      updateHands(game);
       changeTurn(gameName);
     }
     else {
@@ -284,11 +302,15 @@ io.on('connection', socket => {
         io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
         loser = last.who;
       }
-      game.log.push({bluff: true, msg: loser + ' takes the deck to hand'});
+      game.log.push({bluff: true, msg: loser + ' takes the pile to hand'});
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1].msg);
       const player = game.players.find(player => player.name == loser);
-      player.hand = player.hand.concat(game.deck).sort(asc);
-      game.deck = [];
+      player.hand = player.hand.concat(game.pile).sort(asc);
+      game.pile = [];
+      for (const player of game.players) {
+        player.pileLength = 0;
+        updatePile(player);
+      }
       updateHand(player);
       io.in(gameName).emit('hideBluff');
       changeTurn(gameName);
@@ -304,7 +326,7 @@ io.on('connection', socket => {
     if (game.players[game.whoseTurn].name == socket.playerName) {
       const player = game.players[game.whoseTurn];
       if ( sayRegExp.test(data.say) ) {
-        if ( tryPlay(player, data.play, game.deck) ) {
+        if ( tryPlay(player, data.play, game.pile) ) {
           const entry = {pub: socket.playerName + ' claims ' + data.say,
                          who: socket.playerName,
                          pri: ' (actually ' + data.play + ')',
@@ -314,6 +336,10 @@ io.on('connection', socket => {
           socket.to(gameName).emit('appendLog', entry.pub);
           socket.emit('appendLog', entry.pub + entry.pri);
           updateHand(player);
+          for (const player of game.players) {
+            observePile(player, game.pile.length);
+            updatePile(player);
+          }
           socket.emit('hideMove');
           socket.emit('hideBluff');
           socket.to(gameName).emit('showBluff');

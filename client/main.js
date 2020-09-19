@@ -1,5 +1,6 @@
 var socket = io("https://xrchz.net:1909");
 
+const pileDiv = document.getElementById('pile');
 const handDiv = document.getElementById('hand');
 const moveDiv = document.getElementById('move');
 const currentDiv = document.getElementById('current');
@@ -29,6 +30,10 @@ function makeAddPlayCards(c, n) {
     }
   }
 };
+
+socket.on('updatePile', n => {
+  pileDiv.innerHTML = 'Pile: ' + "▩".repeat(n);
+});
 
 socket.on('updateHand', hand => {
   let elem = document.createElement('span');

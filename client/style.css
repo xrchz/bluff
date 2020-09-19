@@ -39,11 +39,10 @@ input[type=button] {
   width: 80vw;
   margin-top: 1vh;
 }
-#hand {
-  font-size: larger;
+#pile {
   margin-top: 2vh;
 }
-#move {
+#pile, #hand, #move {
   font-size: larger;
 }
 #hand a, #say, #play {
