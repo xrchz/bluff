@@ -60,6 +60,11 @@ function updateHands(game) {
   }
 }
 
+function noisyObservation(n) {
+  return n == 0 ? 0 :
+    Math.max(1, Math.round(n + randomNormal() * Math.sqrt(2 * n)));
+}
+
 function observePile(player, length) {
   player.pileLength = length == 0 ? 0 :
     Math.max(1, Math.round(length + randomNormal() * Math.sqrt(2 * length)));
@@ -165,6 +170,25 @@ function findLastPlay(log) {
   }
 }
 
+function formatMove(entry, forWhom) {
+  if (entry.who) {
+    let result = entry.who + ' claims ' + entry.say + ' (';
+    if ( entry.who == forWhom ) {
+      result += 'actually ' + entry.act
+    }
+    else {
+      if(!entry.obs.has(forWhom)) {
+        entry.obs.set(forWhom, noisyObservation(entry.act.length));
+      }
+      result += 'looks like ' + '🂠'.repeat(entry.obs.get(forWhom))
+    }
+    return result + ')'
+  }
+  else {
+    return entry.bluff ? entry.msg : entry;
+  }
+}
+
 io.on('connection', socket => {
   console.log("* * * A new connection has been made.");
   console.log("* ID of new socket object: " + socket.id);
@@ -206,8 +230,7 @@ io.on('connection', socket => {
             socket.emit('setCurrent', current.name);
           }
           for (const entry of game.log) {
-            socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) :
-                                     entry.bluff ? entry.msg : entry);
+            socket.emit('appendLog', formatMove(entry, player.name));
           }
           socket.emit('rejoinGame');
         }
@@ -329,17 +352,12 @@ io.on('connection', socket => {
       const player = game.players[game.whoseTurn];
       if ( sayRegExp.test(data.say) ) {
         if ( tryPlay(player, data.play, game.pile) ) {
-          const entry = {pub: socket.playerName + ' claims ' + data.say,
-                         who: socket.playerName,
-                         pri: ' (actually ' + data.play + ')',
-                         say: data.say,
-                         act: data.play};
+          const entry = {who: socket.playerName, say: data.say, act: data.play, obs: new Map()};
           game.log.push(entry);
-          socket.to(gameName).emit('appendLog', entry.pub);
-          socket.emit('appendLog', entry.pub + entry.pri);
           updateHand(player);
           for (const player of game.players) {
-            observePile(player, game.pile.length);
+            io.in(player.id).emit('appendLog', formatMove(entry, player.name));
+            player.pileLength = noisyObservation(game.pile.length);
             updatePile(player);
           }
           socket.emit('hideMove');
@@ -362,7 +380,7 @@ io.on('connection', socket => {
         }
       }
       else {
-        socket.emit('errorMsg', 'Error: What you say is not valid: ensure all cards are the same');
+        socket.emit('errorMsg', 'What you say is not a valid claim');
       }
     }
     else {

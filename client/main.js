@@ -32,7 +32,7 @@ function makeAddPlayCards(c, n) {
 };
 
 socket.on('updatePile', n => {
-  pileDiv.innerHTML = 'Pile: ' + "▩".repeat(n);
+  pileDiv.innerHTML = 'Pile: ' + "🂠".repeat(n);
 });
 
 socket.on('updateHand', hand => {
