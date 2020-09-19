@@ -78,7 +78,7 @@ const cardName = r =>
   r == Queen ? 'Q' :
   r == King  ? 'K' :
   r == Ace   ? 'A' :
-  r == Joker ? '?' : r;
+  r == Joker ? '?' : String.fromCharCode(48 + r);
 
 const cardNum = c =>
   c == 'T' ? Ten :

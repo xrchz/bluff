@@ -18,8 +18,35 @@ socket.on('updatePlayers', players => {
   playerList.innerHTML = players;
 });
 
+function makeAddPlayCards(c, n) {
+  return () => {
+    const removed = playInput.value.replaceAll(c, '');
+    if (n == 1 && removed.length == playInput.value.length - 1) {
+      playInput.value = removed;
+    }
+    else {
+      playInput.value = removed.concat(c.repeat(n));
+    }
+  }
+};
+
 socket.on('updateHand', hand => {
-  handDiv.innerHTML = 'Hand: ' + hand.join('');
+  let elem = document.createElement('span');
+  while (handDiv.firstChild) {
+    handDiv.removeChild(handDiv.firstChild);
+  }
+  elem.innerHTML = 'Hand: ';
+  handDiv.appendChild(elem);
+  let lastChar;
+  let count;
+  for (const c of hand) {
+    elem = document.createElement('a');
+    elem.innerHTML = c;
+    if (c == lastChar) { count++; } else { count = 1; }
+    lastChar = c;
+    elem.onclick = makeAddPlayCards(c, count);
+    handDiv.appendChild(elem);
+  }
 });
 
 socket.on('setCurrent', player => {
@@ -51,6 +78,10 @@ socket.on('hideBluff', () => {
 
 const gameName = () => gameInput.value.toUpperCase().substring(0, 2);
 settingsButton.onclick = () => { socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value}); };
+
+playInput.onchange = () => {
+  playInput.value = playInput.value.toUpperCase();
+}
 
 moveButton.onclick = () => {
   errorMsg.innerHTML = "";

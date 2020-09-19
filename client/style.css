@@ -1,12 +1,26 @@
+body {
+  font-size: large;
+}
+input {
+  font-size: large;
+}
 #log {
-  height: 10vh;
+  height: 20vh;
   width: 80vw;
   resize: both;
   overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
 }
 #settings {
-  height: 10vh;
+  height: 20vh;
   width: 80vw;
+}
+#hand a {
+  letter-spacing: 0.25em;
+}
+#hand a:hover {
+  cursor: pointer;
 }
 #game, #say, #play {
   text-transform: uppercase;
