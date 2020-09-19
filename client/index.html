@@ -7,6 +7,7 @@
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
+    <p id="errorMsg" />
     <ul id="log"></ul>
     <input id="bluff" type="button" value="BS!" hidden />
     <div id="current"></div>
@@ -26,7 +27,6 @@
       <div>
         <label for="game">Game: </label><input id="game" type=text maxlength=2 autocomplete=off />
       </div>
-      <p id="errorMsg" />
     </div>
     <script src="main.js"></script>
   </body>

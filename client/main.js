@@ -124,6 +124,7 @@ socket.on('appendLog', text => {
   li.appendChild(tx);
   log.appendChild(li);
   li.scrollIntoView(false);
+  errorMsg.innerHTML = "";
 });
 
 socket.on('errorMsg', msg => {
