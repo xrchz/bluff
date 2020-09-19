@@ -85,7 +85,8 @@ playInput.onchange = () => {
 
 moveButton.onclick = () => {
   errorMsg.innerHTML = "";
-  socket.emit('move', {say: sayInput.value.toUpperCase(), play: playInput.value.toUpperCase()});
+  socket.emit('move', {say: sayInput.value.replace(/\s/g, '').toUpperCase(),
+                       play: playInput.value.replace(/\s/g, '').toUpperCase()});
 };
 
 bluffButton.onclick = () => { socket.emit('bluff'); };
