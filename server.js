@@ -177,7 +177,8 @@ io.on('connection', socket => {
           player.id = socket.id;
           updatePlayers(gameName);
           updateHand(player);
-          if (game.players[game.whoseTurn].name == player.name) {
+          const current = game.players[game.whoseTurn];
+          if (current.name == player.name) {
             socket.emit('showMove');
           }
           else {
@@ -190,6 +191,7 @@ io.on('connection', socket => {
             socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) :
                                      entry.bluff ? entry.msg : entry);
           }
+          socket.emit('setCurrent', current.name);
           socket.emit('rejoinGame');
         }
         else {
