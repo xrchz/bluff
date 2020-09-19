@@ -181,11 +181,9 @@ io.on('connection', socket => {
           if (current.name == player.name) {
             socket.emit('showMove');
           }
-          else {
-            const last = findLastPlay(game.log);
-            if (last && last.who != player.name) {
-              socket.emit('showBluff');
-            }
+          const last = findLastPlay(game.log);
+          if (last && last.who != player.name) {
+            socket.emit('showBluff');
           }
           for (const entry of game.log) {
             socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) :
