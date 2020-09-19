@@ -194,19 +194,21 @@ io.on('connection', socket => {
           updatePlayers(gameName);
           updatePile(player);
           updateHand(player);
-          const current = game.players[game.whoseTurn];
-          if (current.name == player.name) {
-            socket.emit('showMove');
-          }
-          const last = findLastPlay(game.log);
-          if (last && last.who != player.name) {
-            socket.emit('showBluff');
+          if (!game.ended) {
+            const current = game.players[game.whoseTurn];
+            if (current.name == player.name) {
+              socket.emit('showMove');
+            }
+            const last = findLastPlay(game.log);
+            if (last && last.who != player.name) {
+              socket.emit('showBluff');
+            }
+            socket.emit('setCurrent', current.name);
           }
           for (const entry of game.log) {
             socket.emit('appendLog', entry.who ? (entry.pub + (entry.who == player.name ? entry.pri : '')) :
                                      entry.bluff ? entry.msg : entry);
           }
-          socket.emit('setCurrent', current.name);
           socket.emit('rejoinGame');
         }
         else {
