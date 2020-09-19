@@ -12,11 +12,18 @@ input {
   list-style-type: none;
   padding-left: 0;
 }
+#bluff, #start {
+  margin-bottom: 1vh;
+}
+#players {
+  margin-top: 2vh;
+}
 #settings {
   height: 20vh;
   width: 80vw;
+  margin-top: 1vh;
 }
-#hand a {
+#hand a, #say, #play {
   letter-spacing: 0.25em;
 }
 #hand a:hover {

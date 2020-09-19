@@ -3,7 +3,7 @@ var socket = io("https://xrchz.net:1909");
 const handDiv = document.getElementById('hand');
 const moveDiv = document.getElementById('move');
 const currentDiv = document.getElementById('current');
-const settingsButton = document.getElementById('joinGame');
+const startButton = document.getElementById('start');
 const moveButton = document.getElementById('submit');
 const bluffButton = document.getElementById('bluff');
 const sayInput = document.getElementById('say');
@@ -21,7 +21,7 @@ socket.on('updatePlayers', players => {
 function makeAddPlayCards(c, n) {
   return () => {
     const removed = playInput.value.replaceAll(c, '');
-    if (n == 1 && removed.length == playInput.value.length - 1) {
+    if (removed.length == playInput.value.length - n) {
       playInput.value = removed;
     }
     else {
@@ -77,7 +77,7 @@ socket.on('hideBluff', () => {
 });
 
 const gameName = () => gameInput.value.toUpperCase().substring(0, 2);
-settingsButton.onclick = () => { socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value}); };
+startButton.onclick = () => { socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value}); };
 
 playInput.onchange = () => {
   playInput.value = playInput.value.toUpperCase();
@@ -93,7 +93,7 @@ bluffButton.onclick = () => { socket.emit('bluff'); };
 socket.on('rejoinGame', () => {
   gameInput.disabled = true;
   nameInput.disabled = true;
-  settingsButton.remove();
+  startButton.remove();
   errorMsg.innerHTML = "";
 });
 
@@ -102,13 +102,13 @@ socket.on('joinGame', data => {
   nameInput.value = data.playerName;
   gameInput.disabled = true;
   nameInput.disabled = true;
-  settingsButton.value = "Start!";
-  settingsButton.onclick = () => { socket.emit('startGame'); };
+  startButton.value = "Start!";
+  startButton.onclick = () => { socket.emit('startGame'); };
   errorMsg.innerHTML = "";
 });
 
 socket.on('startGame', () => {
-  settingsButton.remove();
+  startButton.remove();
   errorMsg.innerHTML = "";
 });
 
