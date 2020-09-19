@@ -130,6 +130,7 @@ function changeTurn(gameName) {
   if (game.pendingWinner && game.pendingWinner.hand.length == 0) {
     game.log.push(game.pendingWinner.name + ' wins!');
     io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+    game.ended = true;
   }
   else {
     game.pendingWinner = null;
@@ -355,6 +356,9 @@ io.on('connection', socket => {
       else {
         game.missingPlayers.add(socket.playerName);
         updatePlayers(socket.gameName);
+        if (game.ended && game.missingPlayers.size == game.players.length) {
+          delete games[socket.gameName];
+        }
       }
     }
     console.log("* Active games: " + Object.keys(games).join(', '));
