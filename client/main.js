@@ -1,7 +1,8 @@
-var socket = io("https://xrchz.net:2009");
+var socket = io("https://xrchz.net:1909");
 
 const handDiv = document.getElementById('hand');
 const moveDiv = document.getElementById('move');
+const currentDiv = document.getElementById('current');
 const settingsButton = document.getElementById('joinGame');
 const moveButton = document.getElementById('submit');
 const bluffButton = document.getElementById('bluff');
@@ -19,6 +20,15 @@ socket.on('updatePlayers', players => {
 
 socket.on('updateHand', hand => {
   handDiv.innerHTML = 'Hand: ' + hand.join('');
+});
+
+socket.on('setCurrent', player => {
+  if (player) {
+    currentDiv.innerHTML = 'Waiting for ' + player + '...';
+  }
+  else {
+    currentDiv.innerHTML = '';
+  }
 });
 
 socket.on('showMove', () => {

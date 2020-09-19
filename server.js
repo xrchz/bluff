@@ -16,8 +16,8 @@ app.get('/', function(req, res) {
 });
 app.use(express.static(__dirname + '/client'));
 
-server.listen(2009, "0.0.0.0");
-console.log('server started on https://xrchz.net:2009');
+server.listen(1909, "0.0.0.0");
+console.log('server started on https://xrchz.net:1909');
 
 var games = {};
 
@@ -132,8 +132,8 @@ function changeTurn(gameName) {
     io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
   }
   else {
-    game.log.push('Waiting for ' + player.name + '...');
-    io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+    game.pendingWinner = null;
+    io.in(gameName).emit('setCurrent', player.name);
     io.in(player.id).emit('showMove');
   }
 }
@@ -321,6 +321,7 @@ io.on('connection', socket => {
           if (player.hand.length == 0) {
             game.log.push(player.name + ' wins unless they are caught...');
             io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+            io.in(gameName).emit('setCurrent');
             game.pendingWinner = player;
           }
           else {
