@@ -12,18 +12,18 @@
     <div id="current"></div>
     <div id="hand"></div>
     <div id="move" hidden>
-      <label for="say">Say: </label><input id="say" autocomplete=off pattern="([2-9]|[tjqkaTJQKA])\1*" />
-      <label for="play">Play: </label><input id="play" autocomplete=off pattern="([2-9]|[tjqkaTJQKA?])*" />
+      <label for="say">Say: </label><input id="say" type=text autocomplete=off pattern="([2-9]|[tjqkaTJQKA])\1*" />
+      <label for="play">Play: </label><input id="play" type=text autocomplete=off pattern="([2-9]|[tjqkaTJQKA?])*" />
       <input id="submit" type="button" value="Submit" />
     </div>
     <div id="players"></div>
     <div id="settings">
       <input id="start" type="button" value="Join game" />
       <div>
-        <label for="name">Name: </label><input id="name" autocomplete=on />
+        <label for="name">Name: </label><input id="name" type=text autocomplete=on />
       </div>
       <div>
-        <label for="game">Game: </label><input id="game" maxlength=2 autocomplete=off />
+        <label for="game">Game: </label><input id="game" type=text maxlength=2 autocomplete=off />
       </div>
       <p id="errorMsg" />
     </div>

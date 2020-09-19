@@ -1,8 +1,21 @@
 body {
   font-size: large;
+  background-color: DarkSeaGreen;
+  color: Indigo;
 }
 input {
   font-size: large;
+}
+input[type=text] {
+  background-color: Khaki;
+  color: MidnightBlue;
+}
+input[type=text]:disabled {
+  background-color: DarkKhaki;
+}
+input[type=button] {
+  background-color: DarkOliveGreen;
+  color: Lavender;
 }
 #log {
   height: 20vh;
@@ -11,6 +24,8 @@ input {
   overflow-y: scroll;
   list-style-type: none;
   padding-left: 0;
+  background-color: SeaGreen;
+  color: Plum;
 }
 #bluff, #start {
   margin-bottom: 1vh;
