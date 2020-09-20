@@ -170,11 +170,13 @@ function findLastPlay(log) {
   }
 }
 
+const cardsSpan = s => '<span class=cards>' + s + '</span>';
+
 function formatMove(entry, forWhom) {
   if (entry.who) {
-    let result = entry.who + ' claims ' + entry.say + ' (';
+    let result = entry.who + ' claims ' + cardsSpan(entry.say) + ' (';
     if ( entry.who == forWhom ) {
-      result += 'actually ' + entry.act
+      result += 'actually ' + cardsSpan(entry.act)
     }
     else {
       if(!entry.obs.has(forWhom)) {
@@ -318,12 +320,12 @@ io.on('connection', socket => {
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
       let loser;
       if (legit) {
-        game.log.push('but ' + last.who + ' had innocently played ' + last.act);
+        game.log.push('but ' + last.who + ' had innocently played ' + cardsSpan(last.act));
         io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
         loser = socket.playerName;
       }
       else {
-        game.log.push('and catches them bluffing with ' + last.act);
+        game.log.push('and catches them bluffing with ' + cardsSpan(last.act));
         io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
         loser = last.who;
       }

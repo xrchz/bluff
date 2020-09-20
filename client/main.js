@@ -32,7 +32,7 @@ function makeAddPlayCards(c, n) {
 };
 
 socket.on('updatePile', n => {
-  pileDiv.innerHTML = 'Pile: ' + "🂠".repeat(n);
+  pileDiv.textContent = 'Pile: ' + "🂠".repeat(n);
 });
 
 socket.on('updateHand', hand => {
@@ -40,13 +40,13 @@ socket.on('updateHand', hand => {
   while (handDiv.firstChild) {
     handDiv.removeChild(handDiv.firstChild);
   }
-  elem.innerHTML = 'Hand: ';
+  elem.textContent = 'Hand: ';
   handDiv.appendChild(elem);
   let lastChar;
   let count;
   for (const c of hand) {
     elem = document.createElement('a');
-    elem.innerHTML = c;
+    elem.textContent = c;
     if (c == lastChar) { count++; } else { count = 1; }
     lastChar = c;
     elem.onclick = makeAddPlayCards(c, count);
@@ -56,7 +56,7 @@ socket.on('updateHand', hand => {
 
 socket.on('setCurrent', player => {
   if (player) {
-    currentDiv.innerHTML = 'Waiting for ' + player + '...';
+    currentDiv.textContent = 'Waiting for ' + player + '...';
   }
   else {
     currentDiv.innerHTML = '';
@@ -118,10 +118,9 @@ socket.on('startGame', () => {
   errorMsg.innerHTML = "";
 });
 
-socket.on('appendLog', text => {
+socket.on('appendLog', markup => {
   const li = document.createElement('li');
-  const tx = document.createTextNode(text);
-  li.appendChild(tx);
+  li.innerHTML = markup;
   log.appendChild(li);
   li.scrollIntoView(false);
   errorMsg.innerHTML = "";
