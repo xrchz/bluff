@@ -55,11 +55,11 @@ function makeAddSayCard(c) {
   elem.onclick = () => { sayInput.value += sayInput.value.charAt(0); };
   sayControl.appendChild(elem);
   elem = document.createElement('a');
-  elem.textContent = '⇨';
+  elem.textContent = '⇦';
   elem.onclick = () => { playInput.value = sayInput.value; };
   sayControl.appendChild(elem);
   elem = document.createElement('a');
-  elem.textContent = '⇦';
+  elem.textContent = '⇨';
   elem.onclick = () => { sayInput.value = playInput.value; };
   sayControl.appendChild(elem);
 })();
