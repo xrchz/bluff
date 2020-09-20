@@ -65,11 +65,6 @@ function noisyObservation(n) {
     Math.max(1, Math.round(n + randomNormal() * Math.sqrt(2 * n)));
 }
 
-function observePile(player, length) {
-  player.pileLength = length == 0 ? 0 :
-    Math.max(1, Math.round(length + randomNormal() * Math.sqrt(2 * length)));
-}
-
 function updatePile(player) {
   io.in(player.id).emit('updatePile', player.pileLength);
 }
