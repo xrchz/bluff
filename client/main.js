@@ -13,6 +13,7 @@ const playInput = document.getElementById('play');
 const playerList = document.getElementById('players');
 const gameInput = document.getElementById('game');
 const nameInput = document.getElementById('name');
+const spectateInput = document.getElementById('spectate');
 const errorMsg = document.getElementById('errorMsg');
 const log = document.getElementById('log');
 
@@ -84,6 +85,10 @@ socket.on('updatePile', n => {
   pileDiv.textContent = 'Pile: ' + "🂠".repeat(n);
 });
 
+socket.on('updatePileSpectator', pile => {
+  pileDiv.innerHTML = 'Pile: <span class=cards>' + pile + '</span>';
+});
+
 socket.on('updateHand', hand => {
   while (handDiv.firstChild) {
     handDiv.removeChild(handDiv.firstChild);
@@ -123,7 +128,9 @@ socket.on('hideMove', () => {
 });
 
 socket.on('showBluff', () => {
-  bluffButton.hidden = false;
+  if (!spectateInput.checked) {
+    bluffButton.hidden = false;
+  }
 });
 
 socket.on('hideBluff', () => {
@@ -132,7 +139,11 @@ socket.on('hideBluff', () => {
 
 const gameName = () => gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2);
 startButton.onclick = () => {
-  socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value.replace(/\W/g, '')});
+  socket.emit('joinGame', {
+    gameName: gameName(),
+    playerName: nameInput.value.replace(/\W/g, ''),
+    spectate: spectateInput.checked
+  });
 };
 
 playInput.onchange = () => {
@@ -147,9 +158,12 @@ moveButton.onclick = () => {
 
 bluffButton.onclick = () => { socket.emit('bluff'); };
 
-socket.on('rejoinGame', () => {
+socket.on('rejoinGame', (name, spectating) => {
   gameInput.disabled = true;
   nameInput.disabled = true;
+  nameInput.value = name;
+  spectateInput.disabled = true;
+  spectateInput.checked = spectating;
   startButton.remove();
   errorMsg.innerHTML = "";
 });
@@ -159,6 +173,7 @@ socket.on('joinGame', data => {
   nameInput.value = data.playerName;
   gameInput.disabled = true;
   nameInput.disabled = true;
+  spectateInput.disabled = true;
   startButton.value = "Start!";
   startButton.onclick = () => { socket.emit('startGame'); };
   errorMsg.innerHTML = "";

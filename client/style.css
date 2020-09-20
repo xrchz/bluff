@@ -38,6 +38,9 @@ input[type=button] {
   list-style-type: none;
   padding-left: 0;
 }
+#players .spectator {
+  color: SlateGray;
+}
 #players span.disconnected {
   color: Thistle;
 }
