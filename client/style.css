@@ -45,10 +45,10 @@ input[type=button] {
 #pile, #hand, #move {
   font-size: larger;
 }
-#hand a, #say, #play, #log span.cards {
+#hand a, #say, #play, .cards {
   letter-spacing: 0.25em;
 }
-#hand a:hover {
+#hand a:hover, #sayControl a:hover {
   cursor: pointer;
 }
 #game, #say, #play {

@@ -8,6 +8,7 @@ const startButton = document.getElementById('start');
 const moveButton = document.getElementById('submit');
 const bluffButton = document.getElementById('bluff');
 const sayInput = document.getElementById('say');
+const sayControl = document.getElementById('sayControl');
 const playInput = document.getElementById('play');
 const playerList = document.getElementById('players');
 const gameInput = document.getElementById('game');
@@ -29,17 +30,69 @@ function makeAddPlayCards(c, n) {
       playInput.value = removed.concat(c.repeat(n));
     }
   }
-};
+}
+
+function makeAddSayCard(c) {
+  return () => {
+    if (sayInput.value.length > 0) {
+      if (sayInput.value.charAt(0) == c) {
+        sayInput.value += c;
+      }
+      else {
+        sayInput.value = sayInput.value.replaceAll(/./g, c);
+      }
+    }
+    else {
+      sayInput.value = c;
+    }
+  }
+}
+
+(() => {
+  let elem = document.createElement('a');
+  elem.textContent = '-';
+  elem.onclick = () => { sayInput.value = sayInput.value.slice(0, -1); };
+  sayControl.appendChild(elem);
+  elem = document.createElement('a');
+  elem.textContent = '+';
+  elem.onclick = () => { sayInput.value += sayInput.value.charAt(0); };
+  sayControl.appendChild(elem);
+  elem = document.createElement('a');
+  elem.textContent = '⇨';
+  elem.onclick = () => { playInput.value = sayInput.value; };
+  sayControl.appendChild(elem);
+  elem = document.createElement('a');
+  elem.textContent = '⇦';
+  elem.onclick = () => { sayInput.value = playInput.value; };
+  sayControl.appendChild(elem);
+})();
+
+function makeSayControl(cards) {
+  let elem = sayControl.lastChild.previousSibling.previousSibling.previousSibling;
+  while (elem.previousSibling) {
+    elem = elem.previousSibling;
+    sayControl.removeChild(elem.nextSibling);
+  }
+  const end = elem.nextSibling;
+  for (const c of cards) {
+    elem = document.createElement('a');
+    elem.textContent = c;
+    elem.onclick = makeAddSayCard(c);
+    sayControl.insertBefore(elem, end);
+  }
+}
+
+makeSayControl('23456789TJQKA');
 
 socket.on('updatePile', n => {
   pileDiv.textContent = 'Pile: ' + "🂠".repeat(n);
 });
 
 socket.on('updateHand', hand => {
-  let elem = document.createElement('span');
   while (handDiv.firstChild) {
     handDiv.removeChild(handDiv.firstChild);
   }
+  let elem = document.createElement('span');
   elem.textContent = 'Hand: ';
   handDiv.appendChild(elem);
   let lastChar;
