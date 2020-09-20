@@ -41,6 +41,9 @@ input[type=button] {
 #players span.disconnected {
   color: Thistle;
 }
+#players span.current {
+  background-color: MediumSeaGreen;
+}
 #settings {
   height: 20vh;
   width: 80vw;

@@ -41,7 +41,7 @@ function randomUnusedGameName() {
   return name;
 }
 
-function formatPlayer(player, forWhom, disconnected) {
+function formatPlayer(player, forWhom, current, disconnected) {
   let s = player.name;
   if (forWhom.handLength && forWhom.handLength[player.name]) {
     s += ' ' + '🂠'.repeat(forWhom.handLength[player.name]);
@@ -49,8 +49,12 @@ function formatPlayer(player, forWhom, disconnected) {
   else if (player.hand && player.name == forWhom.name) {
     s += ' ' + '🂠'.repeat(player.hand.length);
   }
-  if (disconnected) {
-    s = `<span class=disconnected>${s} (d/c)</span>`;
+  let classes = [];
+  let annots = [];
+  if (disconnected) { classes.push('disconnected'); annots.push('(d/c)');}
+  if (current) { classes.push('current'); annots.push('(*)');}
+  if (classes.length) {
+    s = `<span class="${classes.join(' ')}">${s} ${annots.join(' ')}</span>`;
   }
   return s;
 }
@@ -59,11 +63,12 @@ function updatePlayers(gameName) {
   const game = games[gameName];
   const isDisconnected = game.missingPlayers ?
     (player => game.missingPlayers.has(player.name)) : (player => false);
+  const currentName = (game.started && !game.ended) ? game.players[game.whoseTurn].name : null;
   for (const forWhom of game.players) {
     let players = [];
     if (isDisconnected(forWhom)) { continue; }
     for (const player of game.players) {
-      players.push(formatPlayer(player, forWhom, isDisconnected(player)));
+      players.push(formatPlayer(player, forWhom, player.name == currentName, isDisconnected(player)));
     }
     players = players.map(x => `<li>${x}</li>`).join('');
     io.in(forWhom.id).emit('updatePlayers', `<ul>${players}</ul>`);
@@ -295,7 +300,6 @@ io.on('connection', socket => {
       const deck = makeDeck();
       shuffleInPlace(deck);
       shuffleInPlace(game.players);
-      updatePlayers(gameName);
       console.log('* Dealing hands: ' + gameName);
       for (const player of game.players) {
         player.hand = [];
@@ -391,7 +395,6 @@ io.on('connection', socket => {
               player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length);
             }
           }
-          updatePlayers(gameName);
           socket.emit('hideMove');
           socket.emit('hideBluff');
           socket.to(gameName).emit('showBluff');
@@ -406,6 +409,7 @@ io.on('connection', socket => {
           else {
             changeTurn(gameName);
           }
+          updatePlayers(gameName);
         }
         else {
           socket.emit('errorMsg', 'You cannot play that with your hand');
