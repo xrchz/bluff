@@ -33,17 +33,13 @@ function makeAddPlayCards(c, n) {
 }
 
 function makeAddSayCard(c) {
+  const allMatch = new RegExp('^['+c+']*$');
   return () => {
-    if (sayInput.value.length > 0) {
-      if (sayInput.value.charAt(0) == c) {
-        sayInput.value += c;
-      }
-      else {
-        sayInput.value = sayInput.value.replaceAll(/./g, c);
-      }
+    if (allMatch.test(sayInput.value)) {
+      sayInput.value += c;
     }
     else {
-      sayInput.value = c;
+      sayInput.value = sayInput.value.replaceAll(/./g, c);
     }
   }
 }
