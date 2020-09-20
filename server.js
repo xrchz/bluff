@@ -41,13 +41,33 @@ function randomUnusedGameName() {
   return name;
 }
 
+function formatPlayer(player, forWhom, disconnected) {
+  let s = player.name;
+  if (forWhom.handLength && forWhom.handLength[player.name]) {
+    s += ' ' + '🂠'.repeat(forWhom.handLength[player.name]);
+  }
+  else if (player.hand && player.name == forWhom.name) {
+    s += ' ' + '🂠'.repeat(player.hand.length);
+  }
+  if (disconnected) {
+    s = `<span class=disconnected>${s} (d/c)</span>`;
+  }
+  return s;
+}
+
 function updatePlayers(gameName) {
   const game = games[gameName];
-  const func = game.missingPlayers ?
-    (player => game.missingPlayers.has(player.name) ? player.name + ' (d/c)' : player.name) :
-    (player => player.name);
-  const playerNames = game.players.map(func);
-  io.in(gameName).emit('updatePlayers', 'Players: ' + playerNames.join(', '));
+  const isDisconnected = game.missingPlayers ?
+    (player => game.missingPlayers.has(player.name)) : (player => false);
+  for (const forWhom of game.players) {
+    let players = [];
+    if (isDisconnected(forWhom)) { continue; }
+    for (const player of game.players) {
+      players.push(formatPlayer(player, forWhom, isDisconnected(player)));
+    }
+    players = players.map(x => `<li>${x}</li>`).join('');
+    io.in(forWhom.id).emit('updatePlayers', `<ul>${players}</ul>`);
+  }
 }
 
 function updateHand(player) {
@@ -290,6 +310,12 @@ io.on('connection', socket => {
         player.hand.sort(asc);
         player.pileLength = 0;
         updatePile(player);
+        player.handLength = new Map();
+        for (const other of game.players) {
+          if (player.name != other.name) {
+            player.handLength[other.name] = noisyObservation(other.hand.length);
+          }
+        }
       }
       console.log('* Ready: ' + gameName);
       game.whoseTurn = 0;
@@ -297,6 +323,7 @@ io.on('connection', socket => {
       game.log.push('The game begins!');
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
       updateHands(game);
+      updatePlayers(gameName);
       changeTurn(gameName);
     }
     else {
@@ -313,27 +340,31 @@ io.on('connection', socket => {
         Array.from(last.act).every(c => c == '?' || c == last.say[0]));
       game.log.push(socket.playerName + ' accuses ' + last.who);
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-      let loser;
+      let loserName;
       if (legit) {
         game.log.push('but ' + last.who + ' had innocently played ' + cardsSpan(last.act));
         io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-        loser = socket.playerName;
+        loserName = socket.playerName;
       }
       else {
         game.log.push('and catches them bluffing with ' + cardsSpan(last.act));
         io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-        loser = last.who;
+        loserName = last.who;
       }
-      game.log.push({bluff: true, msg: loser + ' takes the pile to hand'});
+      game.log.push({bluff: true, msg: loserName + ' takes the pile to hand'});
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1].msg);
-      const player = game.players.find(player => player.name == loser);
-      player.hand = player.hand.concat(game.pile).sort(asc);
+      const loser = game.players.find(player => player.name == loserName);
+      loser.hand = loser.hand.concat(game.pile).sort(asc);
       game.pile = [];
       for (const player of game.players) {
         player.pileLength = 0;
         updatePile(player);
+        if (player.name != loserName) {
+          player.handLength[loserName] = noisyObservation(loser.hand.length);
+        }
       }
-      updateHand(player);
+      updateHand(loser);
+      updatePlayers(gameName);
       io.in(gameName).emit('hideBluff');
       changeTurn(gameName);
     }
@@ -346,27 +377,31 @@ io.on('connection', socket => {
     const gameName = socket.gameName;
     const game = games[gameName];
     if (game.players[game.whoseTurn].name == socket.playerName) {
-      const player = game.players[game.whoseTurn];
+      const currentPlayer = game.players[game.whoseTurn];
       if ( sayRegExp.test(data.say) ) {
-        if ( tryPlay(player, data.play, game.pile) ) {
+        if ( tryPlay(currentPlayer, data.play, game.pile) ) {
           const entry = {who: socket.playerName, say: data.say, act: data.play, obs: new Map()};
           game.log.push(entry);
-          updateHand(player);
+          updateHand(currentPlayer);
           for (const player of game.players) {
             io.in(player.id).emit('appendLog', formatMove(entry, player.name));
             player.pileLength = noisyObservation(game.pile.length);
             updatePile(player);
+            if (player.name != currentPlayer.name) {
+              player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length);
+            }
           }
+          updatePlayers(gameName);
           socket.emit('hideMove');
           socket.emit('hideBluff');
           socket.to(gameName).emit('showBluff');
           game.whoseTurn++;
           if (game.whoseTurn == game.players.length) { game.whoseTurn = 0; }
-          if (player.hand.length == 0) {
-            game.log.push(player.name + ' wins unless they are caught...');
+          if (currentPlayer.hand.length == 0) {
+            game.log.push(currentPlayer.name + ' wins unless they are caught...');
             io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
             io.in(gameName).emit('setCurrent');
-            game.pendingWinner = player;
+            game.pendingWinner = currentPlayer;
           }
           else {
             changeTurn(gameName);

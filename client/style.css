@@ -34,6 +34,13 @@ input[type=button] {
 #players {
   margin-top: 2vh;
 }
+#players ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+#players span.disconnected {
+  color: Thistle;
+}
 #settings {
   height: 20vh;
   width: 80vw;
