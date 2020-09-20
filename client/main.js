@@ -81,8 +81,10 @@ socket.on('hideBluff', () => {
   bluffButton.hidden = true;
 });
 
-const gameName = () => gameInput.value.toUpperCase().substring(0, 2);
-startButton.onclick = () => { socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value}); };
+const gameName = () => gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2);
+startButton.onclick = () => {
+  socket.emit('joinGame', {gameName: gameName(), playerName: nameInput.value.replace(/\W/g, '')});
+};
 
 playInput.onchange = () => {
   playInput.value = playInput.value.toUpperCase();
