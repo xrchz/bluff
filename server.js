@@ -161,15 +161,16 @@ function tryPlay(player, str, pile) {
   }
 }
 
-function makeDeck() {
+function makeDeck(decks, jokers) {
   const deck = [];
   for (let r = 2; r <= Ace; r++) {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 4 * decks; i++) {
       deck.push(r);
     }
   }
-  deck.push(Joker);
-  deck.push(Joker);
+  for (let i = 0; i < jokers; i++) {
+    deck.push(Joker);
+  }
   return deck;
 }
 
@@ -335,7 +336,7 @@ io.on('connection', socket => {
       game.missingPlayers = new Set();
       game.log = [];
       console.log('* Shuffling deck and players: ' + gameName);
-      const deck = makeDeck();
+      const deck = makeDeck(data.decks, data.jokers);
       shuffleInPlace(deck);
       shuffleInPlace(game.players);
       console.log('* Dealing hands: ' + gameName);
