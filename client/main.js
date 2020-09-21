@@ -261,7 +261,7 @@ socket.on('rejoinGame', (playerName, spectating, data) => {
   spectateInput.disabled = true;
   disableSettings();
   startButton.remove();
-  showHideSettings.hidden = false;
+  gameSettings.hidden = true;
   showHideSettings.onclick();
   errorMsg.innerHTML = "";
 });

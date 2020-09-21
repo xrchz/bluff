@@ -296,7 +296,7 @@ io.on('connection', socket => {
           for (const entry of game.log) {
             socket.emit('appendLog', formatMove(entry, player.name, player.spectating));
           }
-          socket.emit('rejoinGame', player.name, player.spectating);
+          socket.emit('rejoinGame', player.name, player.spectating, game.settingsData);
         }
         else {
           socket.emit('errorMsg', 'Game ' + gameName + ' already contains member ' + socket.playerName);
@@ -325,7 +325,7 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('startGame', (data) => {
+  socket.on('startGame', data => {
     const gameName = socket.gameName;
     const game = games[gameName];
     if (game.players.length > 1) {
