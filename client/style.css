@@ -63,10 +63,14 @@ div.slider {
 #pile, #hand, #move {
   font-size: larger;
 }
+#showHideSettings {
+  font-size: smaller;
+  color: SlateGray;
+}
 #hand a, #say, #play, .cards {
   letter-spacing: 0.25em;
 }
-#hand a:hover, #sayControl a:hover {
+#hand a:hover, #sayControl a:hover, #showHideSettings:hover {
   cursor: pointer;
 }
 #game, #say, #play {

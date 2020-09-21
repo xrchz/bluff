@@ -224,7 +224,7 @@ io.on('connection', socket => {
   console.log("* * * A new connection has been made.");
   console.log("* ID of new socket object: " + socket.id);
 
-  socket.on('joinGame', data => {
+  socket.on('joinRequest', data => {
     let game;
     let gameName = data.gameName;
     if (!gameName) {
@@ -271,7 +271,7 @@ io.on('connection', socket => {
           for (const entry of game.log) {
             socket.emit('appendLog', formatMove(entry, player.name, player.spectating));
           }
-          socket.emit('rejoinGame', player.name, player.spectating);
+          socket.emit('rejoinGame', player.name, player.spectating, game.settingsData);
           if (player.spectating != data.spectate) {
             socket.emit('errorMsg', 'You cannot become a spectator: rejoined as player');
           }
@@ -313,6 +313,7 @@ io.on('connection', socket => {
         game.members.push(player);
         if (!data.spectate) { game.players.push(player); } else { game.spectators.push(player); }
         socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName});
+        if (game.started) { socket.emit('gameStarted', game.settingsData); }
         updatePlayers(gameName);
         console.log("* Active games: " + Object.keys(games).join(', '));
       }
@@ -323,12 +324,13 @@ io.on('connection', socket => {
     }
   });
 
-  socket.on('startGame', () => {
+  socket.on('startGame', (data) => {
     const gameName = socket.gameName;
     const game = games[gameName];
     if (game.players.length > 1) {
       console.log('* Game starting: ' + gameName);
       game.started = true;
+      game.settingsData = data;
       game.pile = [];
       game.missingPlayers = new Set();
       game.log = [];
@@ -361,7 +363,7 @@ io.on('connection', socket => {
       }
       console.log('* Ready: ' + gameName);
       game.whoseTurn = 0;
-      io.in(gameName).emit('startGame');
+      io.in(gameName).emit('gameStarted', data);
       game.log.push('The game begins!');
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
       updateHands(game);

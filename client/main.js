@@ -13,6 +13,7 @@ const playInput = document.getElementById('play');
 const playerList = document.getElementById('players');
 const gameInput = document.getElementById('game');
 const nameInput = document.getElementById('name');
+const gameSettings = document.getElementById('gameSettings');
 const noiseInput = document.getElementById('noise');
 const noiseOutput = noiseInput.nextSibling;
 const jokersInput = document.getElementById('jokers');
@@ -32,6 +33,18 @@ const wrapInput = wrapLabel.lastChild;
 const spectateInput = document.getElementById('spectate');
 const errorMsg = document.getElementById('errorMsg');
 const log = document.getElementById('log');
+const showHideSettings = document.getElementById('showHideSettings');
+
+showHideSettings.onclick = () => {
+  if (gameSettings.hidden) {
+    gameSettings.hidden = false;
+    showHideSettings.textContent = "less";
+  }
+  else {
+    gameSettings.hidden = true;
+    showHideSettings.textContent = "more";
+  }
+};
 
 noiseInput.oninput = () => { noiseOutput.textContent = noiseInput.value; };
 noiseInput.value = 2;
@@ -198,7 +211,7 @@ socket.on('hideBluff', () => {
 
 const gameName = () => gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2);
 startButton.onclick = () => {
-  socket.emit('joinGame', {
+  socket.emit('joinRequest', {
     gameName: gameName(),
     playerName: nameInput.value.replace(/\W/g, ''),
     spectate: spectateInput.checked
@@ -218,9 +231,6 @@ moveButton.onclick = () => {
 bluffButton.onclick = () => { socket.emit('bluff'); };
 
 function disableSettings() {
-  gameInput.disabled = true;
-  nameInput.disabled = true;
-  spectateInput.disabled = true;
   sameInput.disabled = true;
   upInput.disabled = true;
   downInput.disabled = true;
@@ -231,25 +241,65 @@ function disableSettings() {
   jokersInput.disabled = true;
 };
 
-socket.on('rejoinGame', (name, spectating) => {
-  nameInput.value = name;
+function receiveSettings(data) {
+  sameInput.checked = data.allowSame;
+  upInput.checked = data.allowUp;
+  downInput.checked = data.allowDown;
+  anyInput.checked = data.allowAny;
+  wrapInput.checked = data.wrap;
+  noiseInput.value = data.noise; noiseInput.oninput();
+  decksInput.value = data.decks; decksInput.oninput();
+  jokersInput.value = data.jokers; jokersInput.oninput();
+}
+
+socket.on('rejoinGame', (playerName, spectating, data) => {
+  nameInput.value = playerName;
   spectateInput.checked = spectating;
+  receiveSettings(data);
+  gameInput.disabled = true;
+  nameInput.disabled = true;
+  spectateInput.disabled = true;
   disableSettings();
   startButton.remove();
+  showHideSettings.hidden = false;
+  showHideSettings.onclick();
   errorMsg.innerHTML = "";
 });
+
+function settingsData() {
+  return {
+    allowSame: sameInput.checked,
+    allowUp: upInput.checked,
+    allowDown: downInput.checked,
+    allowAny: anyInput.checked,
+    wrap: wrapInput.checked,
+    noise: noiseInput.value,
+    decks: decksInput.value,
+    jokers: jokersInput.value}
+};
 
 socket.on('joinGame', data => {
   gameInput.value = data.gameName;
   nameInput.value = data.playerName;
-  disableSettings();
-  startButton.value = "Start!";
-  startButton.onclick = () => { socket.emit('startGame'); };
+  gameInput.disabled = true;
+  nameInput.disabled = true;
+  spectateInput.disabled = true;
+  showHideSettings.hidden = false;
+  if (!spectateInput.checked) {
+    gameSettings.hidden = false;
+    startButton.value = "Start!";
+    startButton.onclick = () => {
+      socket.emit('startGame', settingsData());
+    };
+  }
+  showHideSettings.onclick();
   errorMsg.innerHTML = "";
 });
 
-socket.on('startGame', () => {
+socket.on('gameStarted', data => {
   startButton.remove();
+  receiveSettings(data);
+  disableSettings();
   errorMsg.innerHTML = "";
 });
 
