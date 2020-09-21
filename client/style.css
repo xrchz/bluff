@@ -19,6 +19,11 @@ input[type=button] {
   background-color: DarkOliveGreen;
   color: Lavender;
 }
+div.slider {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
 #log {
   height: 20vh;
   resize: both;

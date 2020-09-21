@@ -13,9 +13,68 @@ const playInput = document.getElementById('play');
 const playerList = document.getElementById('players');
 const gameInput = document.getElementById('game');
 const nameInput = document.getElementById('name');
+const noiseInput = document.getElementById('noise');
+const noiseOutput = noiseInput.nextSibling;
+const jokersInput = document.getElementById('jokers');
+const jokersOutput = jokersInput.nextSibling;
+const decksInput = document.getElementById('decks');
+const decksOutput = decksInput.nextSibling;
+const sameLabel = document.getElementById('=');
+const sameInput = sameLabel.lastChild;
+const upLabel = document.getElementById('+1');
+const upInput = upLabel.lastChild;
+const downLabel = document.getElementById('-1');
+const downInput = downLabel.lastChild;
+const anyLabel = document.getElementById('any');
+const anyInput = anyLabel.lastChild;
+const wrapLabel = document.getElementById('wrap');
+const wrapInput = wrapLabel.lastChild;
 const spectateInput = document.getElementById('spectate');
 const errorMsg = document.getElementById('errorMsg');
 const log = document.getElementById('log');
+
+noiseInput.oninput = () => { noiseOutput.textContent = noiseInput.value; };
+noiseInput.value = 2;
+noiseInput.oninput();
+
+jokersInput.oninput = () => { jokersOutput.textContent = jokersInput.value; };
+jokersInput.value = 2;
+jokersInput.oninput();
+
+decksInput.oninput = () => {
+  decksOutput.textContent = decksInput.value + ` (${decksInput.value * 4} card${decksInput.value > 0.25 ? 's' : ''} per rank)`;
+};
+decksInput.value = 1;
+decksInput.oninput();
+
+function checkboxConsistency() {
+  if (!upInput.checked) { anyInput.checked = false; }
+  if (!downInput.checked) { anyInput.checked = false; }
+  if (!sameInput.checked) { anyInput.checked = false; }
+  if (upInput.checked || downInput.checked) { wrapLabel.hidden = false; }
+  if (!upInput.checked && !downInput.checked) { wrapLabel.hidden = true; }
+  if (!sameInput.checked && !upInput.checked && !downInput.checked && !anyInput.checked) {
+    sameInput.checked = true;
+    upInput.checked = true;
+    downInput.checked = true;
+    checkboxConsistency();
+  }
+};
+
+anyInput.onchange = () => {
+  if (anyInput.checked) {
+    upInput.checked = true;
+    downInput.checked = true;
+    sameInput.checked = true;
+  }
+  checkboxConsistency();
+};
+
+upInput.onchange = checkboxConsistency;
+
+downInput.onchange = checkboxConsistency;
+
+sameInput.onchange = checkboxConsistency;
 
 socket.on('updatePlayers', players => {
   playerList.innerHTML = players;
@@ -158,12 +217,24 @@ moveButton.onclick = () => {
 
 bluffButton.onclick = () => { socket.emit('bluff'); };
 
-socket.on('rejoinGame', (name, spectating) => {
+function disableSettings() {
   gameInput.disabled = true;
   nameInput.disabled = true;
-  nameInput.value = name;
   spectateInput.disabled = true;
+  sameInput.disabled = true;
+  upInput.disabled = true;
+  downInput.disabled = true;
+  anyInput.disabled = true;
+  wrapInput.disabled = true;
+  noiseInput.disabled = true;
+  decksInput.disabled = true;
+  jokersInput.disabled = true;
+};
+
+socket.on('rejoinGame', (name, spectating) => {
+  nameInput.value = name;
   spectateInput.checked = spectating;
+  disableSettings();
   startButton.remove();
   errorMsg.innerHTML = "";
 });
@@ -171,9 +242,7 @@ socket.on('rejoinGame', (name, spectating) => {
 socket.on('joinGame', data => {
   gameInput.value = data.gameName;
   nameInput.value = data.playerName;
-  gameInput.disabled = true;
-  nameInput.disabled = true;
-  spectateInput.disabled = true;
+  disableSettings();
   startButton.value = "Start!";
   startButton.onclick = () => { socket.emit('startGame'); };
   errorMsg.innerHTML = "";
