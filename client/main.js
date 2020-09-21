@@ -64,8 +64,10 @@ function checkboxConsistency() {
   if (!upInput.checked) { anyInput.checked = false; }
   if (!downInput.checked) { anyInput.checked = false; }
   if (!sameInput.checked) { anyInput.checked = false; }
+  if (!wrapInput.checked) { anyInput.checked = false; }
   if (upInput.checked || downInput.checked) { wrapLabel.hidden = false; }
   if (!upInput.checked && !downInput.checked) { wrapLabel.hidden = true; }
+  if (!sameInput.checked && upInput.checked != downInput.checked) { wrapInput.checked = true; }
   if (!sameInput.checked && !upInput.checked && !downInput.checked && !anyInput.checked) {
     sameInput.checked = true;
     upInput.checked = true;
@@ -79,6 +81,7 @@ anyInput.onchange = () => {
     upInput.checked = true;
     downInput.checked = true;
     sameInput.checked = true;
+    wrapInput.checked = true;
   }
   checkboxConsistency();
 };
@@ -88,6 +91,8 @@ upInput.onchange = checkboxConsistency;
 downInput.onchange = checkboxConsistency;
 
 sameInput.onchange = checkboxConsistency;
+
+wrapInput.onchange = checkboxConsistency;
 
 socket.on('updatePlayers', players => {
   playerList.innerHTML = players;
