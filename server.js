@@ -137,7 +137,40 @@ const cardNum = c =>
   c == 'A' ? Ace :
   c == '?' ? Joker : parseInt(c);
 
-const sayRegExp = /^([2-9]|[TJQKA])\1*$/;
+function validCards(game) {
+  const any = '23456789TJQKA';
+  if (game.settingsData.allowAny) {
+    return any;
+  }
+  const lastPlay = findLastPlay(game.log);
+  if (lastPlay) {
+    const lastCard = cardNum(lastPlay.say[0]);
+    let valid = [];
+    if (game.settingsData.allowDown) {
+      if (lastCard == 2 && game.settingsData.wrap) {
+        valid.push(Ace);
+      }
+      else if (lastCard > 2) {
+        valid.push(lastCard - 1);
+      }
+    }
+    if (game.settingsData.allowSame) {
+      valid.push(lastCard);
+    }
+    if (game.settingsData.allowUp) {
+      if (lastCard == Ace && game.settingsData.wrap) {
+        valid.push(2);
+      }
+      else if (lastCard < Ace) {
+        valid.push(lastCard + 1);
+      }
+    }
+    return valid.map(cardName).join('');
+  }
+  else {
+    return any;
+  }
+}
 
 function tryPlay(player, str, pile) {
   let cards = Array.from(str).map(cardNum).sort(asc);
@@ -185,7 +218,7 @@ function changeTurn(gameName) {
   else {
     game.pendingWinner = null;
     io.in(gameName).emit('setCurrent', player.name);
-    io.in(player.id).emit('showMove');
+    io.in(player.id).emit('showMove', validCards(game));
   }
 }
 
@@ -262,7 +295,7 @@ io.on('connection', socket => {
             const current = game.players[game.whoseTurn];
             socket.emit('setCurrent', current.name);
             if (current.name == player.name) {
-              socket.emit('showMove');
+              socket.emit('showMove', validCards(game));
             }
             const last = findLastPlay(game.log);
             if (last && last.who != player.name) {
@@ -423,6 +456,7 @@ io.on('connection', socket => {
     const game = games[gameName];
     if (game.players[game.whoseTurn].name == socket.playerName) {
       const currentPlayer = game.players[game.whoseTurn];
+      const sayRegExp = new RegExp(`^([${validCards(game)}])\\1*$`);
       if ( sayRegExp.test(data.say) ) {
         if ( tryPlay(currentPlayer, data.play, game.pile) ) {
           const entry = {who: socket.playerName, say: data.say, act: data.play, obs: new Map()};

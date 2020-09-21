@@ -151,8 +151,6 @@ function makeSayControl(cards) {
   }
 }
 
-makeSayControl('23456789TJQKA');
-
 socket.on('updatePile', n => {
   pileDiv.textContent = 'Pile: ' + "🂠".repeat(n);
 });
@@ -189,10 +187,11 @@ socket.on('setCurrent', player => {
   }
 });
 
-socket.on('showMove', () => {
+socket.on('showMove', cards => {
   moveDiv.hidden = false;
   sayInput.value = '';
   playInput.value = '';
+  makeSayControl(cards);
 });
 
 socket.on('hideMove', () => {
