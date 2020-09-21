@@ -285,12 +285,16 @@ socket.on('joinGame', data => {
   nameInput.disabled = true;
   spectateInput.disabled = true;
   showHideSettings.hidden = false;
+  gameSettings.hidden = false; // will be flipped
   if (!spectateInput.checked) {
-    gameSettings.hidden = false;
+    gameSettings.hidden = true;
     startButton.value = "Start!";
     startButton.onclick = () => {
       socket.emit('startGame', settingsData());
     };
+  }
+  else {
+    startButton.hidden = true;
   }
   showHideSettings.onclick();
   errorMsg.innerHTML = "";
