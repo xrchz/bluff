@@ -89,9 +89,9 @@ function updateHands(game) {
   }
 }
 
-function noisyObservation(n) {
+function noisyObservation(n, noise) {
   return n == 0 ? 0 :
-    Math.max(1, Math.round(n + randomNormal() * Math.sqrt(2 * n)));
+    Math.max(1, Math.round(n + randomNormal() * Math.sqrt(2 * noise * n)));
 }
 
 function updatePile(player, pile) {
@@ -202,7 +202,7 @@ function findLastPlay(log) {
 
 const cardsSpan = s => '<span class=cards>' + s + '</span>';
 
-function formatMove(entry, forWhom, spectating) {
+function formatMove(entry, forWhom, spectating, noise) {
   if (entry.who) {
     let result = entry.who + ' claims ' + cardsSpan(entry.say) + ' (';
     if ( entry.who == forWhom || spectating ) {
@@ -210,7 +210,7 @@ function formatMove(entry, forWhom, spectating) {
     }
     else {
       if(!entry.obs.has(forWhom)) {
-        entry.obs.set(forWhom, noisyObservation(entry.act.length));
+        entry.obs.set(forWhom, noisyObservation(entry.act.length, noise));
       }
       result += 'looks like ' + '🂠'.repeat(entry.obs.get(forWhom))
     }
@@ -270,7 +270,7 @@ io.on('connection', socket => {
             }
           }
           for (const entry of game.log) {
-            socket.emit('appendLog', formatMove(entry, player.name, player.spectating));
+            socket.emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise));
           }
           socket.emit('rejoinGame', player.name, player.spectating, game.settingsData);
           if (player.spectating != data.spectate) {
@@ -294,7 +294,7 @@ io.on('connection', socket => {
             socket.emit('setCurrent', current.name);
           }
           for (const entry of game.log) {
-            socket.emit('appendLog', formatMove(entry, player.name, player.spectating));
+            socket.emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise));
           }
           socket.emit('rejoinGame', player.name, player.spectating, game.settingsData);
         }
@@ -357,7 +357,7 @@ io.on('connection', socket => {
           player.handLength = new Map();
           for (const other of game.players) {
             if (player.name != other.name) {
-              player.handLength[other.name] = noisyObservation(other.hand.length);
+              player.handLength[other.name] = noisyObservation(other.hand.length, game.settingsData.noise);
             }
           }
         }
@@ -405,7 +405,7 @@ io.on('connection', socket => {
         player.pileLength = 0;
         updatePile(player, game.pile);
         if (player.name != loserName && !player.spectating) {
-          player.handLength[loserName] = noisyObservation(loser.hand.length);
+          player.handLength[loserName] = noisyObservation(loser.hand.length, game.settingsData.noise);
         }
       }
       updateHand(loser);
@@ -429,11 +429,11 @@ io.on('connection', socket => {
           game.log.push(entry);
           updateHand(currentPlayer);
           for (const player of game.members) {
-            io.in(player.id).emit('appendLog', formatMove(entry, player.name, player.spectating));
+            io.in(player.id).emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise));
             if(!player.spectating) {
-              player.pileLength = noisyObservation(game.pile.length);
+              player.pileLength = noisyObservation(game.pile.length, game.settingsData.noise);
               if (player.name != currentPlayer.name) {
-                player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length);
+                player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length, game.settingsData.noise);
               }
             }
             updatePile(player, game.pile);
