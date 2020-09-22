@@ -142,7 +142,7 @@ function validCards(game) {
   if (game.settingsData.allowAny) {
     return any;
   }
-  const lastPlay = findLastPlay(game.log);
+  const lastPlay = findLastPlay(game.log, true, game.players.length);
   if (lastPlay) {
     const lastCard = cardNum(lastPlay.say[0]);
     let valid = [];
@@ -222,13 +222,27 @@ function changeTurn(gameName) {
   }
 }
 
-function findLastPlay(log) {
+function findLastPlay(log, forValidity, numPlayers) {
+  let passes = 0;
   for (let i = log.length - 1; i > 0; i--) {
     if (log[i].bluff) {
       return false;
     }
-    if (log[i].who) {
-      return log[i];
+    if (log[i].pass) {
+      if (forValidity) {
+        passes++;
+      }
+      else {
+        return false;
+      }
+    }
+    else if (log[i].who) {
+      if (forValidity && passes == numPlayers) {
+        return false;
+      }
+      else {
+        return log[i];
+      }
     }
   }
 }
@@ -237,17 +251,22 @@ const cardsSpan = s => '<span class=cards>' + s + '</span>';
 
 function formatMove(entry, forWhom, spectating, noise) {
   if (entry.who) {
-    let result = entry.who + ' claims ' + cardsSpan(entry.say) + ' (';
-    if ( entry.who == forWhom || spectating ) {
-      result += 'actually ' + cardsSpan(entry.act)
+    if (entry.pass) {
+      return entry.who + ' passes';
     }
     else {
-      if(!entry.obs.has(forWhom)) {
-        entry.obs.set(forWhom, noisyObservation(entry.act.length, noise));
+      let result = entry.who + ' claims ' + cardsSpan(entry.say) + ' (';
+      if ( entry.who == forWhom || spectating ) {
+        result += 'actually ' + cardsSpan(entry.act)
       }
-      result += 'looks like ' + '🂠'.repeat(entry.obs.get(forWhom))
+      else {
+        if(!entry.obs.has(forWhom)) {
+          entry.obs.set(forWhom, noisyObservation(entry.act.length, noise));
+        }
+        result += 'looks like ' + '🂠'.repeat(entry.obs.get(forWhom))
+      }
+      return result + ')'
     }
-    return result + ')'
   }
   else {
     return entry.bluff ? entry.msg : entry;
@@ -456,44 +475,57 @@ io.on('connection', socket => {
     const game = games[gameName];
     if (game.players[game.whoseTurn].name == socket.playerName) {
       const currentPlayer = game.players[game.whoseTurn];
-      const sayRegExp = new RegExp(`^([${validCards(game)}])\\1*$`);
-      if ( sayRegExp.test(data.say) ) {
-        if ( tryPlay(currentPlayer, data.play, game.pile) ) {
-          const entry = {who: socket.playerName, say: data.say, act: data.play, obs: new Map()};
-          game.log.push(entry);
-          updateHand(currentPlayer);
-          for (const player of game.members) {
-            io.in(player.id).emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise));
-            if(!player.spectating) {
-              player.pileLength = noisyObservation(game.pile.length, game.settingsData.noise);
-              if (player.name != currentPlayer.name) {
-                player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length, game.settingsData.noise);
+      if (data) {
+        const sayRegExp = new RegExp(`^([${validCards(game)}])\\1*$`);
+        if ( sayRegExp.test(data.say) ) {
+          if ( tryPlay(currentPlayer, data.play, game.pile) ) {
+            const entry = {who: socket.playerName, say: data.say, act: data.play, obs: new Map()};
+            game.log.push(entry);
+            updateHand(currentPlayer);
+            for (const player of game.members) {
+              io.in(player.id).emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise));
+              if(!player.spectating) {
+                player.pileLength = noisyObservation(game.pile.length, game.settingsData.noise);
+                if (player.name != currentPlayer.name) {
+                  player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length, game.settingsData.noise);
+                }
               }
+              updatePile(player, game.pile);
             }
-            updatePile(player, game.pile);
-          }
-          socket.emit('hideMove');
-          socket.emit('hideBluff');
-          socket.to(gameName).emit('showBluff');
-          game.whoseTurn++;
-          if (game.whoseTurn == game.players.length) { game.whoseTurn = 0; }
-          if (currentPlayer.hand.length == 0) {
-            game.log.push(currentPlayer.name + ' wins unless they are caught...');
-            io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
-            io.in(gameName).emit('setCurrent');
-            game.pendingWinner = currentPlayer;
+            socket.emit('hideMove');
+            socket.emit('hideBluff');
+            socket.to(gameName).emit('showBluff');
+            game.whoseTurn++;
+            if (game.whoseTurn == game.players.length) { game.whoseTurn = 0; }
+            if (currentPlayer.hand.length == 0) {
+              game.log.push(currentPlayer.name + ' wins unless they are caught...');
+              io.in(gameName).emit('appendLog', game.log[game.log.length - 1]);
+              io.in(gameName).emit('setCurrent');
+              game.pendingWinner = currentPlayer;
+            }
+            else {
+              changeTurn(gameName);
+            }
+            updatePlayers(gameName);
           }
           else {
-            changeTurn(gameName);
+            socket.emit('errorMsg', 'You cannot play that with your hand');
           }
-          updatePlayers(gameName);
         }
         else {
-          socket.emit('errorMsg', 'You cannot play that with your hand');
+          socket.emit('errorMsg', 'What you say is not a valid claim');
         }
       }
       else {
-        socket.emit('errorMsg', 'What you say is not a valid claim');
+        const entry = {who: socket.playerName, pass: true};
+        game.log.push(entry);
+        io.in(gameName).emit('appendLog', formatMove(entry));
+        io.in(gameName).emit('hideBluff');
+        socket.emit('hideMove');
+        game.whoseTurn++;
+        if (game.whoseTurn == game.players.length) { game.whoseTurn = 0; }
+        changeTurn(gameName);
+        updatePlayers(gameName);
       }
     }
     else {

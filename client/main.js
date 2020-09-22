@@ -6,6 +6,7 @@ const moveDiv = document.getElementById('move');
 const currentDiv = document.getElementById('current');
 const startButton = document.getElementById('start');
 const moveButton = document.getElementById('submit');
+const passButton = document.getElementById('pass');
 const bluffButton = document.getElementById('bluff');
 const sayInput = document.getElementById('say');
 const sayControl = document.getElementById('sayControl');
@@ -233,6 +234,11 @@ moveButton.onclick = () => {
   errorMsg.innerHTML = "";
   socket.emit('move', {say: sayInput.value.replace(/\s/g, '').toUpperCase(),
                        play: playInput.value.replace(/\s/g, '').toUpperCase()});
+};
+
+passButton.onclick = () => {
+  errorMsg.innerHTML = "";
+  socket.emit('move', false);
 };
 
 bluffButton.onclick = () => { socket.emit('bluff'); };
