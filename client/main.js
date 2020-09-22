@@ -154,6 +154,7 @@ function makeSayControl(cards) {
     elem.onclick = makeAddSayCard(c);
     sayControl.insertBefore(elem, end);
   }
+  sayInput.pattern = `([${cards}])\\1*`;
 }
 
 socket.on('updatePile', n => {
@@ -193,9 +194,11 @@ socket.on('setCurrent', player => {
 });
 
 socket.on('showMove', cards => {
-  moveDiv.hidden = false;
-  sayInput.value = '';
-  playInput.value = '';
+  if (moveDiv.hidden) {
+    moveDiv.hidden = false;
+    sayInput.value = '';
+    playInput.value = '';
+  }
   makeSayControl(cards);
 });
 

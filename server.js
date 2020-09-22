@@ -91,7 +91,7 @@ function updateHands(game) {
 
 function noisyObservation(n, noise) {
   return n == 0 ? 0 :
-    Math.max(1, Math.round(n + randomNormal() * Math.sqrt(2 * noise * n)));
+    Math.max(1, Math.round(n + randomNormal() * noise * Math.sqrt(2 * n)));
 }
 
 function updatePile(player, pile) {
