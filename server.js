@@ -387,6 +387,14 @@ io.on('connection', socket => {
       game.pile = [];
       game.missingPlayers = new Set();
       game.log = [];
+      game.lastActivity = Date.now();
+      game.timeout = setInterval(game => {
+        if (game.missingPlayers.size == game.players.length &&
+            Date.now() - game.lastActivity > 30 * 60 * 1000) {
+          clearInterval(game.timeout);
+          delete games[gameName];
+        }
+      }, 60 * 60 * 1000, game);
       console.log('* Shuffling deck and players: ' + gameName);
       const deck = makeDeck(data.decks, data.jokers);
       shuffleInPlace(deck);
@@ -431,6 +439,7 @@ io.on('connection', socket => {
   socket.on('bluff', () => {
     const gameName = socket.gameName;
     const game = games[gameName];
+    game.lastActivity = Date.now();
     const last = findLastPlay(game.log);
     if (last) {
       const legit = (last.say.length == last.act.length &&
@@ -473,6 +482,7 @@ io.on('connection', socket => {
   socket.on('move', data => {
     const gameName = socket.gameName;
     const game = games[gameName];
+    game.lastActivity = Date.now();
     if (game.players[game.whoseTurn].name == socket.playerName) {
       const currentPlayer = game.players[game.whoseTurn];
       if (data) {
