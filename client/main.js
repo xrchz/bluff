@@ -50,16 +50,19 @@ showHideSettings.onclick = () => {
 noiseInput.oninput = () => { noiseOutput.textContent = noiseInput.value; };
 noiseInput.value = 2;
 noiseInput.oninput();
+noiseInput.onchange = pushSettings;
 
 jokersInput.oninput = () => { jokersOutput.textContent = jokersInput.value; };
 jokersInput.value = 2;
 jokersInput.oninput();
+jokersInput.onchange = pushSettings;
 
 decksInput.oninput = () => {
   decksOutput.textContent = decksInput.value + ` (${decksInput.value * 4} card${decksInput.value > 0.25 ? 's' : ''} per rank)`;
 };
 decksInput.value = 1;
 decksInput.oninput();
+decksInput.onchange = pushSettings;
 
 function checkboxConsistency() {
   if (!upInput.checked) { anyInput.checked = false; }
@@ -73,8 +76,9 @@ function checkboxConsistency() {
     sameInput.checked = true;
     upInput.checked = true;
     downInput.checked = true;
-    checkboxConsistency();
+    return checkboxConsistency();
   }
+  pushSettings();
 };
 
 anyInput.onchange = () => {
@@ -243,6 +247,10 @@ passButton.onclick = () => {
 
 bluffButton.onclick = () => { socket.emit('bluff'); };
 
+function pushSettings() {
+  socket.emit('pushSettings', settingsData());
+}
+
 function disableSettings() {
   sameInput.disabled = true;
   upInput.disabled = true;
@@ -265,6 +273,8 @@ function receiveSettings(data) {
   jokersInput.value = data.jokers; jokersInput.oninput();
 }
 
+socket.on('receiveSettings', receiveSettings);
+
 socket.on('rejoinGame', (playerName, spectating, data) => {
   nameInput.value = playerName;
   spectateInput.checked = spectating;
@@ -274,6 +284,7 @@ socket.on('rejoinGame', (playerName, spectating, data) => {
   spectateInput.disabled = true;
   disableSettings();
   startButton.remove();
+  showHideSettings.hidden = false;
   gameSettings.hidden = true;
   showHideSettings.onclick();
   errorMsg.innerHTML = "";
@@ -294,6 +305,7 @@ function settingsData() {
 socket.on('joinGame', data => {
   gameInput.value = data.gameName;
   nameInput.value = data.playerName;
+  if (data.settingsData) { receiveSettings(data.settingsData); }
   gameInput.disabled = true;
   nameInput.disabled = true;
   spectateInput.disabled = true;
@@ -307,6 +319,7 @@ socket.on('joinGame', data => {
     };
   }
   else {
+    disableSettings();
     startButton.hidden = true;
   }
   showHideSettings.onclick();

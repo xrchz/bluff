@@ -365,7 +365,7 @@ io.on('connection', socket => {
         const player = { id: socket.id, name: socket.playerName, spectating: data.spectate };
         game.members.push(player);
         if (!data.spectate) { game.players.push(player); } else { game.spectators.push(player); }
-        socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName});
+        socket.emit('joinGame', {gameName: gameName, playerName: socket.playerName, settingsData: game.settingsData});
         if (game.started) { socket.emit('gameStarted', game.settingsData); }
         updatePlayers(gameName);
         console.log("* Active games: " + Object.keys(games).join(', '));
@@ -375,6 +375,11 @@ io.on('connection', socket => {
         socket.emit('errorMsg', 'Game ' + gameName + ' already contains member ' + socket.playerName);
       }
     }
+  });
+
+  socket.on('pushSettings', data => {
+    games[socket.gameName].settingsData = data;
+    socket.to(socket.gameName).emit('receiveSettings', data);
   });
 
   socket.on('startGame', data => {
