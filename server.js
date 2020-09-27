@@ -415,9 +415,8 @@ io.on('connection', socket => {
         player.hand = []
       }
       let i = 0
-      let j = 0
-      while (j < deck.length) {
-        game.players[i++].hand.push(deck[j++])
+      while (deck.length) {
+        game.players[i++].hand.push(deck.shift())
         if (i == game.players.length) { i = 0 }
       }
       for (const player of game.members) {
