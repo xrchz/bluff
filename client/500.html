@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>500</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="stylesheet" href="500.css" type="text/css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <p id="errorMsg" />
+    <ul id="log"></ul>
+    <div id="current"></div>
+    <div id="players"></div>
+    <div id="settings">
+      <input id="start" type="button" value="Join game" />
+      <div>
+        <label for="name">Name: </label><input id="name" type=text autocomplete=on pattern="\w+"/>
+      </div>
+      <div>
+        <label for="game">Game: </label><input id="game" type=text maxlength=2 autocomplete=off />
+      </div>
+      <div>
+        <label for="spectate">Spectate</label><input id="spectate" type=checkbox autocomplete=off />
+      </div>
+    </div>
+    <script src="500.js"></script>
+  </body>
+</html>

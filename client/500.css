@@ -1,0 +1,73 @@
+body {
+  font-size: large;
+  background-color: DarkSeaGreen;
+  color: Indigo;
+  margin-left: 2.5vw;
+  width: 95vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: Khaki;
+  color: MidnightBlue;
+}
+input[type=text]:disabled {
+  background-color: DarkKhaki;
+}
+input[type=button] {
+  background-color: DarkOliveGreen;
+  color: Lavender;
+}
+#log {
+  height: 20vh;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: SeaGreen;
+  color: Plum;
+}
+#start {
+  margin-bottom: 1vh;
+}
+#players {
+  margin-top: 2vh;
+}
+#players ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+#players .spectator {
+  color: SlateGray;
+}
+#players span.disconnected {
+  color: Thistle;
+}
+#players span.current {
+  background-color: MediumSeaGreen;
+}
+#settings {
+  height: 20vh;
+  width: 80vw;
+  margin-top: 1vh;
+}
+#hand a, .cards {
+  letter-spacing: 0.25em;
+  font-size: larger;
+}
+#game {
+  text-transform: uppercase;
+}
+.hearts {
+  color: red
+}
+.diamonds {
+  color: blue
+}
+.clubs {
+  color: green
+}
+.spades {
+  color: black
+}
