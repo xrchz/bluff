@@ -11,8 +11,8 @@ var app = express()
 var server = https.createServer(options, app)
 var io = require('socket.io')(server)
 
-app.get((req, res) => {
-  res.sendFile(`${__dirname}/client/index.html`)
+app.get('/', (req, res) => {
+  res.sendFile(`${__dirname}/client/bluff.html`)
 })
 app.use(express.static(`${__dirname}/client`))
 
