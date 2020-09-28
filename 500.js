@@ -261,20 +261,26 @@ io.on('connection', socket => {
       }
     }
     else {
-      if (game.players.every(player => player.name != socket.playerName)) {
-        console.log(`${socket.playerName} joining ${gameName}`)
-        socket.join(gameName)
-        socket.gameName = gameName
-        const player = { socketId: socket.id, name: socket.playerName }
-        game.players.push(player)
-        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-        socket.emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateUnseated', game.players)
-        io.in(gameName).emit('updateSeats', game.seats)
+      if (game.players.every(player => player.name !== socket.playerName)) {
+        if (game.players.length < 4) {
+          console.log(`${socket.playerName} joining ${gameName}`)
+          socket.join(gameName)
+          socket.gameName = gameName
+          const player = { socketId: socket.id, name: socket.playerName }
+          game.players.push(player)
+          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+          socket.emit('updateSpectators', game.spectators)
+          io.in(gameName).emit('updateUnseated', game.players)
+          io.in(gameName).emit('updateSeats', game.seats)
+        }
+        else {
+          console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
+          socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName)
+        }
       }
       else {
-        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
-        socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName)
+        console.log(`${socket.playerName} barred from joining ${gameName} which is full`)
+        socket.emit('errorMsg', 'Game ' + gameName + ' already has enough players. Try spectating.')
       }
     }
     console.log("active games: " + Object.keys(games).join(', '))
