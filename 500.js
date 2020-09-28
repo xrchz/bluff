@@ -55,6 +55,7 @@ const Joker = 15
 const Spades = 1
 const Clubs = 2
 const Diamonds = 3
+const Misere = 3.5
 const Hearts = 4
 const NoTrumps = 5
 
@@ -151,6 +152,7 @@ function deal(game) {
   dealRound(3)
   for (const player of game.players) {
     player.hand.sort(bySuit(NoTrumps))
+    player.formattedHand = player.hand.map(formatCard(NoTrumps))
   }
 }
 
@@ -177,6 +179,79 @@ const formatCard = trump => {
                 suit === Hearts   ? 'hearts'   : null
     return { chr: chr, cls: cls }
   }
+}
+
+function formatBid(b) {
+  if (b.pass) {
+    b.formatted = 'Pass'
+  }
+  else if (b.suit === Misere) {
+    if (b.n === 7.5) {
+      b.formatted = 'Misere'
+    }
+    else {
+      b.formatted = 'Open Misere'
+    }
+  }
+  else {
+    b.formatted = b.n.toString()
+    if (b.suit === Spades) {
+      b.formatted += '♠'
+      b.cls = 'spades'
+    }
+    else if (b.suit === Clubs) {
+      b.formatted += '♣'
+      b.cls = 'clubs'
+    }
+    else if (b.suit === Diamonds) {
+      b.formatted += '♦'
+      b.cls = 'diamonds'
+    }
+    else if (b.suit === Hearts) {
+      b.formatted += '♥'
+      b.cls = 'hearts'
+    }
+    else if (b.suit === NoTrumps) {
+      b.formatted += 'NT'
+    }
+  }
+}
+
+function validBids(lastBid) {
+  const bids = []
+  for (let n = 6; n <= 7; n++) {
+    if (lastBid && lastBid.n > n) { continue }
+    for (let suit = Spades; suit <= NoTrumps; suit++) {
+      if (lastBid && lastBid.n === n && lastBid.suit >= suit) { continue }
+      bids.push({ n: n, suit: suit })
+    }
+  }
+  if (lastBid && lastBid.n === 7) {
+    bids.push({ n: 7.5, suit: Misere })
+  }
+  for (let n = 8; n < 10; n++) {
+    if (lastBid && lastBid.n > n) { continue }
+    for (let suit = Spades; suit <= NoTrumps; suit++) {
+      if (lastBid && lastBid.n === n && lastBid.suit >= suit) { continue }
+      bids.push({ n: n, suit: suit })
+    }
+  }
+  for (let suit = Spades; suit <= NoTrumps; suit++) {
+    if (lastBid && lastBid.n === 10 && lastBid.suit >= suit) { continue }
+    bids.push({ n: 10, suit: suit })
+    if (suit === Diamonds) { bids.push({ n: 10, suit: Misere }) }
+  }
+  bids.push({ pass: true })
+  bids.forEach(formatBid)
+  return bids
+}
+
+function startRound(game) {
+  deal(game)
+  game.bidding = true
+  game.whoseTurn = clockwise(game.dealer)
+  game.players[game.whoseTurn].current = true
+  game.players[game.whoseTurn].validBids = validBids()
 }
 
 io.on('connection', socket => {
@@ -371,20 +446,88 @@ io.on('connection', socket => {
       console.log(`starting ${gameName}`)
       game.started = true
       game.log = []
-      game.dealer = Math.floor(Math.random() * 4)
       game.players = game.seats.map(seat => seat.player)
-      deal(game)
-      game.players.forEach(player => player.formattedHand = player.hand.map(formatCard(NoTrumps)))
-      game.bidding = true
-      game.whoseTurn = clockwise(game.dealer)
-      game.players[game.whoseTurn].current = true
+      game.dealer = Math.floor(Math.random() * 4)
       io.in(gameName).emit('gameStarted')
       game.log.push('The game begins!')
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+      startRound(game)
       io.in(gameName).emit('updatePlayers', game.players)
     }
     else {
       socket.emit('errorMsg', '4 seated players required to start the game')
+    }
+  })
+
+  socket.on('bidRequest', bid => {
+    const gameName = socket.gameName;
+    const game = games[gameName];
+    if (game.bidding) {
+      const current = game.players[game.whoseTurn]
+      if (current) {
+        if (current.name === socket.playerName && current.current) {
+          if (current.validBids && (bid.pass || current.validBids.find(b => b.n === bid.n && b.suit === b.suit))) {
+            delete current.validBids
+            delete current.current
+            current.lastBid = bid
+            if (!bid.pass) {
+              game.lastBidder = game.whoseTurn
+              game.log.push(`${current.name} bids ${bid.formatted}`)
+              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+            }
+            else {
+              game.log.push(`${current.name} passes`)
+              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+            }
+            let nextTurn = clockwise(game.whoseTurn)
+            while (game.players[nextTurn].lastBid &&
+              game.players[nextTurn].lastBid.pass &&
+              nextTurn !== game.whoseTurn) {
+              nextTurn = clockwise(nextTurn)
+            }
+            const lastBidder = game.players[game.lastBidder]
+            const lastBid = lastBidder ? lastBidder.lastBid : null
+            if (nextTurn === game.whoseTurn && bid.pass) {
+              game.log.push(`bidding ends with no contract. redealing...`)
+              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+              game.dealer = clockwise(dealer)
+              game.players.forEach(player => delete player.lastBid)
+              startRound(game)
+            }
+            else if (nextTurn === game.lastBidder) {
+              game.log.push(`bidding ends with ${lastBidder.name} contracting ${lastBid.formatted}`)
+              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+              delete game.bidding
+              lastBidder.contract = lastBid
+              game.players.forEach(player => delete player.lastBid)
+              game.kitty = true
+              game.whoseTurn = game.lastBidder
+            }
+            else {
+              game.whoseTurn = nextTurn
+              game.players[game.whoseTurn].current = true
+              game.players[game.whoseTurn].validBids = validBids(lastBid)
+            }
+            io.in(gameName).emit('updatePlayers', game.players)
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} tried bidding an invalid bid`)
+            socket.emit('errorMsg', 'Error: that is not a valid bid')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried bidding out of turn`)
+          socket.emit('errorMsg', 'Error: it is not your turn to bid')
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried bidding but there is no current player`)
+        socket.emit('errorMsg', 'Error: could not find current player')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried bidding out of phase`)
+      socket.emit('errorMsg', 'Error: bidding is not currently possible')
     }
   })
 

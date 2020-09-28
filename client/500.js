@@ -140,6 +140,24 @@ socket.on('updatePlayers', players => {
     else {
       elem.textContent = '🂠'.repeat(player.hand.length)
     }
+    if (player.lastBid) {
+      elem = document.createElement('div')
+      fragment.appendChild(elem)
+      elem.classList.add('bids')
+      if (player.lastBid.cls) { elem.classList.add(player.lastBid.cls) }
+      elem.textContent = player.lastBid.formatted
+    }
+    if (player.name === nameInput.value && player.validBids) {
+      elem = document.createElement('div')
+      fragment.appendChild(elem)
+      elem.classList.add('bids')
+      for (const b of player.validBids) {
+        const a = elem.appendChild(document.createElement('a'))
+        if (b.cls) { a.classList.add(b.cls) }
+        a.textContent = b.formatted
+        a.onclick = () => { socket.emit('bidRequest', b) }
+      }
+    }
     div.appendChild(fragment)
   }
 })

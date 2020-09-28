@@ -57,6 +57,21 @@ ul.inline > li {
   letter-spacing: 0.25em;
   font-size: xx-large;
 }
+.bids {
+  font-size: larger;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+.bids a {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+}
+.bids a:hover {
+  cursor: pointer;
+  background-color: MediumSeaGreen;
+}
 #playArea {
   display: flex;
   flex-direction: row;
@@ -74,7 +89,7 @@ div.player {
   flex-direction: column;
   width: 28vw;
   height: 20vh;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
 }
 #board {
