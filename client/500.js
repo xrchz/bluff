@@ -67,7 +67,7 @@ socket.on('joinedGame', data => {
 })
 
 socket.on('updateSeats', seats => {
-  const seated = Boolean(seats.find(seat => seat.player && seat.player.name == nameInput.value))
+  const seated = Boolean(seats.find(seat => seat.player && seat.player.name === nameInput.value))
   let emptySeats = false
   for (let i = 0; i < 4; i++) {
     const div = seatDivs[i]
@@ -78,7 +78,7 @@ socket.on('updateSeats', seats => {
       elem = document.createElement('div')
       elem.textContent = seat.player.name
       div.appendChild(elem)
-      if (seat.player.name == nameInput.value && !spectateInput.checked) {
+      if (seat.player.name === nameInput.value && !spectateInput.checked) {
         elem = document.createElement('input')
         elem.type = 'button'
         elem.value = 'Leave seat'
@@ -130,7 +130,7 @@ socket.on('updatePlayers', players => {
     elem = document.createElement('div')
     fragment.appendChild(elem)
     elem.classList.add('cards')
-    if (player.name == nameInput.value || spectateInput.checked) {
+    if (player.name === nameInput.value || spectateInput.checked) {
       for (const c of player.formattedHand) {
         const span = elem.appendChild(document.createElement('span'))
         span.textContent = c.chr

@@ -32,7 +32,7 @@ function shuffleInPlace(array) {
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
 function randomUnusedGameName() {
-  if (Object.keys(games).length == 26 * 26) {
+  if (Object.keys(games).length === 26 * 26) {
     console.log('all game names in use')
     return 'Overflow'
   }
@@ -42,8 +42,6 @@ function randomUnusedGameName() {
 }
 
 const games = {}
-
-const cardsSpan = s => '<span class=cards>' + s + '</span>'
 
 const Ten   = 10
 const Jack  = 11
@@ -78,36 +76,36 @@ function makeDeck() {
 
 function clockwise(playerIndex) {
   playerIndex++
-  if (playerIndex == 4) playerIndex = 0
+  if (playerIndex === 4) playerIndex = 0
   return playerIndex
 }
 
 function reorderCard(c, trump) {
   let suit = c.suit
   let rank = c.rank
-  if (rank == Jack) {
-    if (suit == trump) {
+  if (rank === Jack) {
+    if (suit === trump) {
       rank = RightBower
     }
-    else if ((suit + 2) % 4 == trump) {
+    else if ((suit + 2) % 4 === trump) {
       rank = LeftBower
     }
   }
-  else if (rank == Joker) {
+  else if (rank === Joker) {
     suit = trump
   }
-  if (suit == trump) { suit = NoTrumps }
+  if (suit === trump) { suit = NoTrumps }
   return { rank: rank, suit: suit }
 }
 
 function bySuit (trump) {
-  if (trump == NoTrumps) {
+  if (trump === NoTrumps) {
     function cmp (c1, c2) {
-      if (c1.suit == c2.suit) {
+      if (c1.suit === c2.suit) {
         return c1.rank - c2.rank
       }
-      else if (c1.rank == Joker || c2.rank == Joker) {
-        return c1.rank == Joker ? (c2.rank == Joker ? 0 : 1) : -1
+      else if (c1.rank === Joker || c2.rank === Joker) {
+        return c1.rank === Joker ? (c2.rank === Joker ? 0 : 1) : -1
       }
       else {
         return c1.suit - c2.suit
@@ -119,7 +117,7 @@ function bySuit (trump) {
     function cmp (c1, c2) {
       let x1 = reorderCard(c1, trump)
       let x2 = reorderCard(c2, trump)
-      if (x1.suit == x2.suit) {
+      if (x1.suit === x2.suit) {
         return x1.rank - x2.rank
       }
       else {
@@ -145,7 +143,7 @@ function deal(game) {
       while (left-- > 0) {
         game.players[dealTo].hand.push(deck.shift())
       }
-    } while (dealTo != game.dealer)
+    } while (dealTo !== game.dealer)
     game.kitty.push(deck.shift())
   }
   dealRound(3)
@@ -160,23 +158,23 @@ const formatCard = trump => {
   return c => {
     const suit = reorderCard(c, trump).suit
     let chr
-    if (c.rank == Joker) {
+    if (c.rank === Joker) {
       chr = '\u{1F0DF}'
     }
     else {
       let codepoint = 0x1F000
-      codepoint += c.suit == Spades ? 0xA0 :
-        c.suit == Hearts ? 0xB0 :
-        c.suit == Diamonds ? 0xC0 :
-        c.suit == Clubs ? 0xD0 : 0xE0
-      codepoint += c.rank == Ace ? 1 :
+      codepoint += c.suit === Spades ? 0xA0 :
+        c.suit === Hearts ? 0xB0 :
+        c.suit === Diamonds ? 0xC0 :
+        c.suit === Clubs ? 0xD0 : 0xE0
+      codepoint += c.rank === Ace ? 1 :
         c.rank <= Jack ? c.rank : c.rank + 1
       chr = String.fromCodePoint(codepoint)
     }
-    const cls = suit == Spades   ? 'spades'   :
-                suit == Clubs    ? 'clubs'    :
-                suit == Diamonds ? 'diamonds' :
-                suit == Hearts   ? 'hearts'   : null
+    const cls = suit === Spades   ? 'spades'   :
+                suit === Clubs    ? 'clubs'    :
+                suit === Diamonds ? 'diamonds' :
+                suit === Hearts   ? 'hearts'   : null
     return { chr: chr, cls: cls }
   }
 }
@@ -209,7 +207,7 @@ io.on('connection', socket => {
       console.log(`name ${socket.playerName} supplied for ${socket.id}`)
     }
     if (data.spectate) {
-      if (game.spectators.every(spectator => spectator.name != socket.playerName)) {
+      if (game.spectators.every(spectator => spectator.name !== socket.playerName)) {
         console.log(`${socket.playerName} joining ${gameName} as spectator`)
         socket.gameName = gameName
         socket.join(gameName)
@@ -225,7 +223,7 @@ io.on('connection', socket => {
         else {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
-          for (entry of game.log) {
+          for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
         }
@@ -236,19 +234,19 @@ io.on('connection', socket => {
       }
     }
     else if (game.started) {
-      if (game.players.find(player => player.name == socket.playerName && !player.socketId)) {
-        if (Object.keys(socket.rooms).length == 1) {
+      if (game.players.find(player => player.name === socket.playerName && !player.socketId)) {
+        if (Object.keys(socket.rooms).length === 1) {
           console.log(`${socket.playerName} rejoining ${gameName}`)
           socket.gameName = gameName
           socket.join(gameName)
-          const player = game.players.find(player => player.name == socket.playerName)
+          const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
           io.in(gameName).emit('updatePlayers', game.players)
           // update game situation for rejoined player
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          for (entry of game.log) {
+          for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
         }
@@ -289,7 +287,7 @@ io.on('connection', socket => {
       const seat = game.seats[data.seatIndex]
       if (seat) {
         if (!seat.player) {
-          const player = game.players.find(player => player.name == data.playerName)
+          const player = game.players.find(player => player.name === data.playerName)
           if (player) {
             if (!player.seated) {
               seat.player = player
@@ -328,10 +326,10 @@ io.on('connection', socket => {
     const gameName = socket.gameName
     const game = games[gameName]
     if (!game.started) {
-      const player = game.players.find(player => player.name == socket.playerName)
+      const player = game.players.find(player => player.name === socket.playerName)
       if (player) {
         if (player.seated) {
-          const seat = game.seats.find(seat => seat.player && seat.player.name == player.name)
+          const seat = game.seats.find(seat => seat.player && seat.player.name === player.name)
           if (seat) {
             delete seat.player
             player.seated = false
@@ -363,7 +361,7 @@ io.on('connection', socket => {
   socket.on('startGame', () => {
     const gameName = socket.gameName;
     const game = games[gameName];
-    if (game.players.length == 4 && game.seats.every(seat => seat.player)) {
+    if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
       console.log(`starting ${gameName}`)
       game.started = true
       game.log = []
@@ -390,26 +388,26 @@ io.on('connection', socket => {
     const game = games[gameName]
     if (game) {
       if (!game.started) {
-        game.players = game.players.filter(player => player.name != socket.playerName)
-        game.spectators = game.spectators.filter(player => player.name != socket.playerName)
-        const seat = game.seats.find(seat => seat.player && seat.player.name == socket.playerName)
+        game.players = game.players.filter(player => player.name !== socket.playerName)
+        game.spectators = game.spectators.filter(player => player.name !== socket.playerName)
+        const seat = game.seats.find(seat => seat.player && seat.player.name === socket.playerName)
         if (seat) { delete seat.player }
         io.in(gameName).emit('updateSpectators', game.spectators)
         io.in(gameName).emit('updateSeats', game.seats)
         io.in(gameName).emit('updateUnseated', game.players)
-        if (game.players.length == 0 && game.spectators.length == 0) {
+        if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)
           delete games[gameName]
         }
       }
       else {
-        const spectators = game.spectators.filter(player => player.name != socket.playerName)
+        const spectators = game.spectators.filter(player => player.name !== socket.playerName)
         if (spectators.length < game.spectators.length) {
           game.spectators = spectators
           io.in(gameName).emit('updateSpectators', game.spectators)
         }
         else {
-          game.players.find(player => player.name == socket.playerName).socketId = null
+          game.players.find(player => player.name === socket.playerName).socketId = null
           io.in(gameName).emit('updatePlayers', game.players)
         }
         if (game.ended && game.players.every(player => !player.socketId)) {
