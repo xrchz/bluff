@@ -20,22 +20,28 @@ const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 
 const seatDivs = [playerSouth, playerWest, playerNorth, playerEast]
 
+const fragment = document.createDocumentFragment()
+
+function moveContents(fromNode, toNode) {
+  while (fromNode.firstChild) { toNode.appendChild(fromNode.firstChild) }
+}
+
 rotateClockwise.onclick = () => {
   seatDivs.push(seatDivs.shift())
-  const content = seatDivs[3].innerHTML
-  seatDivs[3].innerHTML = seatDivs[2].innerHTML
-  seatDivs[2].innerHTML = seatDivs[1].innerHTML
-  seatDivs[1].innerHTML = seatDivs[0].innerHTML
-  seatDivs[0].innerHTML = content
+  moveContents(seatDivs[3], fragment)
+  moveContents(seatDivs[2], seatDivs[3])
+  moveContents(seatDivs[1], seatDivs[2])
+  moveContents(seatDivs[0], seatDivs[1])
+  seatDivs[0].appendChild(fragment)
 }
 
 rotateAnticlockwise.onclick = () => {
   seatDivs.unshift(seatDivs.pop())
-  const content = seatDivs[0].innerHTML
-  seatDivs[0].innerHTML = seatDivs[1].innerHTML
-  seatDivs[1].innerHTML = seatDivs[2].innerHTML
-  seatDivs[2].innerHTML = seatDivs[3].innerHTML
-  seatDivs[3].innerHTML = content
+  moveContents(seatDivs[0], fragment)
+  moveContents(seatDivs[1], seatDivs[0])
+  moveContents(seatDivs[2], seatDivs[1])
+  moveContents(seatDivs[3], seatDivs[2])
+  seatDivs[3].appendChild(fragment)
 }
 
 joinButton.onclick = () => {
