@@ -20,6 +20,24 @@ const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 
 const seatDivs = [playerSouth, playerWest, playerNorth, playerEast]
 
+rotateClockwise.onclick = () => {
+  seatDivs.push(seatDivs.shift())
+  const content = seatDivs[3].innerHTML
+  seatDivs[3].innerHTML = seatDivs[2].innerHTML
+  seatDivs[2].innerHTML = seatDivs[1].innerHTML
+  seatDivs[1].innerHTML = seatDivs[0].innerHTML
+  seatDivs[0].innerHTML = content
+}
+
+rotateAnticlockwise.onclick = () => {
+  seatDivs.unshift(seatDivs.pop())
+  const content = seatDivs[0].innerHTML
+  seatDivs[0].innerHTML = seatDivs[1].innerHTML
+  seatDivs[1].innerHTML = seatDivs[2].innerHTML
+  seatDivs[2].innerHTML = seatDivs[3].innerHTML
+  seatDivs[3].innerHTML = content
+}
+
 joinButton.onclick = () => {
   socket.emit('joinRequest', {
     gameName:  gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),

@@ -435,8 +435,10 @@ io.on('connection', socket => {
     const game = games[gameName]
     if (game) {
       if (!game.started) {
-        game.players = game.players.filter( player => player.name != socket.playerName )
-        game.spectators = game.spectators.filter( player => player.name != socket.playerName )
+        game.players = game.players.filter(player => player.name != socket.playerName)
+        game.spectators = game.spectators.filter(player => player.name != socket.playerName)
+        const seat = game.seats.find(seat => seat.player && seat.player.name == socket.playerName)
+        if (seat) { delete seat.player }
         io.in(gameName).emit('updateSpectators', game.spectators)
         io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
         io.in(gameName).emit('updateUnseated', game.players)
@@ -446,7 +448,7 @@ io.on('connection', socket => {
         }
       }
       else {
-        const spectators = game.spectators.filter( player => player.name != socket.playerName )
+        const spectators = game.spectators.filter(player => player.name != socket.playerName)
         if (spectators.length < game.spectators.length) {
           game.spectators = spectators
           io.in(gameName).emit('updateSpectators', game.spectators)
