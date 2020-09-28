@@ -33,7 +33,7 @@ input[type=button] {
   background-color: SeaGreen;
   color: Plum;
 }
-#players span.disconnected {
+.disconnected {
   color: Thistle;
 }
 .empty {
@@ -50,12 +50,12 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
-#players span.current {
+.current {
   background-color: MediumSeaGreen;
 }
 .cards {
   letter-spacing: 0.25em;
-  font-size: larger;
+  font-size: xx-large;
 }
 #playArea {
   display: flex;

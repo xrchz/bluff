@@ -66,55 +66,81 @@ socket.on('joinedGame', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('updateSeats', data => {
-  const seated = Boolean(data.seats.find(seat => seat.player && seat.player.name == nameInput.value))
-  const started = Boolean(data.missingPlayers)
+socket.on('updateSeats', seats => {
+  const seated = Boolean(seats.find(seat => seat.player && seat.player.name == nameInput.value))
   let emptySeats = false
   for (let i = 0; i < 4; i++) {
-    const seatDiv = seatDivs[i]
-    const seat = data.seats[i]
-    while (seatDiv.firstChild) { seatDiv.firstChild.remove() }
+    const div = seatDivs[i]
+    const seat = seats[i]
+    div.innerHTML = ''
     let elem
     if (seat.player) {
       elem = document.createElement('div')
       elem.textContent = seat.player.name
-      seatDiv.appendChild(elem)
-      if (!started) {
-        if (seat.player.name == nameInput.value && !spectateInput.checked) {
-          elem = document.createElement('input')
-          elem.type = 'button'
-          elem.value = 'Leave seat'
-          elem.onclick = () => { socket.emit('leaveSeat') }
-          seatDiv.appendChild(elem)
-        }
+      div.appendChild(elem)
+      if (seat.player.name == nameInput.value && !spectateInput.checked) {
+        elem = document.createElement('input')
+        elem.type = 'button'
+        elem.value = 'Leave seat'
+        elem.onclick = () => { socket.emit('leaveSeat') }
+        div.appendChild(elem)
       }
-      // add bids if appropriate - if name matches and not spectating and valid bids are on the player
-      // add hand if appropriate - display hand if name matches or spectating, otherwise card backs
-      // add tricks if any
-      // mark as current or disconnected
     }
     else {
       emptySeats = true
       elem = document.createElement('div')
       elem.textContent = 'Empty'
       elem.classList.add('empty')
-      seatDiv.appendChild(elem)
+      div.appendChild(elem)
       if (!spectateInput.checked && !seated) {
         elem = document.createElement('input')
         elem.type = 'button'
         elem.value = 'Sit here'
         elem.onclick = () => { socket.emit('sitHere', { playerName: nameInput.value, seatIndex: i }) }
-        seatDiv.appendChild(elem)
+        div.appendChild(elem)
       }
     }
   }
-  if (!started) {
-    if (!emptySeats && seated) {
-      startButton.hidden = false
+  if (!emptySeats && seated) {
+    startButton.hidden = false
+  }
+  if (emptySeats) {
+    startButton.hidden = true
+  }
+})
+
+socket.on('updatePlayers', players => {
+  for (let i = 0; i < 4; i++) {
+    const div = seatDivs[i]
+    const player = players[i]
+    div.innerHTML = ''
+    let elem
+    elem = document.createElement('div')
+    fragment.appendChild(elem)
+    elem = elem.appendChild(document.createElement('span'))
+    elem.textContent = player.name
+    if (player.current) {
+      elem.textContent += ' (*)'
+      elem.classList.add('current')
     }
-    if (emptySeats) {
-      startButton.hidden = true
+    if (!player.socketId) {
+      elem.textContent += ' (d/c)'
+      elem.classList.add('disconnected')
     }
+    elem = document.createElement('div')
+    fragment.appendChild(elem)
+    elem.classList.add('cards')
+    if (player.name == nameInput.value || spectateInput.checked) {
+      for (const c of player.formattedHand) {
+        const span = elem.appendChild(document.createElement('span'))
+        span.textContent = c.chr
+        if (c.cls) { span.classList.add(c.cls) }
+      }
+    }
+    else {
+      elem.textContent = '🂠'.repeat(player.hand.length)
+    }
+    div.appendChild(fragment)
   }
 })
 
@@ -143,6 +169,7 @@ startButton.onclick = () => { socket.emit('startGame') }
 
 socket.on('gameStarted', () => {
   startButton.remove()
+  log.hidden = false
   errorMsg.innerHTML = ''
 })
 
