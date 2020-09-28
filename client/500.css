@@ -2,8 +2,8 @@ body {
   font-size: large;
   background-color: DarkSeaGreen;
   color: Indigo;
-  margin-left: 2.5vw;
-  width: 95vw;
+  margin-left: 2vw;
+  width: 96vw;
 }
 input {
   font-size: large;
@@ -11,6 +11,11 @@ input {
 input[type=text] {
   background-color: Khaki;
   color: MidnightBlue;
+  width: 8em;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
 }
 input[type=text]:disabled {
   background-color: DarkKhaki;
@@ -28,36 +33,78 @@ input[type=button] {
   background-color: SeaGreen;
   color: Plum;
 }
-#start {
-  margin-bottom: 1vh;
-}
-#players {
-  margin-top: 2vh;
-}
-#players ul {
-  list-style-type: none;
-  padding-left: 0;
-}
-#players .spectator {
-  color: SlateGray;
-}
 #players span.disconnected {
   color: Thistle;
+}
+.empty {
+  color: Thistle;
+}
+#spectators {
+  color: SlateGray
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
 }
 #players span.current {
   background-color: MediumSeaGreen;
 }
-#settings {
-  height: 20vh;
-  width: 80vw;
-  margin-top: 1vh;
-}
-#hand a, .cards {
+.cards {
   letter-spacing: 0.25em;
   font-size: larger;
 }
-#game {
-  text-transform: uppercase;
+#playArea {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+#partnership {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+}
+div.player {
+  display: flex;
+  flex-direction: column;
+  width: 28vw;
+  height: 20vh;
+  justify-content: center;
+  align-items: center;
+}
+#board {
+  display: flex;
+  width: 15vw;
+  height: 15vh;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  font-size: larger;
+}
+#playedCenter {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  height: 100%;
+}
+#rotate[hidden] {
+  display: none;
+}
+#rotate {
+  display: flex;
+  width: 84vw;
+  justify-content: space-around;
+  align-items: center;
+  font-size: x-large;
+}
+#rotate a:hover {
+  cursor: pointer;
 }
 .hearts {
   color: red

@@ -7,22 +7,35 @@
     <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
-    <p id="errorMsg" />
-    <ul id="log"></ul>
-    <div id="current"></div>
-    <div id="players"></div>
-    <div id="settings">
-      <input id="start" type="button" value="Join game" />
-      <div>
-        <label for="name">Name: </label><input id="name" type=text autocomplete=on pattern="\w+"/>
+    <p id="errorMsg"></p>
+    <label for="game">Game: </label><input id="game" type=text maxlength=2 autocomplete=off />
+    <input id="name" type=text autocomplete=on pattern="\w+" placeholder="Name" />
+    <input id="join" type=button value="Join" />
+    <label for="spectate">Spectate</label><input id="spectate" type="checkbox" autocomplete=off />
+    <input id="start" type=button value="Start!" hidden />
+    <ul id="log" hidden></ul>
+    <ul id="unseated" class="inline"></ul>
+    <div id="playArea">
+      <div id="playerWest" class=player></div>
+      <div id="partnership">
+        <div id="playerNorth" class=player></div>
+        <div id="board">
+          <div id="playedWest"></div>
+          <div id="playedCenter">
+            <div id="playedNorth"></div>
+            <div id="playedSouth"></div>
+          </div>
+          <div id="playedEast"></div>
+        </div>
+        <div id="playerSouth" class=player></div>
       </div>
-      <div>
-        <label for="game">Game: </label><input id="game" type=text maxlength=2 autocomplete=off />
-      </div>
-      <div>
-        <label for="spectate">Spectate</label><input id="spectate" type=checkbox autocomplete=off />
-      </div>
+      <div id="playerEast" class=player></div>
     </div>
+    <div id="rotate" hidden>
+      <a id="rotateClockwise">↻</a>
+      <a id="rotateAnticlockwise">↺</a>
+    </div>
+    <ul id="spectators" class="inline"></ul>
     <script src="500.js"></script>
   </body>
 </html>

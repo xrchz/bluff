@@ -241,9 +241,9 @@ io.on('connection', socket => {
     }
     if (!(gameName in games)) {
       console.log(`new game ${gameName}`)
-      game = { players: [],
-               spectators: [],
-               members: [] }
+      game = { seats: [{}, {}, {}, {}],
+               players: [],
+               spectators: [] }
       games[gameName] = game
     }
     else {
@@ -257,7 +257,25 @@ io.on('connection', socket => {
       socket.playerName = data.playerName
       console.log(`name ${socket.playerName} supplied for ${socket.id}`)
     }
-    if (game.started) {
+    if (data.spectate) {
+      if (game.spectators.every(spectator => spectator.name != socket.playerName)) {
+        console.log(`${socket.playerName} joining ${gameName} as spectator`)
+        socket.gameName = gameName
+        socket.join(gameName)
+        const spectator = { id: socket.id, name: socket.playerName }
+        game.spectators.push(spectator)
+        io.in(gameName).emit('updateSpectators', game.spectators)
+        // update game situation for spectator
+        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName, spectating: true })
+        if (!game.started) { socket.emit('updateUnseated', game.players) }
+        socket.emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
+      }
+      else {
+        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate spectator`)
+        socket.emit('errorMsg', 'Game ' + gameName + ' already contains spectator ' + socket.playerName)
+      }
+    }
+    else if (game.started) {
       if (game.missingPlayers.has(socket.playerName)) {
         if (Object.keys(socket.rooms).length == 1) {
           console.log(`${socket.playerName} rejoining ${gameName}`)
@@ -266,45 +284,14 @@ io.on('connection', socket => {
           game.missingPlayers.delete(socket.playerName)
           const player = game.players.find(player => player.name == socket.playerName)
           player.id = socket.id
-          updatePlayers(gameName)
-          if (!game.ended) {
-            const current = game.players[game.whoseTurn]
-            socket.emit('setCurrent', current.name)
-          }
-          for (const entry of game.log) {
-            socket.emit('appendLog', formatMove(entry, player))
-          }
-          socket.emit('rejoinGame', player.name, player.spectating)
-          if (player.spectating != data.spectate) {
-            socket.emit('errorMsg', 'You cannot become a spectator: rejoined as player')
-          }
+          io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
+          // update game situation for rejoined player
+          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+          socket.emit('updateSpectators', game.spectators)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in other rooms`)
           socket.emit('errorMsg', 'Error: somehow this connection is already used in another game')
-        }
-      }
-      else if (data.spectate) {
-        if (game.members.every(player => player.name != socket.playerName)) {
-          console.log(`${socket.playerName} joining ${gameName} as spectator`)
-          socket.gameName = gameName
-          socket.join(gameName)
-          const player = { id: socket.id, name: socket.playerName, spectating: true }
-          game.members.push(player)
-          game.spectators.push(player)
-          updatePlayers(gameName)
-          if (!game.ended) {
-            const current = game.players[game.whoseTurn]
-            socket.emit('setCurrent', current.name)
-          }
-          for (const entry of game.log) {
-            socket.emit('appendLog', formatMove(entry, player))
-          }
-          socket.emit('rejoinGame', player.name, player.spectating, game.settingsData)
-        }
-        else {
-          console.log(`${socket.playerName} barred from joining ${gameName} as duplicate`)
-          socket.emit('errorMsg', 'Game ' + gameName + ' already contains member ' + socket.playerName)
         }
       }
       else {
@@ -313,23 +300,101 @@ io.on('connection', socket => {
       }
     }
     else {
-      if (game.members.every(player => player.name != socket.playerName)) {
+      if (game.players.every(player => player.name != socket.playerName)) {
         console.log(`${socket.playerName} joining ${gameName}`)
         socket.join(gameName)
         socket.gameName = gameName
-        const player = { id: socket.id, name: socket.playerName, spectating: data.spectate }
-        game.members.push(player)
-        if (!data.spectate) { game.players.push(player) } else { game.spectators.push(player) }
-        socket.emit('joinGame', { gameName: gameName, playerName: socket.playerName })
-        if (game.started) { socket.emit('gameStarted') }
-        updatePlayers(gameName)
+        const player = { id: socket.id, name: socket.playerName }
+        game.players.push(player)
+        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+        socket.emit('updateSpectators', game.spectators)
+        io.in(gameName).emit('updateUnseated', game.players)
+        io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
       }
       else {
-        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate`)
-        socket.emit('errorMsg', 'Game ' + gameName + ' already contains member ' + socket.playerName)
+        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
+        socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName)
       }
     }
     console.log("active games: " + Object.keys(games).join(', '))
+  })
+
+  socket.on('sitHere', data => {
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (!game.started) {
+      const seat = game.seats[data.seatIndex]
+      if (seat) {
+        if (!seat.player) {
+          const player = game.players.find(player => player.name == data.playerName)
+          if (player) {
+            if (!player.seated) {
+              seat.player = player
+              player.seated = true
+              io.in(gameName).emit('updateUnseated', game.players)
+              io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
+              console.log(`${socket.playerName} in ${gameName} took their seat`)
+            }
+            else {
+              console.log(`error: ${socket.playerName} in ${gameName} tried to sit but is already seated`)
+              socket.emit('errorMsg', 'Error: you are already seated')
+            }
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} tried to sit but is not a player`)
+            socket.emit('errorMsg', 'Error: a non-player cannot sit')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried sitting in an occupied seat`)
+          socket.emit('errorMsg', 'Error: trying to sit in an occupied seat')
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried sitting at invalid index ${data.seatIndex}`)
+        socket.emit('errorMsg', 'Error: trying to sit at an invalid seat index')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried sitting when game already started`)
+      socket.emit('errorMsg', 'Error: cannot sit after the game has started')
+    }
+  })
+
+  socket.on('leaveSeat', () => {
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (!game.started) {
+      const player = game.players.find(player => player.name == socket.playerName)
+      if (player) {
+        if (player.seated) {
+          const seat = game.seats.find(seat => seat.player && seat.player.name == player.name)
+          if (seat) {
+            delete seat.player
+            player.seated = false
+            io.in(gameName).emit('updateUnseated', game.players)
+            io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
+            console.log(`${socket.playerName} in ${gameName} left their seat`)
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} is tried to leave seat but no seat has them`)
+            socket.emit('errorMsg', 'Error: could not find you in any seat')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} is not seated but tried to leave their seat`)
+          socket.emit('errorMsg', 'Error: you are not seated so cannot leave your seat')
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} is not a player but tried to leave a seat`)
+        socket.emit('errorMsg', 'Error: non-player trying to leave seat')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried leaving seat when game already started`)
+      socket.emit('errorMsg', 'Error: cannot leave seat after the game has started')
+    }
   })
 
   socket.on('startGame', () => {
@@ -366,31 +431,33 @@ io.on('connection', socket => {
 
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
-    const game = games[socket.gameName]
+    const gameName = socket.gameName
+    const game = games[gameName]
     if (game) {
       if (!game.started) {
-        game.members = game.members.filter( player => player.name != socket.playerName )
         game.players = game.players.filter( player => player.name != socket.playerName )
         game.spectators = game.spectators.filter( player => player.name != socket.playerName )
-        updatePlayers(socket.gameName)
-        if (game.members.length == 0) {
-          console.log(`removing empty game ${socket.gameName}`)
-          delete games[socket.gameName]
+        io.in(gameName).emit('updateSpectators', game.spectators)
+        io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
+        io.in(gameName).emit('updateUnseated', game.players)
+        if (game.players.length == 0 && game.spectators.length == 0) {
+          console.log(`removing empty game ${gameName}`)
+          delete games[gameName]
         }
       }
       else {
         const spectators = game.spectators.filter( player => player.name != socket.playerName )
         if (spectators.length < game.spectators.length) {
-          game.members = game.members.filter( player => player.name != socket.playerName )
           game.spectators = spectators
+          io.in(gameName).emit('updateSpectators', game.spectators)
         }
         else {
           game.missingPlayers.add(socket.playerName)
+          io.in(gameName).emit('updateSeats', { seats: game.seats, missingPlayers: game.missingPlayers })
         }
-        updatePlayers(socket.gameName)
         if (game.ended && game.missingPlayers.size == game.players.length) {
-          console.log(`removing finished game ${socket.gameName}`)
-          delete games[socket.gameName]
+          console.log(`removing finished game ${gameName}`)
+          delete games[gameName]
         }
       }
     }
