@@ -58,6 +58,7 @@ const Diamonds = 3
 const Misere = 3.5
 const Hearts = 4
 const NoTrumps = 5
+const TrumpSuit = 6
 
 function makeDeck() {
   const deck = []
@@ -95,11 +96,12 @@ function reorderCard(c, trump) {
   else if (rank === Joker) {
     suit = trump
   }
-  if (suit === trump) { suit = NoTrumps }
+  if (suit === trump) { suit = TrumpSuit }
   return { rank: rank, suit: suit }
 }
 
 function bySuit (trump) {
+  if (trump === Misere) { trump = NoTrumps }
   if (trump === NoTrumps) {
     function cmp (c1, c2) {
       if (c1.suit === c2.suit) {
@@ -152,35 +154,35 @@ function deal(game) {
   dealRound(3)
   for (const player of game.players) {
     player.hand.sort(bySuit(NoTrumps))
-    player.formattedHand = player.hand.map(formatCard(NoTrumps))
+    player.hand.forEach(c => c.formatted = formatCard(c, NoTrumps))
   }
   game.kitty.sort(bySuit(NoTrumps))
-  game.formattedKitty = game.kitty.map(formatCard(NoTrumps))
+  game.kitty.forEach(c => c.formatted = formatCard(c, NoTrumps))
 }
 
-const formatCard = trump => {
-  return c => {
-    const suit = reorderCard(c, trump).suit
-    let chr
-    if (c.rank === Joker) {
-      chr = '\u{1F0DF}'
-    }
-    else {
-      let codepoint = 0x1F000
-      codepoint += c.suit === Spades ? 0xA0 :
-        c.suit === Hearts ? 0xB0 :
-        c.suit === Diamonds ? 0xC0 :
-        c.suit === Clubs ? 0xD0 : 0xE0
-      codepoint += c.rank === Ace ? 1 :
-        c.rank <= Jack ? c.rank : c.rank + 1
-      chr = String.fromCodePoint(codepoint)
-    }
-    const cls = suit === Spades   ? 'spades'   :
-                suit === Clubs    ? 'clubs'    :
-                suit === Diamonds ? 'diamonds' :
-                suit === Hearts   ? 'hearts'   : null
-    return { chr: chr, cls: cls }
+function formatCard(c, trump) {
+  if (trump === Misere) { trump = NoTrumps }
+  let suit = reorderCard(c, trump).suit
+  if (suit === TrumpSuit) { suit = c.suit }
+  let chr
+  if (c.rank === Joker) {
+    chr = '\u{1F0DF}'
   }
+  else {
+    let codepoint = 0x1F000
+    codepoint += c.suit === Spades ? 0xA0 :
+      c.suit === Hearts ? 0xB0 :
+      c.suit === Diamonds ? 0xC0 :
+      c.suit === Clubs ? 0xD0 : 0xE0
+    codepoint += c.rank === Ace ? 1 :
+      c.rank <= Jack ? c.rank : c.rank + 1
+    chr = String.fromCodePoint(codepoint)
+  }
+  const cls = suit === Spades   ? 'spades'   :
+    suit === Clubs    ? 'clubs'    :
+    suit === Diamonds ? 'diamonds' :
+    suit === Hearts   ? 'hearts'   : null
+  return { chr: chr, cls: cls }
 }
 
 function formatBid(b) {
@@ -257,7 +259,7 @@ function startRound(gameName) {
   game.players[game.whoseTurn].current = true
   game.players[game.whoseTurn].validBids = validBids()
   io.in(gameName).emit('updatePlayers', game.players)
-  io.in(gameName).emit('updateKitty', game.formattedKitty)
+  io.in(gameName).emit('updateKitty', { kitty: game.kitty })
 }
 
 function appendLog(gameName, entry) {
@@ -309,7 +311,7 @@ io.on('connection', socket => {
         else {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
-          socket.emit('updateKitty', game.formattedKitty)
+          socket.emit('updateKitty', { kitty: game.kitty })
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
@@ -332,7 +334,12 @@ io.on('connection', socket => {
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
           io.in(gameName).emit('updatePlayers', game.players)
-          socket.emit('updateKitty', game.formattedKitty)
+          let kitty = { kitty: game.kitty }
+          if (player.contract && game.selectKitty) {
+            kitty.contractorName = player.name,
+            kitty.contractorIndex = game.players.findIndex(player => player.name === socket.playerName)
+          }
+          socket.emit('updateKitty', kitty)
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
@@ -361,13 +368,13 @@ io.on('connection', socket => {
           io.in(gameName).emit('updateSeats', game.seats)
         }
         else {
-          console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
-          socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName)
+          console.log(`${socket.playerName} barred from joining ${gameName} which is full`)
+          socket.emit('errorMsg', 'Game ' + gameName + ' already has enough players. Try spectating.')
         }
       }
       else {
-        console.log(`${socket.playerName} barred from joining ${gameName} which is full`)
-        socket.emit('errorMsg', 'Game ' + gameName + ' already has enough players. Try spectating.')
+        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
+        socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName)
       }
     }
     console.log("active games: " + Object.keys(games).join(', '))
@@ -452,8 +459,8 @@ io.on('connection', socket => {
   })
 
   socket.on('startGame', () => {
-    const gameName = socket.gameName;
-    const game = games[gameName];
+    const gameName = socket.gameName
+    const game = games[gameName]
     if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
       console.log(`starting ${gameName}`)
       game.started = true
@@ -470,8 +477,8 @@ io.on('connection', socket => {
   })
 
   socket.on('bidRequest', bid => {
-    const gameName = socket.gameName;
-    const game = games[gameName];
+    const gameName = socket.gameName
+    const game = games[gameName]
     if (game.bidding) {
       const current = game.players[game.whoseTurn]
       if (current) {
@@ -508,7 +515,18 @@ io.on('connection', socket => {
               game.players.forEach(player => delete player.lastBid)
               game.selectKitty = true
               game.whoseTurn = game.lastBidder
+              lastBidder.current = true
+              game.players.forEach(player => {
+                player.hand.sort(bySuit(lastBid.suit))
+                player.hand.forEach(c => c.formatted = formatCard(c, lastBid.suit))
+              })
+              game.kitty.sort(bySuit(lastBid.suit))
+              game.kitty.forEach(c => c.formatted = formatCard(c, lastBid.suit))
               io.in(gameName).emit('updatePlayers', game.players)
+              io.in(gameName).emit('updateKitty',
+                { kitty: game.kitty,
+                  contractorName: lastBidder.name,
+                  contractorIndex: game.lastBidder })
             }
             else {
               game.whoseTurn = nextTurn
@@ -535,6 +553,53 @@ io.on('connection', socket => {
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried bidding out of phase`)
       socket.emit('errorMsg', 'Error: bidding is not currently possible')
+    }
+  })
+
+  socket.on('kittyRequest', data => {
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (game.selectKitty) {
+      const current = game.players[game.whoseTurn]
+      if (current) {
+        if (current.name === socket.playerName && current.current) {
+          if (current.contract) {
+            const trump = current.contract.suit
+            const fromTo = [game.kitty, current.hand]
+            if (data.from === 'hand') { fromTo.push(fromTo.shift()) }
+            if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
+              const removed = fromTo[0].splice(data.index, 1)[0]
+              fromTo[1].push(removed)
+              fromTo[1].sort(bySuit(trump))
+              io.in(gameName).emit('updatePlayers', game.players)
+              io.in(gameName).emit('updateKitty',
+                { kitty: game.kitty,
+                  contractorName: current.name,
+                  contractorIndex: game.whoseTurn })
+            }
+            else {
+              console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} with bad index ${data.index}`)
+              socket.emit('errorMsg', `Error: index ${data.index} for taking from ${data.from} is invalid`)
+            }
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} but has no contract`)
+            socket.emit('errorMsg', 'Error: you do not have the contract')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of turn`)
+          socket.emit('errorMsg', `Error: it is not your turn to take from ${data.from}`)
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} but there is no current player`)
+        socket.emit('errorMsg', 'Error: could not find current player')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of phase`)
+      socket.emit('errorMsg', `Error: taking from ${data.from} is not currently possible`)
     }
   })
 

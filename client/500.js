@@ -133,10 +133,10 @@ socket.on('updatePlayers', players => {
     fragment.appendChild(elem)
     elem.classList.add('cards')
     if (player.name === nameInput.value || spectateInput.checked) {
-      for (const c of player.formattedHand) {
+      for (const c of player.hand) {
         const span = elem.appendChild(document.createElement('span'))
-        span.textContent = c.chr
-        if (c.cls) { span.classList.add(c.cls) }
+        span.textContent = c.formatted.chr
+        if (c.formatted.cls) { span.classList.add(c.formatted.cls) }
       }
     }
     else {
@@ -166,13 +166,35 @@ socket.on('updatePlayers', players => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('updateKitty', cards => {
+socket.on('updateKitty', data => {
   kittyDiv.innerHTML = ''
   if (spectateInput.checked) {
-    for (const c of cards) {
+    for (const c of data.kitty) {
       const span = kittyDiv.appendChild(document.createElement('span'))
-      span.textContent = c.chr
-      if (c.cls) { span.classList.add(c.cls) }
+      span.textContent = c.formatted.chr
+      if (c.formatted.cls) { span.classList.add(c.formatted.cls) }
+    }
+  }
+  else if (data.contractorName && nameInput.value === data.contractorName) {
+    for (let i = 0; i < data.kitty.length; i++) {
+      const a = kittyDiv.appendChild(document.createElement('a'))
+      const c = data.kitty[i].formatted
+      a.textContent = c.chr
+      if (c.cls) { a.classList.add(c.cls) }
+      a.onclick = () => { socket.emit('kittyRequest', { from: 'kitty', index: i }) }
+    }
+    if (data.kitty.length < 3) {
+      const handDiv = seatDivs[data.contractorIndex].firstChild.nextSibling
+      if (handDiv.firstChild && handDiv.firstChild.tagName === "SPAN") {
+        for (let i = 0; handDiv.firstChild; i++) {
+          const span = handDiv.removeChild(handDiv.firstChild)
+          const a = fragment.appendChild(document.createElement('a'))
+          a.textContent = span.textContent
+          a.classList = span.classList
+          a.onclick = () => { socket.emit('kittyRequest', { from: 'hand', index: i }) }
+        }
+        handDiv.appendChild(fragment)
+      }
     }
   }
   else {

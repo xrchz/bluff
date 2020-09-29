@@ -72,6 +72,10 @@ ul.inline > li {
   cursor: pointer;
   background-color: MediumSeaGreen;
 }
+.cards a:hover {
+  cursor: pointer;
+  background-color: MediumSeaGreen;
+}
 #playArea {
   display: flex;
   flex-direction: row;
