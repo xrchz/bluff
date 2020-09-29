@@ -60,6 +60,9 @@ const Hearts = 4
 const NoTrumps = 5
 const TrumpSuit = 6
 
+const sameColour = (s1, s2) =>
+  s1 + s2 === 3 || s1 + s2 === 7
+
 function makeDeck() {
   const deck = []
   for (let suit = Spades; suit <= Clubs; suit++) {
@@ -89,8 +92,9 @@ function reorderCard(c, trump) {
     if (suit === trump) {
       rank = RightBower
     }
-    else if ((suit + 2) % 4 === trump) {
+    else if (trump < NoTrumps && sameColour(suit, trump)) {
       rank = LeftBower
+      suit = trump
     }
   }
   else if (rank === Joker) {
@@ -131,6 +135,16 @@ function bySuit (trump) {
   }
 }
 
+function sortAndFormat(cards, trump) {
+  cards.sort(bySuit(trump))
+  cards.forEach(c => {
+    c.formatted = formatCard(c, trump)
+    if (c.rank === Joker && !c.suit && trump < NoTrumps && trump !== Misere) {
+      c.suit = trump
+    }
+  })
+}
+
 function deal(game) {
   const deck = makeDeck()
   shuffleInPlace(deck)
@@ -152,18 +166,14 @@ function deal(game) {
   dealRound(3)
   dealRound(4)
   dealRound(3)
-  for (const player of game.players) {
-    player.hand.sort(bySuit(NoTrumps))
-    player.hand.forEach(c => c.formatted = formatCard(c, NoTrumps))
-  }
-  game.kitty.sort(bySuit(NoTrumps))
-  game.kitty.forEach(c => c.formatted = formatCard(c, NoTrumps))
+  game.players.forEach(player => sortAndFormat(player.hand, NoTrumps))
+  sortAndFormat(game.kitty, NoTrumps)
 }
 
 function formatCard(c, trump) {
   if (trump === Misere) { trump = NoTrumps }
   let suit = reorderCard(c, trump).suit
-  if (suit === TrumpSuit) { suit = c.suit }
+  if (suit === TrumpSuit) { suit = trump < NoTrumps ? trump : c.suit }
   let chr
   if (c.rank === Joker) {
     chr = '\u{1F0DF}'
@@ -516,12 +526,8 @@ io.on('connection', socket => {
               game.selectKitty = true
               game.whoseTurn = game.lastBidder
               lastBidder.current = true
-              game.players.forEach(player => {
-                player.hand.sort(bySuit(lastBid.suit))
-                player.hand.forEach(c => c.formatted = formatCard(c, lastBid.suit))
-              })
-              game.kitty.sort(bySuit(lastBid.suit))
-              game.kitty.forEach(c => c.formatted = formatCard(c, lastBid.suit))
+              game.players.forEach(player => sortAndFormat(player.hand, lastBid.suit))
+              sortAndFormat(game.kitty, lastBid.suit)
               io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateKitty',
                 { kitty: game.kitty,
