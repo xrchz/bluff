@@ -140,7 +140,7 @@ socket.on('updatePlayers', players => {
       }
     }
     else {
-      elem.textContent = '🂠'.repeat(player.hand.length)
+      elem.innerHTML = '<span>🂠</span>'.repeat(player.hand.length)
     }
     const bid = player.lastBid || player.contract
     if (bid) {
@@ -168,16 +168,18 @@ socket.on('updatePlayers', players => {
 
 socket.on('updateKitty', data => {
   kittyDiv.innerHTML = ''
+  const div = kittyDiv.appendChild(document.createElement('div'))
+  div.classList.add('cards')
   if (spectateInput.checked) {
     for (const c of data.kitty) {
-      const span = kittyDiv.appendChild(document.createElement('span'))
+      const span = div.appendChild(document.createElement('span'))
       span.textContent = c.formatted.chr
       if (c.formatted.cls) { span.classList.add(c.formatted.cls) }
     }
   }
   else if (data.contractorName && nameInput.value === data.contractorName) {
     for (let i = 0; i < data.kitty.length; i++) {
-      const a = kittyDiv.appendChild(document.createElement('a'))
+      const a = div.appendChild(document.createElement('a'))
       const c = data.kitty[i].formatted
       a.textContent = c.chr
       if (c.cls) { a.classList.add(c.cls) }
@@ -196,9 +198,15 @@ socket.on('updateKitty', data => {
         handDiv.appendChild(fragment)
       }
     }
+    else {
+      const elem = kittyDiv.appendChild(document.createElement('input'))
+      elem.type = 'button'
+      elem.value = 'Done'
+      elem.onclick = () => { socket.emit('kittyRequest', { done: true }) }
+    }
   }
   else {
-    kittyDiv.textContent = '🂠'.repeat(3)
+    div.innerHTML = '<span>🂠</span>'.repeat(3)
   }
   errorMsg.innerHTML = ''
 })

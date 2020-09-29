@@ -96,6 +96,15 @@ div.player {
   justify-content: space-around;
   align-items: center;
 }
+#kitty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+#kitty > input {
+  margin-top: 0.5em;
+}
 #board {
   display: flex;
   width: 15vw;

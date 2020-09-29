@@ -570,22 +570,34 @@ io.on('connection', socket => {
       if (current) {
         if (current.name === socket.playerName && current.current) {
           if (current.contract) {
-            const trump = current.contract.suit
-            const fromTo = [game.kitty, current.hand]
-            if (data.from === 'hand') { fromTo.push(fromTo.shift()) }
-            if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
-              const removed = fromTo[0].splice(data.index, 1)[0]
-              fromTo[1].push(removed)
-              fromTo[1].sort(bySuit(trump))
-              io.in(gameName).emit('updatePlayers', game.players)
-              io.in(gameName).emit('updateKitty',
-                { kitty: game.kitty,
-                  contractorName: current.name,
-                  contractorIndex: game.whoseTurn })
+            if (!data.done) {
+              const trump = current.contract.suit
+              const fromTo = data.from === 'hand' ? [current.hand, game.kitty] : [game.kitty, current.hand]
+              if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
+                const removed = fromTo[0].splice(data.index, 1)[0]
+                fromTo[1].push(removed)
+                fromTo[1].sort(bySuit(trump))
+                io.in(gameName).emit('updatePlayers', game.players)
+                io.in(gameName).emit('updateKitty',
+                  { kitty: game.kitty,
+                    contractorName: current.name,
+                    contractorIndex: game.whoseTurn })
+              }
+              else {
+                console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} with bad index ${data.index}`)
+                socket.emit('errorMsg', `Error: index ${data.index} for taking from ${data.from} is invalid`)
+              }
             }
             else {
-              console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} with bad index ${data.index}`)
-              socket.emit('errorMsg', `Error: index ${data.index} for taking from ${data.from} is invalid`)
+              appendLog(gameName, `${current.name} exchanges with the kitty.`)
+              delete game.selectKitty
+              // TODO: nominate joker suit if possible and desired
+              // TODO: mark contractor's partner as open if misere
+              // TODO: mark contractor as open if open misere
+              game.playing = true
+              current.callingSuit = true
+              io.in(gameName).emit('updatePlayers', game.players)
+              io.in(gameName).emit('updateKitty', { kitty: game.kitty })
             }
           }
           else {
