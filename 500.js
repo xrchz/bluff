@@ -154,6 +154,8 @@ function deal(game) {
     player.hand.sort(bySuit(NoTrumps))
     player.formattedHand = player.hand.map(formatCard(NoTrumps))
   }
+  game.kitty.sort(bySuit(NoTrumps))
+  game.formattedKitty = game.kitty.map(formatCard(NoTrumps))
 }
 
 const formatCard = trump => {
@@ -246,12 +248,22 @@ function validBids(lastBid) {
   return bids
 }
 
-function startRound(game) {
+function startRound(gameName) {
+  const game = games[gameName]
+  appendLog(gameName, `${game.players[game.dealer].name} deals.`)
   deal(game)
   game.bidding = true
   game.whoseTurn = clockwise(game.dealer)
   game.players[game.whoseTurn].current = true
   game.players[game.whoseTurn].validBids = validBids()
+  io.in(gameName).emit('updatePlayers', game.players)
+  io.in(gameName).emit('updateKitty', game.formattedKitty)
+}
+
+function appendLog(gameName, entry) {
+  const game = games[gameName]
+  game.log.push(entry)
+  io.in(gameName).emit('appendLog', entry)
 }
 
 io.on('connection', socket => {
@@ -288,9 +300,8 @@ io.on('connection', socket => {
         socket.join(gameName)
         const spectator = { socketId: socket.id, name: socket.playerName }
         game.spectators.push(spectator)
-        io.in(gameName).emit('updateSpectators', game.spectators)
-        // update game situation for spectator
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName, spectating: true })
+        io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started) {
           socket.emit('updateUnseated', game.players)
           socket.emit('updateSeats', game.seats)
@@ -298,6 +309,7 @@ io.on('connection', socket => {
         else {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
+          socket.emit('updateKitty', game.formattedKitty)
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
@@ -316,11 +328,11 @@ io.on('connection', socket => {
           socket.join(gameName)
           const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
-          io.in(gameName).emit('updatePlayers', game.players)
-          // update game situation for rejoined player
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
+          io.in(gameName).emit('updatePlayers', game.players)
+          socket.emit('updateKitty', game.formattedKitty)
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
@@ -449,10 +461,8 @@ io.on('connection', socket => {
       game.players = game.seats.map(seat => seat.player)
       game.dealer = Math.floor(Math.random() * 4)
       io.in(gameName).emit('gameStarted')
-      game.log.push('The game begins!')
-      io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
-      startRound(game)
-      io.in(gameName).emit('updatePlayers', game.players)
+      appendLog(gameName, 'The game begins!')
+      startRound(gameName)
     }
     else {
       socket.emit('errorMsg', '4 seated players required to start the game')
@@ -472,12 +482,10 @@ io.on('connection', socket => {
             current.lastBid = bid
             if (!bid.pass) {
               game.lastBidder = game.whoseTurn
-              game.log.push(`${current.name} bids ${bid.formatted}`)
-              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+              appendLog(gameName, `${current.name} bids ${bid.formatted}.`)
             }
             else {
-              game.log.push(`${current.name} passes`)
-              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+              appendLog(gameName, `${current.name} passes.`)
             }
             let nextTurn = clockwise(game.whoseTurn)
             while (game.players[nextTurn].lastBid &&
@@ -488,27 +496,26 @@ io.on('connection', socket => {
             const lastBidder = game.players[game.lastBidder]
             const lastBid = lastBidder ? lastBidder.lastBid : null
             if (nextTurn === game.whoseTurn && bid.pass) {
-              game.log.push(`bidding ends with no contract. redealing...`)
-              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+              appendLog(gameName, 'Bidding ends with no contract. Redealing...')
               game.dealer = clockwise(dealer)
               game.players.forEach(player => delete player.lastBid)
-              startRound(game)
+              startRound(gameName)
             }
             else if (nextTurn === game.lastBidder) {
-              game.log.push(`bidding ends with ${lastBidder.name} contracting ${lastBid.formatted}`)
-              io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
+              appendLog(gameName, `Bidding ends with ${lastBidder.name} contracting ${lastBid.formatted}.`)
               delete game.bidding
               lastBidder.contract = lastBid
               game.players.forEach(player => delete player.lastBid)
-              game.kitty = true
+              game.selectKitty = true
               game.whoseTurn = game.lastBidder
+              io.in(gameName).emit('updatePlayers', game.players)
             }
             else {
               game.whoseTurn = nextTurn
               game.players[game.whoseTurn].current = true
               game.players[game.whoseTurn].validBids = validBids(lastBid)
+              io.in(gameName).emit('updatePlayers', game.players)
             }
-            io.in(gameName).emit('updatePlayers', game.players)
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried bidding an invalid bid`)

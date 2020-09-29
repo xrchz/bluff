@@ -10,6 +10,7 @@ const startButton = document.getElementById('start')
 const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
+const kittyDiv = document.getElementById('kitty')
 const playerSouth = document.getElementById('playerSouth')
 const playerWest = document.getElementById('playerWest')
 const playerNorth = document.getElementById('playerNorth')
@@ -107,6 +108,7 @@ socket.on('updateSeats', seats => {
   if (emptySeats) {
     startButton.hidden = true
   }
+  errorMsg.innerHTML = ''
 })
 
 socket.on('updatePlayers', players => {
@@ -140,12 +142,13 @@ socket.on('updatePlayers', players => {
     else {
       elem.textContent = '🂠'.repeat(player.hand.length)
     }
-    if (player.lastBid) {
+    const bid = player.lastBid || player.contract
+    if (bid) {
       elem = document.createElement('div')
       fragment.appendChild(elem)
       elem.classList.add('bids')
-      if (player.lastBid.cls) { elem.classList.add(player.lastBid.cls) }
-      elem.textContent = player.lastBid.formatted
+      if (bid.cls) { elem.classList.add(bid.cls) }
+      elem.textContent = bid.formatted
     }
     if (player.name === nameInput.value && player.validBids) {
       elem = document.createElement('div')
@@ -160,6 +163,22 @@ socket.on('updatePlayers', players => {
     }
     div.appendChild(fragment)
   }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('updateKitty', cards => {
+  kittyDiv.innerHTML = ''
+  if (spectateInput.checked) {
+    for (const c of cards) {
+      const span = kittyDiv.appendChild(document.createElement('span'))
+      span.textContent = c.chr
+      if (c.cls) { span.classList.add(c.cls) }
+    }
+  }
+  else {
+    kittyDiv.textContent = '🂠'.repeat(3)
+  }
+  errorMsg.innerHTML = ''
 })
 
 socket.on('updateUnseated', players => {
@@ -171,6 +190,7 @@ socket.on('updateUnseated', players => {
     elem.textContent = player.name
     unseated.appendChild(elem)
   }
+  errorMsg.innerHTML = ''
 })
 
 socket.on('updateSpectators', spectators => {
