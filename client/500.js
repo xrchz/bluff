@@ -62,7 +62,7 @@ socket.on('joinedGame', data => {
   spectateInput.disabled = true
   spectateInput.previousElementSibling.hidden = true
   spectateInput.hidden = true
-  joinButton.remove()
+  joinButton.parentNode.removeChild(joinButton)
   rotateDiv.hidden = false
   errorMsg.innerHTML = ''
 })
@@ -182,7 +182,7 @@ socket.on('updateKitty', cards => {
 })
 
 socket.on('updateUnseated', players => {
-  while (unseated.firstChild) { unseated.firstChild.remove() }
+  unseated.innerHTML = ''
   let elem
   for (player of players) {
     if (player.seated) { continue }
@@ -194,7 +194,7 @@ socket.on('updateUnseated', players => {
 })
 
 socket.on('updateSpectators', spectators => {
-  while (spectatorsDiv.firstChild) { spectatorsDiv.firstChild.remove() }
+  spectatorsDiv.innerHTML = ''
   let elem
   for (spectator of spectators) {
     elem = document.createElement('li')
@@ -206,7 +206,7 @@ socket.on('updateSpectators', spectators => {
 startButton.onclick = () => { socket.emit('startGame') }
 
 socket.on('gameStarted', () => {
-  startButton.remove()
+  startButton.parentNode.removeChild(startButton)
   log.hidden = false
   errorMsg.innerHTML = ''
 })
