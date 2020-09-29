@@ -15,11 +15,16 @@ const playerSouth = document.getElementById('playerSouth')
 const playerWest = document.getElementById('playerWest')
 const playerNorth = document.getElementById('playerNorth')
 const playerEast = document.getElementById('playerEast')
+const playedSouth = document.getElementById('playedSouth')
+const playedWest = document.getElementById('playedWest')
+const playedNorth = document.getElementById('playedNorth')
+const playedEast = document.getElementById('playedEast')
 const rotateDiv = document.getElementById('rotate')
 const rotateClockwise = document.getElementById('rotateClockwise')
 const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 
 const seatDivs = [playerSouth, playerWest, playerNorth, playerEast]
+const cardDivs = [playedSouth, playedWest, playedNorth, playedEast]
 
 const fragment = document.createDocumentFragment()
 
@@ -27,22 +32,32 @@ function moveContents(fromNode, toNode) {
   while (fromNode.firstChild) { toNode.appendChild(fromNode.firstChild) }
 }
 
+function rotateDivsClockwise(divs) {
+  divs.push(divs.shift())
+  moveContents(divs[3], fragment)
+  moveContents(divs[2], divs[3])
+  moveContents(divs[1], divs[2])
+  moveContents(divs[0], divs[1])
+  divs[0].appendChild(fragment)
+}
+
+function rotateDivsAnticlockwise(divs) {
+  divs.unshift(divs.pop())
+  moveContents(divs[0], fragment)
+  moveContents(divs[1], divs[0])
+  moveContents(divs[2], divs[1])
+  moveContents(divs[3], divs[2])
+  divs[3].appendChild(fragment)
+}
+
 rotateClockwise.onclick = () => {
-  seatDivs.push(seatDivs.shift())
-  moveContents(seatDivs[3], fragment)
-  moveContents(seatDivs[2], seatDivs[3])
-  moveContents(seatDivs[1], seatDivs[2])
-  moveContents(seatDivs[0], seatDivs[1])
-  seatDivs[0].appendChild(fragment)
+  rotateDivsClockwise(seatDivs)
+  rotateDivsClockwise(cardDivs)
 }
 
 rotateAnticlockwise.onclick = () => {
-  seatDivs.unshift(seatDivs.pop())
-  moveContents(seatDivs[0], fragment)
-  moveContents(seatDivs[1], seatDivs[0])
-  moveContents(seatDivs[2], seatDivs[1])
-  moveContents(seatDivs[3], seatDivs[2])
-  seatDivs[3].appendChild(fragment)
+  rotateDivsAnticlockwise(seatDivs)
+  rotateDivsAnticlockwise(cardDivs)
 }
 
 joinButton.onclick = () => {
@@ -133,10 +148,16 @@ socket.on('updatePlayers', players => {
     fragment.appendChild(elem)
     elem.classList.add('cards')
     if (player.name === nameInput.value || spectateInput.checked) {
-      for (const c of player.hand) {
-        const span = elem.appendChild(document.createElement('span'))
-        span.textContent = c.formatted.chr
-        if (c.formatted.cls) { span.classList.add(c.formatted.cls) }
+      const isCalled = c => c.suit === player.callingSuit
+      const isPlayable = player.callingSuit ?
+        (player.hand.some(isCalled) ? isCalled : c => true) : c => false
+      for (let i = 0; i < player.hand.length; i++) {
+        const playable = isPlayable(player.hand[i])
+        const c = player.hand[i].formatted
+        const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
+        a.textContent = c.chr
+        if (c.cls) { a.classList.add(c.cls) }
+        if (playable) { a.onclick = () => { socket.emit('playRequest', i) } }
       }
     }
     else {

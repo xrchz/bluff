@@ -33,10 +33,7 @@ input[type=button] {
   background-color: SeaGreen;
   color: Plum;
 }
-.disconnected {
-  color: Thistle;
-}
-.empty {
+.disconnected, .empty {
   color: Thistle;
 }
 #spectators {
@@ -54,8 +51,11 @@ ul.inline > li {
   background-color: MediumSeaGreen;
 }
 .cards {
-  letter-spacing: 0.25em;
   font-size: xx-large;
+}
+.cards > span, .cards > a, .bids > a {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
 }
 .bids {
   font-size: larger;
@@ -64,15 +64,7 @@ ul.inline > li {
   justify-content: center;
   align-items: center;
 }
-.bids a {
-  padding-left: 0.25em;
-  padding-right: 0.25em;
-}
-.bids a:hover {
-  cursor: pointer;
-  background-color: MediumSeaGreen;
-}
-.cards a:hover {
+.bids > a:hover, .cards > a:hover {
   cursor: pointer;
   background-color: MediumSeaGreen;
 }
