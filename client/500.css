@@ -25,7 +25,7 @@ input[type=button] {
   color: Lavender;
 }
 #log {
-  height: 20vh;
+  height: 15vh;
   resize: both;
   overflow-y: scroll;
   list-style-type: none;
@@ -52,10 +52,13 @@ ul.inline > li {
 }
 .cards {
   font-size: xx-large;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 .cards > span, .cards > a, .bids > a {
-  padding-left: 0.25em;
-  padding-right: 0.25em;
+  padding: 0.25em;
 }
 .bids {
   font-size: larger;
@@ -83,8 +86,8 @@ ul.inline > li {
 div.player {
   display: flex;
   flex-direction: column;
-  width: 28vw;
-  height: 20vh;
+  width: 30vw;
+  height: 30vh;
   justify-content: space-around;
   align-items: center;
 }
@@ -99,8 +102,8 @@ div.player {
 }
 #board {
   display: flex;
-  width: 15vw;
-  height: 15vh;
+  width: 20vw;
+  height: 20vh;
   flex-direction: row;
   justify-content: space-around;
   align-items: center;

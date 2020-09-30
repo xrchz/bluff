@@ -12,9 +12,11 @@
     <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
     <input id=join type=button value="Join" />
     <label for=spectate>Spectate</label><input id=spectate type=checkbox autocomplete=off />
-    <input id=start type=button value="Start!" hidden />
+    <div>
+      <ul id=unseated class=inline></ul>
+      <input id=start type=button value="Start!" hidden />
+    </div>
     <ul id=log hidden></ul>
-    <ul id=unseated class=inline></ul>
     <div id=playArea>
       <div id=playerWest class=player></div>
       <div id=partnership>
