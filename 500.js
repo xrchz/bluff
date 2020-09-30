@@ -507,6 +507,7 @@ io.on('connection', socket => {
               game.selectKitty = true
               game.whoseTurn = game.lastBidder
               lastBidder.current = true
+              lastBidder.selecting = true
               game.players.forEach(player => sortAndFormat(player.hand, lastBid.suit))
               sortAndFormat(game.kitty, lastBid.suit)
               io.in(gameName).emit('updatePlayers', game.players)
@@ -549,7 +550,7 @@ io.on('connection', socket => {
     if (game.selectKitty) {
       const current = game.players[game.whoseTurn]
       if (current) {
-        if (current.name === socket.playerName && current.current) {
+        if (current.name === socket.playerName && current.current && current.selecting) {
           if (current.contract) {
             if (!data.done) {
               const trump = current.contract.suit
@@ -572,6 +573,7 @@ io.on('connection', socket => {
             else {
               appendLog(gameName, `${current.name} exchanges with the kitty.`)
               delete game.selectKitty
+              delete current.selecting
               // TODO: nominate joker suit if possible and desired
               // TODO: mark contractor's partner as open if misere
               // TODO: mark contractor as open if open misere

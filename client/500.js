@@ -159,7 +159,7 @@ socket.on('updatePlayers', players => {
       }
     }
     else {
-      elem.innerHTML = '<span>🂠</span>'.repeat(player.hand.length)
+      elem.innerHTML = '<span>🂠</span>'.repeat(player.selecting ? 10 : player.hand.length)
     }
     const bid = player.lastBid || player.contract
     if (bid) {
