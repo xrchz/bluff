@@ -67,15 +67,17 @@ function makeDeck() {
   const deck = []
   for (let suit = Spades; suit <= Clubs; suit++) {
     for (let rank = 5; rank <= Ace; rank++) {
-      deck.push({ rank: rank, suit: suit })
+      deck.push({ rank: rank, suit: suit,
+        effectiveRank: rank, effectiveSuit: suit })
     }
   }
   for (let suit = Diamonds; suit <= Hearts; suit++) {
     for (let rank = 4; rank <= Ace; rank++) {
-      deck.push({ rank: rank, suit: suit })
+      deck.push({ rank: rank, suit: suit,
+       effectiveRank: rank,  effectiveSuit: suit })
     }
   }
-  deck.push({ rank: Joker })
+  deck.push({ rank: Joker, effectiveRank: Joker, effectiveSuit: TrumpSuit })
   return deck
 }
 
@@ -85,64 +87,37 @@ function clockwise(playerIndex) {
   return playerIndex
 }
 
-function reorderCard(c, trump) {
-  let suit = c.suit
-  let rank = c.rank
-  if (rank === Jack) {
-    if (suit === trump) {
-      rank = RightBower
-    }
-    else if (trump < NoTrumps && sameColour(suit, trump)) {
-      rank = LeftBower
-      suit = trump
-    }
-  }
-  else if (rank === Joker) {
-    suit = trump
-  }
-  if (suit === trump) { suit = TrumpSuit }
-  return { rank: rank, suit: suit }
-}
-
-function bySuit (trump) {
-  if (trump === Misere) { trump = NoTrumps }
-  if (trump === NoTrumps) {
-    function cmp (c1, c2) {
-      if (c1.suit === c2.suit) {
-        return c1.rank - c2.rank
+function setEffective(trump) {
+  if (trump < NoTrumps && trump !== Misere) {
+    return function (c) {
+      if (c.rank === Jack) {
+        if (c.suit === trump) {
+          c.effectiveRank = RightBower
+        }
+        else if (sameColour(c.suit, trump)) {
+          c.effectiveRank = LeftBower
+          c.effectiveSuit = trump
+        }
       }
-      else if (c1.rank === Joker || c2.rank === Joker) {
-        return c1.rank === Joker ? (c2.rank === Joker ? 0 : 1) : -1
+      else if (c.rank === Joker) {
+        c.effectiveSuit = trump
       }
-      else {
-        return c1.suit - c2.suit
-      }
+      if (c.effectiveSuit === trump) { c.effectiveSuit = TrumpSuit }
     }
-    return cmp
   }
   else {
-    function cmp (c1, c2) {
-      let x1 = reorderCard(c1, trump)
-      let x2 = reorderCard(c2, trump)
-      if (x1.suit === x2.suit) {
-        return x1.rank - x2.rank
-      }
-      else {
-        return x1.suit - x2.suit
-      }
-    }
-    return cmp
+    return function (c) {}
   }
 }
 
+const byEffective = (c1, c2) =>
+  c1.effectiveSuit === c2.effectiveSuit ?
+    c1.effectiveRank - c2.effectiveRank : c1.effectiveSuit - c2.effectiveSuit
+
 function sortAndFormat(cards, trump) {
-  cards.sort(bySuit(trump))
-  cards.forEach(c => {
-    c.formatted = formatCard(c, trump)
-    if (c.rank === Joker && !c.suit && trump < NoTrumps && trump !== Misere) {
-      c.suit = trump
-    }
-  })
+  cards.forEach(setEffective(trump))
+  cards.sort(byEffective)
+  cards.forEach(c => { c.formatted = formatCard(c, trump) })
 }
 
 function deal(game) {
@@ -172,7 +147,7 @@ function deal(game) {
 
 function formatCard(c, trump) {
   if (trump === Misere) { trump = NoTrumps }
-  let suit = reorderCard(c, trump).suit
+  let suit = c.effectiveSuit
   if (suit === TrumpSuit) { suit = trump < NoTrumps ? trump : c.suit }
   let chr
   if (c.rank === Joker) {
@@ -582,7 +557,7 @@ io.on('connection', socket => {
               if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
                 const removed = fromTo[0].splice(data.index, 1)[0]
                 fromTo[1].push(removed)
-                fromTo[1].sort(bySuit(trump))
+                fromTo[1].sort(byEffective)
                 io.in(gameName).emit('updatePlayers', game.players)
                 io.in(gameName).emit('updateKitty',
                   { kitty: game.kitty,
@@ -649,9 +624,9 @@ io.on('connection', socket => {
                 game.whoseTurn = clockwise(game.whoseTurn)
                 const next = game.players[game.whoseTurn]
                 next.current = true
-                if (next.hand.some(c => c.suit === calling)) {
+                if (next.hand.some(c => c.effectiveSuit === calling)) {
                   next.validPlays = []
-                  next.hand.forEach((c, i) => { if (c.suit === calling) { next.validPlays.push(i) } })
+                  next.hand.forEach((c, i) => { if (c.effectiveSuit === calling) { next.validPlays.push(i) } })
                 }
                 else {
                   next.validPlays = true
