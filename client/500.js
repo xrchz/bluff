@@ -75,15 +75,17 @@ socket.on('joinedGame', data => {
   gameInput.disabled = true
   nameInput.disabled = true
   spectateInput.disabled = true
-  spectateInput.previousElementSibling.hidden = true
-  spectateInput.hidden = true
+  if (!spectateInput.checked) {
+    spectateInput.previousElementSibling.hidden = true
+    spectateInput.hidden = true
+  }
   joinButton.parentNode.removeChild(joinButton)
   rotateDiv.hidden = false
   errorMsg.innerHTML = ''
 })
 
 socket.on('updateSeats', seats => {
-  const seated = Boolean(seats.find(seat => seat.player && seat.player.name === nameInput.value))
+  const seated = !spectateInput.checked && seats.find(seat => seat.player && seat.player.name === nameInput.value)
   let emptySeats = false
   for (let i = 0; i < 4; i++) {
     const div = seatDivs[i]
@@ -169,7 +171,7 @@ socket.on('updatePlayers', players => {
       if (bid.cls) { elem.classList.add(bid.cls) }
       elem.textContent = bid.formatted
     }
-    if (player.name === nameInput.value && player.validBids) {
+    if (player.name === nameInput.value && player.validBids && !spectateInput.checked) {
       elem = document.createElement('div')
       fragment.appendChild(elem)
       elem.classList.add('bids')
