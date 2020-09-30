@@ -148,11 +148,9 @@ socket.on('updatePlayers', players => {
     fragment.appendChild(elem)
     elem.classList.add('cards')
     if (player.name === nameInput.value || spectateInput.checked) {
-      const isCalled = c => c.suit === player.callingSuit
-      const isPlayable = player.callingSuit ?
-        (player.hand.some(isCalled) ? isCalled : c => true) : c => false
       for (let i = 0; i < player.hand.length; i++) {
-        const playable = isPlayable(player.hand[i])
+        const playable = !spectateInput.checked && player.validPlays &&
+          (player.validPlays === true || player.validPlays.includes(i))
         const c = player.hand[i].formatted
         const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
         a.textContent = c.chr
@@ -230,6 +228,19 @@ socket.on('updateKitty', data => {
     div.innerHTML = '<span>🂠</span>'.repeat(3)
   }
   errorMsg.innerHTML = ''
+})
+
+socket.on('updateTrick', data => {
+  for(let i = 0; i < 4; i++) {
+    const div = cardDivs[(data.leader + i) % 4]
+    div.innerHTML = ''
+    if (i < data.trick.length) {
+      const c = data.trick[i].formatted
+      const elem = div.appendChild(document.createElement('span'))
+      elem.textContent = c.chr
+      if (c.cls) { elem.classList.add(c.cls) }
+    }
+  }
 })
 
 socket.on('updateUnseated', players => {

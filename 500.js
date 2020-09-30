@@ -322,6 +322,9 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
           socket.emit('updateKitty', { kitty: game.kitty })
+          if (game.trick) {
+            socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
+          }
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
@@ -350,6 +353,9 @@ io.on('connection', socket => {
             kitty.contractorIndex = game.players.findIndex(player => player.name === socket.playerName)
           }
           socket.emit('updateKitty', kitty)
+          if (game.trick) {
+            socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
+          }
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
@@ -514,7 +520,7 @@ io.on('connection', socket => {
             const lastBid = lastBidder ? lastBidder.lastBid : null
             if (nextTurn === game.whoseTurn && bid.pass) {
               appendLog(gameName, 'Bidding ends with no contract. Redealing...')
-              game.dealer = clockwise(dealer)
+              game.dealer = clockwise(game.dealer)
               game.players.forEach(player => delete player.lastBid)
               startRound(gameName)
             }
@@ -595,7 +601,9 @@ io.on('connection', socket => {
               // TODO: mark contractor's partner as open if misere
               // TODO: mark contractor as open if open misere
               game.playing = true
-              current.callingSuit = true
+              current.validPlays = true
+              game.leader = game.whoseTurn
+              game.trick = []
               io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateKitty', { kitty: game.kitty })
             }
@@ -618,6 +626,69 @@ io.on('connection', socket => {
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of phase`)
       socket.emit('errorMsg', `Error: taking from ${data.from} is not currently possible`)
+    }
+  })
+
+  socket.on('playRequest', index => {
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (game.playing && game.trick) {
+      const current = game.players[game.whoseTurn]
+      if (current) {
+        if (current.name === socket.playerName && current.current) {
+          if (current.validPlays) {
+            if (current.validPlays === true && Number.isInteger(index) && 0 <= index && index < current.hand.length ||
+                current.validPlays.includes(index)) {
+              delete current.validPlays
+              delete current.current
+              const played = current.hand.splice(index, 1)[0]
+              game.trick.push(played)
+              appendLog(gameName, `${current.name} plays ${played.formatted.chr}.`)
+              if (game.trick.length < 4) {
+                const calling = game.trick[0].suit
+                game.whoseTurn = clockwise(game.whoseTurn)
+                const next = game.players[game.whoseTurn]
+                next.current = true
+                if (next.hand.some(c => c.suit === calling)) {
+                  next.validPlays = []
+                  next.hand.forEach((c, i) => { if (c.suit === calling) { next.validPlays.push(i) } })
+                }
+                else {
+                  next.validPlays = true
+                }
+                io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+                io.in(gameName).emit('updatePlayers', game.players)
+              }
+              else {
+                // TODO: determine trick winner
+                // add trick to their list of tricks
+                // check if round is ended (hand is empty)
+                // else set leader to trick winner
+              }
+            }
+            else {
+              console.log(`error: ${socket.playerName} in ${gameName} tried playing with bad index ${data.index}`)
+              socket.emit('errorMsg', `Error: index ${data.index} is invalid`)
+            }
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} tried playing but has no validPlays`)
+            socket.emit('errorMsg', 'Error: you do not have any valid plays')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried playing out of turn`)
+          socket.emit('errorMsg', 'Error: it is not your turn')
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried playing but there is no current player`)
+        socket.emit('errorMsg', 'Error: could not find current player')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried playing out of phase`)
+      socket.emit('errorMsg', `Error: playing is not currently possible`)
     }
   })
 
