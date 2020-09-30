@@ -640,10 +640,34 @@ io.on('connection', socket => {
                 io.in(gameName).emit('updatePlayers', game.players)
               }
               else {
-                // TODO: determine trick winner
-                // add trick to their list of tricks
-                // check if round is ended (hand is empty)
-                // else set leader to trick winner
+                let winningIndex = 0
+                for (let i = 1; i < 4; i++) {
+                  const currentCard = game.trick[i]
+                  const winningCard = game.trick[winningIndex]
+                  if ((currentCard.effectiveSuit === TrumpSuit &&
+                        (winningCard.effectiveSuit !== TrumpSuit ||
+                         winningCard.effectiveRank < currentCard.effectiveRank)) ||
+                      (currentCard.effectiveSuit === calling &&
+                        (winningCard.effectiveSuit !== calling && winningCard.effectiveSuit !== TrumpSuit ||
+                         winningCard.effectiveSuit === calling && winningCard.effectiveRank < currentCard.effectiveRank))) {
+                    winningIndex = i
+                  }
+                }
+                winningIndex = (game.leader + winningIndex) % 4
+                const winner = game.players[winningIndex]
+                winner.tricks.push({ cards: game.trick, open: false })
+                appendLog(gameName, `${winner.name} wins the trick.`)
+                // TODO check if round is ended (hand is empty)
+                game.trick = []
+                game.leader = winningIndex
+                game.whoseTurn = winningIndex
+                winner.current = true
+                winner.validPlays = true
+                const promise = new Promise(resolve => setTimeout(resolve, 1500))
+                promise.then(() => {
+                  io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+                  io.in(gameName).emit('updatePlayers', game.players)
+                })
               }
             }
             else {
