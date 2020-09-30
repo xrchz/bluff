@@ -22,6 +22,7 @@ const playedEast = document.getElementById('playedEast')
 const rotateDiv = document.getElementById('rotate')
 const rotateClockwise = document.getElementById('rotateClockwise')
 const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
+const scoreTable = document.getElementById('score')
 
 const seatDivs = [playerSouth, playerWest, playerNorth, playerEast]
 const cardDivs = [playedSouth, playedWest, playedNorth, playedEast]
@@ -288,6 +289,45 @@ socket.on('updateSpectators', spectators => {
     elem.textContent = spectator.name
     spectatorsDiv.appendChild(elem)
   }
+})
+
+socket.on('updateScore', data => {
+  scoreTable.innerHTML = ''
+  if (data.rounds.length) {
+    let elem = fragment.appendChild(document.createElement('thead'))
+    elem = elem.appendChild(document.createElement('tr'))
+    elem.appendChild(document.createElement('th')).textContent = 'Round'
+    elem.appendChild(document.createElement('th')).textContent = 'Contractor'
+    elem.appendChild(document.createElement('th')).textContent = 'Contract'
+    elem.appendChild(document.createElement('th')).textContent = 'Tricks'
+    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[0]} Score`
+    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[1]} Score`
+    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[0]} Total`
+    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[1]} Total`
+    let totals = [0, 0]
+    for (let i = 0; i < data.rounds.length; i++) {
+      const round = data.rounds[i]
+      const contractorTeam = round.contractorIndex % 2
+      const scores = contractorTeam ? [round.opponentScore, round.score] : [round.score, round.opponentScore]
+      totals[0] += scores[0]
+      totals[1] += scores[1]
+      elem = fragment.appendChild(document.createElement('tr'))
+      elem.appendChild(document.createElement('th')).textContent = (i + 1).toString()
+      elem.appendChild(document.createElement('td')).textContent = round.contractorName
+      const contract = document.createElement('span')
+      contract.classList.add('bids')
+      if (round.contract.cls) { contract.classList.add(round.contract.cls) }
+      contract.textContent = round.contract.formatted
+      elem.appendChild(document.createElement('td')).appendChild(contract)
+      elem.appendChild(document.createElement('td')).textContent = round.tricksMade.toString()
+      elem.appendChild(document.createElement('td')).textContent = scores[0]
+      elem.appendChild(document.createElement('td')).textContent = scores[1]
+      elem.appendChild(document.createElement('td')).textContent = totals[0]
+      elem.appendChild(document.createElement('td')).textContent = totals[1]
+    }
+    scoreTable.appendChild(fragment)
+  }
+  errorMsg.innerHTML = ''
 })
 
 startButton.onclick = () => { socket.emit('startGame') }

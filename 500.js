@@ -63,6 +63,11 @@ const TrumpSuit = 6
 const sameColour = (s1, s2) =>
   s1 + s2 === 3 || s1 + s2 === 7
 
+const contractValue = c =>
+  c.suit === Misere ?
+    (c.n < 10 ? 250 : 500) :
+    (c.n - 6) * 100 + (c.suit + 1) * 20
+
 function makeDeck() {
   const deck = []
   for (let suit = Spades; suit <= Clubs; suit++) {
@@ -86,6 +91,8 @@ function clockwise(playerIndex) {
   if (playerIndex === 4) playerIndex = 0
   return playerIndex
 }
+
+const opposite = playerIndex => clockwise(clockwise(playerIndex))
 
 function setEffective(trump) {
   if (trump < NoTrumps && trump !== Misere) {
@@ -175,7 +182,7 @@ function formatBid(b) {
     b.formatted = 'Pass'
   }
   else if (b.suit === Misere) {
-    if (b.n === 7.5) {
+    if (b.n < 10) {
       b.formatted = 'Misere'
     }
     else {
@@ -303,6 +310,7 @@ io.on('connection', socket => {
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
+          socket.emit('updateScore', { rounds: game.rounds, teamNames: game.teamNames })
         }
       }
       else {
@@ -333,6 +341,9 @@ io.on('connection', socket => {
           }
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
+          }
+          if (game.rounds.length) {
+            socket.emit('updateScore', { rounds: game.rounds, teamNames: game.teamNames })
           }
         }
         else {
@@ -457,6 +468,9 @@ io.on('connection', socket => {
       game.started = true
       game.log = []
       game.players = game.seats.map(seat => seat.player)
+      game.teamNames = [`${game.players[0].name} & ${game.players[2].name}`,
+                        `${game.players[1].name} & ${game.players[3].name}`]
+      game.rounds = []
       game.dealer = Math.floor(Math.random() * 4)
       io.in(gameName).emit('gameStarted')
       appendLog(gameName, 'The game begins!')
@@ -495,8 +509,8 @@ io.on('connection', socket => {
             const lastBid = lastBidder ? lastBidder.lastBid : null
             if (nextTurn === game.whoseTurn && bid.pass) {
               appendLog(gameName, 'Bidding ends with no contract. Redealing...')
-              game.dealer = clockwise(game.dealer)
               game.players.forEach(player => delete player.lastBid)
+              game.dealer = clockwise(game.dealer)
               startRound(gameName)
             }
             else if (nextTurn === game.lastBidder) {
@@ -624,7 +638,8 @@ io.on('connection', socket => {
               appendLog(gameName, `${current.name} plays ${played.formatted.chr}.`)
               io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
               io.in(gameName).emit('updatePlayers', game.players)
-              const trump = game.players[game.lastBidder].contract.suit
+              const contractor = game.players[game.lastBidder]
+              const trump = contractor.contract.suit
               const calling = game.trick[0].effectiveSuit
               if (game.trick.length < 4) {
                 game.whoseTurn = clockwise(game.whoseTurn)
@@ -657,17 +672,54 @@ io.on('connection', socket => {
                 const winner = game.players[winningIndex]
                 winner.tricks.push({ cards: game.trick, open: false })
                 appendLog(gameName, `${winner.name} wins the trick.`)
-                // TODO check if round is ended (hand is empty)
                 game.trick = []
-                game.leader = winningIndex
-                game.whoseTurn = winningIndex
-                winner.current = true
-                winner.validPlays = true
-                const promise = new Promise(resolve => setTimeout(resolve, 1500))
-                promise.then(() => {
-                  io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
-                  io.in(gameName).emit('updatePlayers', game.players)
-                })
+                if (current.hand.length) {
+                  game.leader = winningIndex
+                  game.whoseTurn = winningIndex
+                  // TODO: handle misere case where next turn may be winner's partner
+                  winner.current = true
+                  winner.validPlays = true
+                  const promise = new Promise(resolve => setTimeout(resolve, 1500))
+                  promise.then(() => {
+                    io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+                    io.in(gameName).emit('updatePlayers', game.players)
+                  })
+                }
+                else {
+                  const promise = new Promise(resolve => setTimeout(resolve, 1500))
+                  promise.then(() => {
+                    io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+                    delete game.leader
+                    delete game.playing
+                    const contract = contractor.contract
+                    delete contractor.contract
+                    const contractTricks = contractor.tricks.length +
+                      game.players[opposite(game.lastBidder)].tricks.length
+                    const opponentTricks = 10 - contractTricks
+                    const contractMade = contract.suit === Misere ? contractTricks === 0 : contractTricks >= contract.n
+                    const opponentScore = contract.suit === Misere ? 0 : opponentTricks * 10
+                    const contractScore = contractMade ?
+                      (contractTricks === 10 ? Math.min(250, contractValue(contract)) : contractValue(contract)) :
+                      -contractValue(contract)
+                    game.rounds.push({
+                      contractorIndex: game.lastBidder,
+                      contractorName: contractor.name,
+                      contract: contract,
+                      tricksMade: contractTricks,
+                      score: contractScore,
+                      opponentScore: opponentScore })
+                    appendLog(gameName, `${contractor.name}'s partnership ${contractMade ? 'makes' : 'fails'} their contract, scoring ${contractScore}.`)
+                    appendLog(gameName, `The opponents score ${opponentScore}.`)
+                    io.in(gameName).emit('updateScore', { rounds: game.rounds, teamNames: game.teamNames })
+                    const promise = new Promise(resolve => setTimeout(resolve, 2000))
+                    promise.then(() => {
+                      game.players.forEach(player => delete player.tricks)
+                      appendLog(gameName, 'The next round begins.')
+                      game.dealer = clockwise(game.dealer)
+                      startRound(gameName)
+                    })
+                  })
+                }
               }
             }
             else {
