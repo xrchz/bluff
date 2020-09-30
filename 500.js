@@ -578,6 +578,7 @@ io.on('connection', socket => {
               // TODO: mark contractor's partner as open if misere
               // TODO: mark contractor as open if open misere
               game.playing = true
+              game.players.forEach(player => player.tricks = [])
               current.validPlays = true
               game.leader = game.whoseTurn
               game.trick = []
@@ -621,8 +622,11 @@ io.on('connection', socket => {
               const played = current.hand.splice(index, 1)[0]
               game.trick.push(played)
               appendLog(gameName, `${current.name} plays ${played.formatted.chr}.`)
+              io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+              io.in(gameName).emit('updatePlayers', game.players)
+              const trump = game.players[game.lastBidder].contract.suit
+              const calling = game.trick[0].effectiveSuit
               if (game.trick.length < 4) {
-                const calling = game.trick[0].suit
                 game.whoseTurn = clockwise(game.whoseTurn)
                 const next = game.players[game.whoseTurn]
                 next.current = true
@@ -633,7 +637,6 @@ io.on('connection', socket => {
                 else {
                   next.validPlays = true
                 }
-                io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
                 io.in(gameName).emit('updatePlayers', game.players)
               }
               else {
@@ -666,6 +669,32 @@ io.on('connection', socket => {
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried playing out of phase`)
       socket.emit('errorMsg', `Error: playing is not currently possible`)
+    }
+  })
+
+  socket.on('trickRequest', data => {
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (game.playing) {
+      const player = game.players.find(player => player.name === data.playerName)
+      if (player) {
+        if (player.tricks && Number.isInteger(data.index) && 0 <= data.index && data.index < player.tricks.length) {
+          player.tricks[data.index].open = Boolean(data.open)
+          io.in(gameName).emit('updatePlayers', game.players)
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick with bad index`)
+          socket.emit('errorMsg', `Error: toggling a trick with an invalid index`)
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick of an unknown player`)
+        socket.emit('errorMsg', `Error: toggling a trick of an unknown player`)
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick out of phase`)
+      socket.emit('errorMsg', `Error: toggling a trick is not currently possible`)
     }
   })
 

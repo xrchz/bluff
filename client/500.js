@@ -180,6 +180,29 @@ socket.on('updatePlayers', players => {
         a.onclick = () => { socket.emit('bidRequest', b) }
       }
     }
+    if (player.tricks) {
+      elem = document.createElement('div')
+      fragment.appendChild(elem)
+      elem.classList.add('tricks')
+      for (let i = 0; i < player.tricks.length; i++) {
+        const trick = player.tricks[i]
+        const t = elem.appendChild(document.createElement('div'))
+        t.classList.add('cards')
+        if (trick.open) {
+          for (const c of trick.cards) {
+            const a = t.appendChild(document.createElement('a'))
+            a.textContent = c.formatted.chr
+            if (c.formatted.cls) { a.classList.add(c.formatted.cls) }
+            a.onclick = () => { socket.emit('trickRequest', { open: false, index: i, playerName: player.name }) }
+          }
+        }
+        else {
+          const a = t.appendChild(document.createElement('a'))
+          a.textContent = '🂠'
+          a.onclick = () => { socket.emit('trickRequest', { open: true, index: i, playerName: player.name }) }
+        }
+      }
+    }
     div.appendChild(fragment)
   }
   errorMsg.innerHTML = ''

@@ -109,6 +109,11 @@ div.player {
   align-items: center;
   font-size: larger;
 }
+div.tricks {
+  display: flex;
+  flex-flow: row wrap;
+  color: DarkBlue;
+}
 #playedCenter {
   display: flex;
   flex-direction: column;
