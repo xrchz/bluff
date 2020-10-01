@@ -382,9 +382,19 @@ io.on('connection', socket => {
     console.log("active games: " + Object.keys(games).join(', '))
   })
 
-  socket.on('sitHere', data => {
+  function inGame(func) {
     const gameName = socket.gameName
     const game = games[gameName]
+    if (game) {
+      func(gameName, game)
+    }
+    else {
+      console.log(`${socket.playerName} failed to find game ${gameName}`)
+      socket.emit('errorMsg', `Game ${gameName} not found`)
+    }
+  }
+
+  socket.on('sitHere', data => inGame((gameName, game) => {
     if (!game.started) {
       const seat = game.seats[data.seatIndex]
       if (seat) {
@@ -422,11 +432,9 @@ io.on('connection', socket => {
       console.log(`error: ${socket.playerName} in ${gameName} tried sitting when game already started`)
       socket.emit('errorMsg', 'Error: cannot sit after the game has started')
     }
-  })
+  }))
 
-  socket.on('leaveSeat', () => {
-    const gameName = socket.gameName
-    const game = games[gameName]
+  socket.on('leaveSeat', () => inGame((gameName, game) => {
     if (!game.started) {
       const player = game.players.find(player => player.name === socket.playerName)
       if (player) {
@@ -458,11 +466,9 @@ io.on('connection', socket => {
       console.log(`error: ${socket.playerName} in ${gameName} tried leaving seat when game already started`)
       socket.emit('errorMsg', 'Error: cannot leave seat after the game has started')
     }
-  })
+  }))
 
-  socket.on('startGame', () => {
-    const gameName = socket.gameName
-    const game = games[gameName]
+  socket.on('startGame', () => inGame((gameName, game) => {
     if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
       console.log(`starting ${gameName}`)
       game.started = true
@@ -479,11 +485,9 @@ io.on('connection', socket => {
     else {
       socket.emit('errorMsg', '4 seated players required to start the game')
     }
-  })
+  }))
 
-  socket.on('bidRequest', bid => {
-    const gameName = socket.gameName
-    const game = games[gameName]
+  socket.on('bidRequest', bid => inGame((gameName, game) => {
     if (game.bidding) {
       const current = game.players[game.whoseTurn]
       if (current) {
@@ -556,11 +560,9 @@ io.on('connection', socket => {
       console.log(`error: ${socket.playerName} in ${gameName} tried bidding out of phase`)
       socket.emit('errorMsg', 'Error: bidding is not currently possible')
     }
-  })
+  }))
 
-  socket.on('kittyRequest', data => {
-    const gameName = socket.gameName
-    const game = games[gameName]
+  socket.on('kittyRequest', data => inGame((gameName, game) => {
     if (game.selectKitty) {
       const current = game.players[game.whoseTurn]
       if (current) {
@@ -619,11 +621,9 @@ io.on('connection', socket => {
       console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of phase`)
       socket.emit('errorMsg', `Error: taking from ${data.from} is not currently possible`)
     }
-  })
+  }))
 
-  socket.on('playRequest', index => {
-    const gameName = socket.gameName
-    const game = games[gameName]
+  socket.on('playRequest', index => inGame((gameName, game) => {
     if (game.playing && game.trick) {
       const current = game.players[game.whoseTurn]
       if (current) {
@@ -746,11 +746,9 @@ io.on('connection', socket => {
       console.log(`error: ${socket.playerName} in ${gameName} tried playing out of phase`)
       socket.emit('errorMsg', `Error: playing is not currently possible`)
     }
-  })
+  }))
 
-  socket.on('trickRequest', data => {
-    const gameName = socket.gameName
-    const game = games[gameName]
+  socket.on('trickRequest', data => inGame((gameName, game) => {
     if (game.playing) {
       const player = game.players.find(player => player.name === data.playerName)
       if (player) {
@@ -772,7 +770,7 @@ io.on('connection', socket => {
       console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick out of phase`)
       socket.emit('errorMsg', `Error: toggling a trick is not currently possible`)
     }
-  })
+  }))
 
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
