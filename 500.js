@@ -514,22 +514,29 @@ io.on('connection', socket => {
   }))
 
   socket.on('startGame', () => inGame((gameName, game) => {
-    if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
-      console.log(`starting ${gameName}`)
-      game.started = true
-      game.log = []
-      game.players = game.seats.map(seat => seat.player)
-      game.teamNames = [`${game.players[0].name} & ${game.players[2].name}`,
-                        `${game.players[1].name} & ${game.players[3].name}`]
-      game.total = [0, 0]
-      game.rounds = []
-      game.dealer = Math.floor(Math.random() * 4)
-      io.in(gameName).emit('gameStarted')
-      appendLog(gameName, 'The game begins!')
-      startRound(gameName)
+    if (!game.started) {
+      if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
+        console.log(`starting ${gameName}`)
+        game.started = true
+        game.log = []
+        game.players = game.seats.map(seat => seat.player)
+        delete game.seats
+        game.teamNames = [`${game.players[0].name} & ${game.players[2].name}`,
+                          `${game.players[1].name} & ${game.players[3].name}`]
+        game.total = [0, 0]
+        game.rounds = []
+        game.dealer = Math.floor(Math.random() * 4)
+        io.in(gameName).emit('gameStarted')
+        appendLog(gameName, 'The game begins!')
+        startRound(gameName)
+      }
+      else {
+        socket.emit('errorMsg', '4 seated players required to start the game')
+      }
     }
     else {
-      socket.emit('errorMsg', '4 seated players required to start the game')
+      console.log(`${socket.playerName} attempted to start ${gameName} again`)
+      socket.emit('errorMsg', `Error: ${gameName} has already started`)
     }
   }))
 
