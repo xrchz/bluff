@@ -41,7 +41,21 @@ function randomUnusedGameName() {
   return name
 }
 
-const games = {}
+const saveFile = 'games.json'
+
+const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
+
+function saveGames() {
+  let toSave = {}
+  for(const [gameName, game] of Object.entries(games)) {
+    if (game.started) { toSave[gameName] = game }
+  }
+  fs.writeFileSync(saveFile,
+    JSON.stringify(
+      toSave,
+      (k, v) => k === 'socketId' ? null :
+                k === 'spectators' ? [] : v))
+}
 
 const Ten   = 10
 const Jack  = 11
@@ -771,6 +785,7 @@ io.on('connection', socket => {
                       checkEnd(gameName)
                       if (game.ended) {
                         io.in(gameName).emit('updatePlayers', game.players)
+                        delete game.trick
                         delete game.kitty
                         io.in(gameName).emit('updateKitty')
                       }
@@ -871,3 +886,6 @@ io.on('connection', socket => {
     console.log("active games: " + Object.keys(games).join(', '))
   })
 })
+
+process.on('SIGINT', () => { saveGames(); process.exit() })
+process.on('uncaughtExceptionMonitor', saveGames)
