@@ -213,6 +213,7 @@ socket.on('updatePlayers', players => {
 
 socket.on('updateKitty', data => {
   kittyDiv.innerHTML = ''
+  if (!data) { return }
   const div = kittyDiv.appendChild(document.createElement('div'))
   div.classList.add('cards')
   if (spectateInput.checked) {
@@ -291,42 +292,37 @@ socket.on('updateSpectators', spectators => {
   }
 })
 
-socket.on('updateScore', data => {
+socket.on('initScore', teamNames => {
   scoreTable.innerHTML = ''
-  if (data.rounds.length) {
-    let elem = fragment.appendChild(document.createElement('thead'))
-    elem = elem.appendChild(document.createElement('tr'))
-    elem.appendChild(document.createElement('th')).textContent = 'Round'
-    elem.appendChild(document.createElement('th')).textContent = 'Contractor'
-    elem.appendChild(document.createElement('th')).textContent = 'Contract'
-    elem.appendChild(document.createElement('th')).textContent = 'Tricks'
-    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[0]} Score`
-    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[1]} Score`
-    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[0]} Total`
-    elem.appendChild(document.createElement('th')).textContent = `${data.teamNames[1]} Total`
-    let totals = [0, 0]
-    for (let i = 0; i < data.rounds.length; i++) {
-      const round = data.rounds[i]
-      const contractorTeam = round.contractorIndex % 2
-      const scores = contractorTeam ? [round.opponentScore, round.score] : [round.score, round.opponentScore]
-      totals[0] += scores[0]
-      totals[1] += scores[1]
-      elem = fragment.appendChild(document.createElement('tr'))
-      elem.appendChild(document.createElement('th')).textContent = (i + 1).toString()
-      elem.appendChild(document.createElement('td')).textContent = round.contractorName
-      const contract = document.createElement('span')
-      contract.classList.add('bids')
-      if (round.contract.cls) { contract.classList.add(round.contract.cls) }
-      contract.textContent = round.contract.formatted
-      elem.appendChild(document.createElement('td')).appendChild(contract)
-      elem.appendChild(document.createElement('td')).textContent = round.tricksMade.toString()
-      elem.appendChild(document.createElement('td')).textContent = scores[0]
-      elem.appendChild(document.createElement('td')).textContent = scores[1]
-      elem.appendChild(document.createElement('td')).textContent = totals[0]
-      elem.appendChild(document.createElement('td')).textContent = totals[1]
-    }
-    scoreTable.appendChild(fragment)
-  }
+  let elem = fragment.appendChild(document.createElement('thead'))
+  elem = elem.appendChild(document.createElement('tr'))
+  elem.appendChild(document.createElement('th')).textContent = 'Round'
+  elem.appendChild(document.createElement('th')).textContent = 'Contractor'
+  elem.appendChild(document.createElement('th')).textContent = 'Contract'
+  elem.appendChild(document.createElement('th')).textContent = 'Tricks'
+  elem.appendChild(document.createElement('th')).textContent = `${teamNames[0]} Score`
+  elem.appendChild(document.createElement('th')).textContent = `${teamNames[1]} Score`
+  elem.appendChild(document.createElement('th')).textContent = `${teamNames[0]} Total`
+  elem.appendChild(document.createElement('th')).textContent = `${teamNames[1]} Total`
+  scoreTable.appendChild(fragment)
+  errorMsg.innerHTML = ''
+})
+
+socket.on('appendScore', data => {
+  const elem = fragment.appendChild(document.createElement('tr'))
+  elem.appendChild(document.createElement('th')).textContent = data.round.toString()
+  elem.appendChild(document.createElement('td')).textContent = data.contractor
+  const contract = document.createElement('span')
+  contract.classList.add('bids')
+  if (data.contract.cls) { contract.classList.add(data.contract.cls) }
+  contract.textContent = data.contract.formatted
+  elem.appendChild(document.createElement('td')).appendChild(contract)
+  elem.appendChild(document.createElement('td')).textContent = data.tricks.toString()
+  elem.appendChild(document.createElement('td')).textContent = data.score[0]
+  elem.appendChild(document.createElement('td')).textContent = data.score[1]
+  elem.appendChild(document.createElement('td')).textContent = data.total[0]
+  elem.appendChild(document.createElement('td')).textContent = data.total[1]
+  scoreTable.appendChild(fragment)
   errorMsg.innerHTML = ''
 })
 
