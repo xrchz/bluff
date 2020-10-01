@@ -321,6 +321,79 @@ function checkEnd(gameName) {
   }
 }
 
+const stateKeys = {
+  game: [
+    'players', 'teamNames', 'total',
+    'started', 'dealer',
+    'bidding', 'whoseTurn', 'lastBidder',
+    'selectKitty', 'kitty',
+    'playing', 'leader', 'trick',
+    'ended'
+  ],
+  teamNames: true,
+  total: true,
+  kitty: true,
+  trick: true,
+  players: [
+    'current',
+    'validBids', 'lastBid', 'contract',
+    'selecting',
+    'validPlays', 'hand', 'tricks'
+  ],
+  contract: true,
+  validBids: true,
+  validPlays: true,
+  hand: true
+}
+
+function copy(keys, from, to, restore) {
+  for (const key of keys) {
+    if (key in from) {
+      if (stateKeys[key] === true) {
+        to[key] = JSON.parse(JSON.stringify(from[key]))
+      }
+      else if (key === 'players') {
+        if (!restore) {
+          to.players = [{}, {}, {}, {}]
+        }
+        for (let i = 0; i < 4; i++) {
+          copy(stateKeys.players, from.players[i], to.players[i], restore)
+        }
+      }
+      else if (stateKeys[key]) {
+        if (!restore || !(key in to)) {
+          to[key] = {}
+        }
+        copy(stateKeys[key], from[key], to[key], restore)
+      }
+      else if (key === 'tricks') {
+        if (restore) {
+          to.tricks.length = from.tricks
+        }
+        else {
+          to.tricks = from.tricks.length
+        }
+      }
+      else {
+        to[key] = from[key]
+      }
+    }
+    else if (restore && key in to) {
+      delete to[key]
+    }
+  }
+}
+
+function appendUndo(gameName) {
+  const game = games[gameName]
+  const entry = {}
+  copy(stateKeys.game, game, entry)
+  entry.logLength = game.log.length
+  entry.roundsLength = game.rounds.length
+  game.undoLog.push(entry)
+  io.in(gameName).emit('showUndo', true)
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -394,7 +467,7 @@ io.on('connection', socket => {
           let kitty = { kitty: game.kitty }
           if (player.contract && game.selectKitty) {
             kitty.contractorName = player.name,
-            kitty.contractorIndex = game.players.findIndex(player => player.name === socket.playerName)
+            kitty.contractorIndex = game.lastBidder
           }
           socket.emit('updateKitty', kitty)
           if (game.trick) {
@@ -404,6 +477,9 @@ io.on('connection', socket => {
             socket.emit('appendLog', entry)
           }
           restoreScore(socket, game.teamNames, game.rounds, game.players)
+          if (game.undoLog.length) {
+            socket.emit('showUndo', true)
+          }
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in other rooms`)
@@ -452,6 +528,33 @@ io.on('connection', socket => {
       socket.emit('errorMsg', `Game ${gameName} not found`)
     }
   }
+
+  socket.on('undoRequest', () => inGame((gameName, game) => {
+    if (game.started && game.undoLog.length) {
+      const entry = game.undoLog.pop()
+      copy(stateKeys.game, entry, game, true)
+      io.in(gameName).emit('updatePlayers', game.players)
+      let kitty = { kitty: game.kitty }
+      if (game.selectKitty) {
+        kitty.contractorName = game.players[game.lastBidder].name,
+        kitty.contractorIndex = game.lastBidder
+      }
+      io.in(gameName).emit('updateKitty', kitty)
+      if (game.trick) {
+        io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+      }
+      io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
+      game.log.length = entry.logLength
+      game.rounds.length = entry.roundsLength
+      if (!game.undoLog.length) {
+        io.in(gameName).emit('showUndo', false)
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
+      socket.emit('errorMsg', 'Error: there is nothing to undo')
+    }
+  }))
 
   socket.on('sitHere', data => inGame((gameName, game) => {
     if (!game.started) {
@@ -532,6 +635,7 @@ io.on('connection', socket => {
       if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
         console.log(`starting ${gameName}`)
         game.started = true
+        game.undoLog = []
         game.log = []
         game.players = game.seats.map(seat => seat.player)
         delete game.seats
@@ -560,6 +664,7 @@ io.on('connection', socket => {
       if (current) {
         if (current.name === socket.playerName && current.current) {
           if (current.validBids && (bid.pass || current.validBids.find(b => b.n === bid.n && b.suit === b.suit))) {
+            appendUndo(gameName)
             delete current.validBids
             delete current.current
             current.lastBid = bid
@@ -639,6 +744,7 @@ io.on('connection', socket => {
               const trump = current.contract.suit
               const fromTo = data.from === 'hand' ? [current.hand, game.kitty] : [game.kitty, current.hand]
               if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
+                appendUndo(gameName)
                 const removed = fromTo[0].splice(data.index, 1)[0]
                 fromTo[1].push(removed)
                 fromTo[1].sort(byEffective)
@@ -654,6 +760,7 @@ io.on('connection', socket => {
               }
             }
             else {
+              appendUndo(gameName)
               appendLog(gameName, `${current.name} exchanges with the kitty.`)
               delete game.selectKitty
               delete current.selecting
@@ -698,6 +805,7 @@ io.on('connection', socket => {
           if (current.validPlays) {
             if (current.validPlays === true && Number.isInteger(index) && 0 <= index && index < current.hand.length ||
                 current.validPlays.includes(index)) {
+              appendUndo(gameName)
               delete current.validPlays
               delete current.current
               const played = current.hand.splice(index, 1)[0]
@@ -782,10 +890,10 @@ io.on('connection', socket => {
                     const promise = new Promise(resolve => setTimeout(resolve, 2000))
                     promise.then(() => {
                       game.players.forEach(player => delete player.tricks)
+                      delete game.trick
                       checkEnd(gameName)
                       if (game.ended) {
                         io.in(gameName).emit('updatePlayers', game.players)
-                        delete game.trick
                         delete game.kitty
                         io.in(gameName).emit('updateKitty')
                       }

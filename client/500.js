@@ -7,6 +7,7 @@ const errorMsg = document.getElementById('errorMsg')
 const log = document.getElementById('log')
 const joinButton = document.getElementById('join')
 const startButton = document.getElementById('start')
+const undoButton = document.getElementById('undo')
 const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
@@ -68,6 +69,10 @@ joinButton.onclick = () => {
     spectate: spectateInput.checked
   })
 }
+
+startButton.onclick = () => { socket.emit('startGame') }
+
+undoButton.onclick = () => { socket.emit('undoRequest') }
 
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
@@ -326,8 +331,6 @@ socket.on('appendScore', data => {
   errorMsg.innerHTML = ''
 })
 
-startButton.onclick = () => { socket.emit('startGame') }
-
 socket.on('gameStarted', () => {
   startButton.parentNode.removeChild(startButton)
   log.hidden = false
@@ -340,6 +343,22 @@ socket.on('appendLog', markup => {
   log.appendChild(li)
   li.scrollIntoView(false)
   errorMsg.innerHTML = ''
+})
+
+socket.on('removeLog', n => {
+  while(n-- > 0) {
+    log.removeChild(log.lastElementChild)
+  }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('showUndo', show => {
+  if (!show) {
+    undoButton.hidden = true
+  }
+  else if (!spectateInput.checked) {
+    undoButton.hidden = false
+  }
 })
 
 socket.on('errorMsg', msg => {
