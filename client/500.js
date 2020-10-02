@@ -327,7 +327,6 @@ socket.on('appendScore', data => {
   elem.appendChild(document.createElement('th')).textContent = data.round.toString()
   elem.appendChild(document.createElement('td')).textContent = data.contractor
   const contract = document.createElement('span')
-  contract.classList.add('bids')
   if (data.contract.cls) { contract.classList.add(data.contract.cls) }
   contract.textContent = data.contract.formatted
   elem.appendChild(document.createElement('td')).appendChild(contract)
