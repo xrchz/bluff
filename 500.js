@@ -367,12 +367,10 @@ function copy(keys, from, to, restore) {
         copy(stateKeys[key], from[key], to[key], restore)
       }
       else if (key === 'tricks') {
-        if (restore) {
-          to.tricks.length = from.tricks
-        }
-        else {
-          to.tricks = from.tricks.length
-        }
+        const func = restore ?
+          (cards => ({ cards: JSON.parse(JSON.stringify(cards)), open: false })) :
+          (trick => JSON.parse(JSON.stringify(trick.cards)))
+        to.tricks = from.tricks.map(func)
       }
       else {
         to[key] = from[key]
