@@ -338,7 +338,7 @@ const stateKeys = {
   kitty: true,
   trick: true,
   players: [
-    'current',
+    'current', 'open', 'dummy',
     'validBids', 'lastBid', 'contract',
     'selecting',
     'validPlays', 'hand', 'tricks'
@@ -767,8 +767,14 @@ io.on('connection', socket => {
               delete game.selectKitty
               delete current.selecting
               // TODO: nominate joker suit if possible and desired
-              // TODO: mark contractor's partner as open if misere
-              // TODO: mark contractor as open if open misere
+              if (current.contract.suit === Misere) {
+                const partner = game.players[opposite(game.whoseTurn)]
+                partner.open = true
+                partner.dummy = true
+                if (current.contract.n === 10) {
+                  current.open = true
+                }
+              }
               game.playing = true
               game.players.forEach(player => player.tricks = [])
               current.validPlays = true
@@ -802,14 +808,17 @@ io.on('connection', socket => {
   socket.on('playRequest', index => inGame((gameName, game) => {
     if (game.playing && game.trick) {
       const current = game.players[game.whoseTurn]
-      if (current) {
-        if (current.name === socket.playerName && current.current) {
+      const partner = game.players[opposite(game.whoseTurn)]
+      if (current && partner) {
+        if (current.name === socket.playerName && current.current ||
+            current.dummy && partner.name === socket.playerName && partner.current) {
           if (current.validPlays) {
             if (current.validPlays === true && Number.isInteger(index) && 0 <= index && index < current.hand.length ||
                 current.validPlays.includes(index)) {
               appendUndo(gameName)
               delete current.validPlays
               delete current.current
+              delete partner.current
               const played = current.hand.splice(index, 1)[0]
               game.trick.push(played)
               appendLog(gameName, `${current.name} plays ${played.formatted.chr}.`)
@@ -821,7 +830,12 @@ io.on('connection', socket => {
               if (game.trick.length < 4) {
                 game.whoseTurn = clockwise(game.whoseTurn)
                 const next = game.players[game.whoseTurn]
-                next.current = true
+                if (next.dummy) {
+                  game.players[opposite(game.whoseTurn)].current = true
+                }
+                else {
+                  next.current = true
+                }
                 if (next.hand.some(c => c.effectiveSuit === calling)) {
                   next.validPlays = []
                   next.hand.forEach((c, i) => { if (c.effectiveSuit === calling) { next.validPlays.push(i) } })
@@ -853,8 +867,12 @@ io.on('connection', socket => {
                 if (current.hand.length) {
                   game.leader = winningIndex
                   game.whoseTurn = winningIndex
-                  // TODO: handle misere case where next turn may be winner's partner
-                  winner.current = true
+                  if (winner.dummy) {
+                    game.players[opposite(winningIndex)].current = true
+                  }
+                  else {
+                    winner.current = true
+                  }
                   winner.validPlays = true
                   const promise = new Promise(resolve => setTimeout(resolve, 1500))
                   promise.then(() => {
@@ -870,8 +888,13 @@ io.on('connection', socket => {
                     delete game.playing
                     const contract = contractor.contract
                     delete contractor.contract
-                    const contractTricks = contractor.tricks.length +
-                      game.players[opposite(game.lastBidder)].tricks.length
+                    const contractorPartner = game.players[opposite(game.lastBidder)]
+                    if (contract.suit === Misere) {
+                      delete contractor.open
+                      delete contractorPartner.open
+                      delete contractorPartner.dummy
+                    }
+                    const contractTricks = contractor.tricks.length + contractorPartner.tricks.length
                     if (!game.rounds.length) {
                       io.in(gameName).emit('initScore', game.teamNames)
                     }

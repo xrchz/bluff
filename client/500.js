@@ -138,6 +138,7 @@ socket.on('updatePlayers', players => {
   for (let i = 0; i < 4; i++) {
     const div = seatDivs[i]
     const player = players[i]
+    const partner = players[(i + 2) % 4]
     div.innerHTML = ''
     let elem
     elem = document.createElement('div')
@@ -155,10 +156,13 @@ socket.on('updatePlayers', players => {
     elem = document.createElement('div')
     fragment.appendChild(elem)
     elem.classList.add('cards')
-    if (player.name === nameInput.value || spectateInput.checked) {
+    if (player.name === nameInput.value ||
+        spectateInput.checked ||
+        player.open && (player.dummy || player.hand.length < 10)) {
+      const playableBase = !spectateInput.checked && player.validPlays &&
+        (!player.dummy || partner.name === nameInput.value)
       for (let i = 0; i < player.hand.length; i++) {
-        const playable = !spectateInput.checked && player.validPlays &&
-          (player.validPlays === true || player.validPlays.includes(i))
+        const playable = playableBase && (player.validPlays === true || player.validPlays.includes(i))
         const c = player.hand[i].formatted
         const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
         a.textContent = c.chr
