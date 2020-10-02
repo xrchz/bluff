@@ -1017,6 +1017,8 @@ io.on('connection', socket => {
     }
     console.log("active games: " + Object.keys(games).join(', '))
   })
+
+  socket.on('saveGames', saveGames)
 })
 
 process.on('SIGINT', () => { saveGames(); process.exit() })
