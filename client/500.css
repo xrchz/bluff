@@ -67,9 +67,17 @@ ul.inline > li {
   justify-content: center;
   align-items: center;
 }
-.bids > a:hover, .cards > a:hover {
+.bids > a:hover, .cards > a:hover, a.joker:hover {
   cursor: pointer;
   background-color: MediumSeaGreen;
+}
+.joker {
+  position: relative;
+}
+.joker > span {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0)
 }
 #playArea {
   display: flex;

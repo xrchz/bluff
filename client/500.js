@@ -160,14 +160,27 @@ socket.on('updatePlayers', players => {
         spectateInput.checked ||
         player.open && (player.dummy || players.every(p => p.hand.length < 10))) {
       const playableBase = !spectateInput.checked && player.validPlays &&
-        (!player.dummy || partner.name === nameInput.value)
+        (player.dummy ? partner.name : player.name) === nameInput.value
       for (let i = 0; i < player.hand.length; i++) {
         const playable = playableBase && (player.validPlays === true || player.validPlays.includes(i))
-        const c = player.hand[i].formatted
-        const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
-        a.textContent = c.chr
-        if (c.cls) { a.classList.add(c.cls) }
-        if (playable) { a.onclick = () => { socket.emit('playRequest', i) } }
+        const h = player.hand[i]
+        const c = h.formatted
+        if (playable && h.rank === 15 && player.restrictJokers) {
+          for (const j of player.restrictJokers) {
+            const a = elem.appendChild(document.createElement('a'))
+            a.textContent = c.chr
+            a.appendChild(document.createElement('span')).textContent = j.chr
+            a.classList.add('joker')
+            a.classList.add(j.cls)
+            a.onclick = () => { socket.emit('playRequest', { index: i, jsuit: j.suit }) }
+          }
+        }
+        else {
+          const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
+          a.textContent = c.chr
+          if (c.cls) { a.classList.add(c.cls) }
+          if (playable) { a.onclick = () => { socket.emit('playRequest', { index: i }) } }
+        }
       }
     }
     else {
@@ -204,6 +217,11 @@ socket.on('updatePlayers', players => {
           for (const c of trick.cards) {
             const a = t.appendChild(document.createElement('a'))
             a.textContent = c.formatted.chr
+            if (c.formatted.chr.length > 2) {
+              a.classList.add('joker')
+              a.textContent = a.textContent.slice(0, -1)
+              a.appendChild(document.createElement('span')).textContent = c.formatted.chr[2]
+            }
             if (c.formatted.cls) { a.classList.add(c.formatted.cls) }
             a.onclick = () => { socket.emit('trickRequest', { open: false, index: i, playerName: player.name }) }
           }
@@ -274,6 +292,11 @@ socket.on('updateTrick', data => {
       const c = data.trick[i].formatted
       const elem = div.appendChild(document.createElement('span'))
       elem.textContent = c.chr
+      if (c.chr.length > 2) {
+        elem.classList.add('joker')
+        elem.textContent = c.chr.slice(0, -1)
+        elem.appendChild(document.createElement('span')).textContent = c.chr[2]
+      }
       if (c.cls) { elem.classList.add(c.cls) }
     }
   }

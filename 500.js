@@ -73,6 +73,7 @@ const Misere = 3.5
 const Hearts = 4
 const NoTrumps = 5
 const TrumpSuit = 6
+const JokerSuit = 7
 
 const sameColour = (s1, s2) =>
   s1 + s2 === 3 || s1 + s2 === 7
@@ -105,7 +106,7 @@ function makeDeck() {
        effectiveRank: rank,  effectiveSuit: suit })
     }
   }
-  deck.push({ rank: Joker, effectiveRank: Joker, effectiveSuit: TrumpSuit })
+  deck.push({ rank: Joker, suit: JokerSuit, effectiveRank: Joker, effectiveSuit: JokerSuit })
   return deck
 }
 
@@ -130,6 +131,7 @@ function setEffective(trump) {
         }
       }
       else if (c.rank === Joker) {
+        c.suit = trump
         c.effectiveSuit = trump
       }
       if (c.effectiveSuit === trump) { c.effectiveSuit = TrumpSuit }
@@ -175,29 +177,42 @@ function deal(game) {
   sortAndFormat(game.kitty, NoTrumps)
 }
 
+const suitCls = suit =>
+  suit === Spades   ? 'spades'   :
+  suit === Clubs    ? 'clubs'    :
+  suit === Diamonds ? 'diamonds' :
+  suit === Hearts   ? 'hearts'   : null
+
+const suitChr = suit =>
+  suit === Spades   ? '♠' :
+  suit === Clubs    ? '♣' :
+  suit === Diamonds ? '♦' :
+  suit === Hearts   ? '♥' : ''
+
 function formatCard(c, trump) {
-  if (trump === Misere) { trump = NoTrumps }
-  let suit = c.effectiveSuit
-  if (suit === TrumpSuit) { suit = trump < NoTrumps ? trump : c.suit }
   let chr
   if (c.rank === Joker) {
     chr = '\u{1F0DF}'
   }
   else {
     let codepoint = 0x1F000
-    codepoint += c.suit === Spades ? 0xA0 :
-      c.suit === Hearts ? 0xB0 :
+    codepoint +=
+      c.suit === Spades   ? 0xA0 :
+      c.suit === Hearts   ? 0xB0 :
       c.suit === Diamonds ? 0xC0 :
-      c.suit === Clubs ? 0xD0 : 0xE0
+      c.suit === Clubs    ? 0xD0 : 0
     codepoint += c.rank === Ace ? 1 :
       c.rank <= Jack ? c.rank : c.rank + 1
     chr = String.fromCodePoint(codepoint)
   }
-  const cls = suit === Spades   ? 'spades'   :
-    suit === Clubs    ? 'clubs'    :
-    suit === Diamonds ? 'diamonds' :
-    suit === Hearts   ? 'hearts'   : null
-  return { chr: chr, cls: cls }
+  const suit = c.effectiveSuit === TrumpSuit ? trump : c.effectiveSuit
+  return { chr: chr, cls: suitCls(suit) }
+}
+
+function reformatJoker(c, jsuit) {
+  c.formatted.cls = suitCls(jsuit)
+  c.formatted.chr += suitChr(jsuit)
+  c.effectiveSuit = jsuit
 }
 
 function formatBid(b) {
@@ -329,22 +344,24 @@ const stateKeys = {
     'started', 'dealer',
     'bidding', 'whoseTurn', 'lastBidder',
     'selectKitty', 'kitty',
-    'playing', 'leader', 'trick',
+    'playing', 'leader', 'trick', 'unledSuits',
     'ended'
   ],
   teamNames: true,
   total: true,
   kitty: true,
   trick: true,
+  unledSuits: true,
   players: [
     'current', 'open', 'dummy',
     'validBids', 'lastBid', 'contract',
     'selecting',
-    'validPlays', 'hand', 'tricks'
+    'validPlays', 'restrictJokers', 'hand', 'tricks'
   ],
   contract: true,
   validBids: true,
   validPlays: true,
+  restrictJokers: true,
   hand: true
 }
 
@@ -775,6 +792,7 @@ io.on('connection', socket => {
               }
               game.playing = true
               game.players.forEach(player => player.tricks = [])
+              game.unledSuits = [Spades, Clubs, Diamonds, Hearts]
               current.validPlays = true
               game.leader = game.whoseTurn
               game.trick = []
@@ -803,7 +821,7 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('playRequest', index => inGame((gameName, game) => {
+  socket.on('playRequest', data => inGame((gameName, game) => {
     if (game.playing && game.trick) {
       const current = game.players[game.whoseTurn]
       const partner = game.players[opposite(game.whoseTurn)]
@@ -811,13 +829,18 @@ io.on('connection', socket => {
         if (current.name === socket.playerName && current.current ||
             current.dummy && partner.name === socket.playerName && partner.current) {
           if (current.validPlays) {
-            if (current.validPlays === true && Number.isInteger(index) && 0 <= index && index < current.hand.length ||
-                current.validPlays.includes(index)) {
+            if ((current.validPlays === true &&
+                 Number.isInteger(data.index) && 0 <= data.index && data.index < current.hand.length ||
+                 current.validPlays.includes(data.index)) &&
+                (current.hand[data.index].effectiveRank !== Joker || !current.restrictJokers ||
+                 current.restrictJokers.find(j => j.suit === data.jsuit))) {
               appendUndo(gameName)
               delete current.validPlays
+              delete current.restrictJokers
               delete current.current
               delete partner.current
-              const played = current.hand.splice(index, 1)[0]
+              const played = current.hand.splice(data.index, 1)[0]
+              if (data.jsuit) reformatJoker(played, data.jsuit)
               game.trick.push(played)
               appendLog(gameName, `${current.name} plays ${played.formatted.chr}.`)
               io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
@@ -825,6 +848,9 @@ io.on('connection', socket => {
               const contractor = game.players[game.lastBidder]
               const trump = contractor.contract.suit
               const calling = game.trick[0].effectiveSuit
+              if (trump === Misere || trump === NoTrumps) {
+                game.unledSuits = game.unledSuits.filter(s => s !== played.effectiveSuit)
+              }
               if (game.trick.length < 4) {
                 game.whoseTurn = clockwise(game.whoseTurn)
                 const next = game.players[game.whoseTurn]
@@ -838,6 +864,16 @@ io.on('connection', socket => {
                   next.validPlays = []
                   next.hand.forEach((c, i) => { if (c.effectiveSuit === calling) { next.validPlays.push(i) } })
                 }
+                else if (trump === Misere) {
+                  const jokerIndex = next.hand.findIndex(c =>
+                    c.effectiveRank === Joker && c.effectiveSuit === JokerSuit)
+                  if (0 <= jokerIndex) {
+                    next.validPlays = [jokerIndex]
+                  }
+                  else {
+                    next.validPlays = true
+                  }
+                }
                 else {
                   next.validPlays = true
                 }
@@ -848,11 +884,12 @@ io.on('connection', socket => {
                 for (let i = 1; i < 4; i++) {
                   const currentCard = game.trick[i]
                   const winningCard = game.trick[winningIndex]
-                  if ((currentCard.effectiveSuit === TrumpSuit &&
+                  if ((currentCard.effectiveSuit === JokerSuit) ||
+                      (currentCard.effectiveSuit === TrumpSuit &&
                         (winningCard.effectiveSuit !== TrumpSuit ||
                          winningCard.effectiveRank < currentCard.effectiveRank)) ||
                       (currentCard.effectiveSuit === calling &&
-                        (winningCard.effectiveSuit !== calling && winningCard.effectiveSuit !== TrumpSuit ||
+                        (winningCard.effectiveSuit !== calling && winningCard.effectiveSuit < TrumpSuit ||
                          winningCard.effectiveSuit === calling && winningCard.effectiveRank < currentCard.effectiveRank))) {
                     winningIndex = i
                   }
@@ -868,6 +905,11 @@ io.on('connection', socket => {
                   game.whoseTurn = winningIndex
                   winner.current = true
                   winner.validPlays = true
+                  if ((trump === Misere || trump === NoTrumps) &&
+                      winner.hand.find(c => c.effectiveRank === Joker) &&
+                      current.hand.length > 1) {
+                    winner.restrictJokers = game.unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
+                  }
                   const promise = new Promise(resolve => setTimeout(resolve, 1500))
                   promise.then(() => {
                     io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
@@ -910,6 +952,7 @@ io.on('connection', socket => {
                     promise.then(() => {
                       game.players.forEach(player => delete player.tricks)
                       delete game.trick
+                      delete game.unledSuits
                       checkEnd(gameName)
                       if (game.ended) {
                         io.in(gameName).emit('updatePlayers', game.players)
