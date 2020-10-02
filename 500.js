@@ -743,7 +743,6 @@ io.on('connection', socket => {
         if (current.name === socket.playerName && current.current && current.selecting) {
           if (current.contract) {
             if (!data.done) {
-              const trump = current.contract.suit
               const fromTo = data.from === 'hand' ? [current.hand, game.kitty] : [game.kitty, current.hand]
               if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
                 appendUndo(gameName)
