@@ -207,10 +207,10 @@ function formatBid(b) {
   }
   else if (b.suit === Misere) {
     if (b.n < 10) {
-      b.formatted = 'Misere'
+      b.formatted = 'Mis'
     }
     else {
-      b.formatted = 'Open Misere'
+      b.formatted = 'OMis'
     }
   }
   else {
