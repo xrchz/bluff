@@ -290,8 +290,8 @@ function restoreScore(room, teamNames, rounds, players) {
     for (let i = 0; i < rounds.length; i++) {
       const round = rounds[i]
       const score = calculateScore(round.contract, round.tricksMade).score
-      for (const i of [0, 1]) { total[i] += score[i] }
       if (round.contractorIndex % 2) { score.push(score.shift()) }
+      for (const i of [0, 1]) { total[i] += score[i] }
       io.in(room).emit('appendScore', {
         round: i+1,
         contractor: players[round.contractorIndex].name,
