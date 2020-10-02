@@ -83,9 +83,8 @@ const contractValue = c =>
     (c.n - 6) * 100 + (c.suit + 1) * 20
 
 function calculateScore(contract, contractTricks) {
-  const opponentTricks = 10 - contractTricks
   const contractMade = contract.suit === Misere ? contractTricks === 0 : contractTricks >= contract.n
-  const opponentScore = contract.suit === Misere ? 0 : opponentTricks * 10
+  const opponentScore = contract.suit === Misere ? 0 : (10 - contractTricks) * 10
   const contractScore = contractMade ?
     (contractTricks === 10 ? Math.min(250, contractValue(contract)) : contractValue(contract)) :
     -contractValue(contract)
@@ -860,18 +859,14 @@ io.on('connection', socket => {
                 }
                 winningIndex = (game.leader + winningIndex) % 4
                 const winner = game.players[winningIndex]
+                const winnerPartner = game.players[opposite(winningIndex)]
                 winner.tricks.push({ cards: game.trick, open: false })
                 appendLog(gameName, `${winner.name} wins the trick.`)
                 game.trick = []
-                if (current.hand.length) {
+                if (current.hand.length && !winner.dummy && !winnerPartner.dummy) {
                   game.leader = winningIndex
                   game.whoseTurn = winningIndex
-                  if (winner.dummy) {
-                    game.players[opposite(winningIndex)].current = true
-                  }
-                  else {
-                    winner.current = true
-                  }
+                  winner.current = true
                   winner.validPlays = true
                   const promise = new Promise(resolve => setTimeout(resolve, 1500))
                   promise.then(() => {
