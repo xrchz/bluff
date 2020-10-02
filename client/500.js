@@ -158,7 +158,7 @@ socket.on('updatePlayers', players => {
     elem.classList.add('cards')
     if (player.name === nameInput.value ||
         spectateInput.checked ||
-        player.open && (player.dummy || player.hand.length < 10)) {
+        player.open && (player.dummy || players.every(p => p.hand.length < 10))) {
       const playableBase = !spectateInput.checked && player.validPlays &&
         (!player.dummy || partner.name === nameInput.value)
       for (let i = 0; i < player.hand.length; i++) {
