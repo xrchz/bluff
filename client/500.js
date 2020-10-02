@@ -297,6 +297,11 @@ socket.on('updateSpectators', spectators => {
   }
 })
 
+socket.on('removeScore', () => {
+  scoreTable.innerHTML = ''
+  errorMsg.innerHTML = ''
+})
+
 socket.on('initScore', teamNames => {
   scoreTable.innerHTML = ''
   let elem = fragment.appendChild(document.createElement('thead'))

@@ -284,16 +284,16 @@ function appendLog(gameName, entry) {
   io.in(gameName).emit('appendLog', entry)
 }
 
-function restoreScore(socket, teamNames, rounds, players) {
+function restoreScore(room, teamNames, rounds, players) {
   if (rounds.length) {
-    socket.emit('initScore', teamNames)
+    io.in(room).emit('initScore', teamNames)
     const total = [0, 0]
     for (let i = 0; i < rounds.length; i++) {
       const round = rounds[i]
       const score = calculateScore(round.contract, round.tricksMade).score
       for (const i of [0, 1]) { total[i] += score[i] }
       if (round.contractorIndex % 2) { score.push(score.shift()) }
-      socket.emit('appendScore', {
+      io.in(room).emit('appendScore', {
         round: i+1,
         contractor: players[round.contractorIndex].name,
         contract: round.contract,
@@ -302,6 +302,9 @@ function restoreScore(socket, teamNames, rounds, players) {
         total: total
       })
     }
+  }
+  else {
+    io.in(room).emit('removeScore')
   }
 }
 
@@ -442,7 +445,7 @@ io.on('connection', socket => {
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
-          restoreScore(socket, game.teamNames, game.rounds, game.players)
+          restoreScore(socket.id, game.teamNames, game.rounds, game.players)
         }
       }
       else {
@@ -474,7 +477,7 @@ io.on('connection', socket => {
           for (const entry of game.log) {
             socket.emit('appendLog', entry)
           }
-          restoreScore(socket, game.teamNames, game.rounds, game.players)
+          restoreScore(socket.id, game.teamNames, game.rounds, game.players)
           if (game.undoLog.length) {
             socket.emit('showUndo', true)
           }
@@ -544,6 +547,7 @@ io.on('connection', socket => {
       io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
       game.log.length = entry.logLength
       game.rounds.length = entry.roundsLength
+      restoreScore(gameName, game.teamNames, game.rounds, game.players)
       if (!game.undoLog.length) {
         io.in(gameName).emit('showUndo', false)
       }
