@@ -185,6 +185,11 @@ socket.on('updatePlayers', players => {
         else {
           const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
           a.textContent = c.chr
+          if (c.chr.length > 2) {
+            a.classList.add('joker')
+            a.textContent = a.textContent.slice(0, -1)
+            a.appendChild(document.createElement('span')).textContent = c.chr[2]
+          }
           if (c.cls) { a.classList.add(c.cls) }
           if (playable) { a.onclick = () => { socket.emit('playRequest', { index: i }) } }
         }
