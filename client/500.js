@@ -12,6 +12,7 @@ const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
 const kittyDiv = document.getElementById('kitty')
+const jokerDiv = document.getElementById('joker')
 const playerSouth = document.getElementById('playerSouth')
 const playerWest = document.getElementById('playerWest')
 const playerNorth = document.getElementById('playerNorth')
@@ -73,6 +74,12 @@ joinButton.onclick = () => {
 startButton.onclick = () => { socket.emit('startGame') }
 
 undoButton.onclick = () => { socket.emit('undoRequest') }
+
+for (let i = 0; i < jokerDiv.children.length; i++) {
+  jokerDiv.children[i].onclick = () => {
+    socket.emit('jokerRequest', i)
+  }
+}
 
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
@@ -390,6 +397,10 @@ socket.on('showUndo', show => {
   else if (!spectateInput.checked) {
     undoButton.hidden = false
   }
+})
+
+socket.on('showJoker', show => {
+  jokerDiv.hidden = !show
 })
 
 socket.on('errorMsg', msg => {

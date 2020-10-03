@@ -292,6 +292,31 @@ function startRound(gameName) {
   io.in(gameName).emit('updateKitty', { kitty: game.kitty })
 }
 
+function startPlaying(gameName) {
+  const game = games[gameName]
+  const contractor = game.players[game.lastBidder]
+  const trump = contractor.contract.suit
+  if (trump === Misere) {
+    const partner = game.players[opposite(game.lastBidder)]
+    partner.open = true
+    partner.dummy = true
+    if (contractor.contract.n === 10) {
+      contractor.open = true
+    }
+  }
+  game.playing = true
+  game.players.forEach(player => player.tricks = [])
+  game.unledSuits = [Spades, Clubs, Diamonds, Hearts]
+  contractor.validPlays = true
+  if ((trump === Misere || trump === NoTrumps) &&
+    contractor.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit)) {
+    contractor.restrictJokers = game.unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
+  }
+  game.leader = game.lastBidder
+  game.trick = []
+  io.in(gameName).emit('updatePlayers', game.players)
+}
+
 function appendLog(gameName, entry) {
   const game = games[gameName]
   game.log.push(entry)
@@ -343,7 +368,7 @@ const stateKeys = {
     'players', 'teamNames', 'total',
     'started', 'dealer',
     'bidding', 'whoseTurn', 'lastBidder',
-    'selectKitty', 'kitty',
+    'selectKitty', 'kitty', 'nominateJoker',
     'playing', 'leader', 'trick', 'unledSuits',
     'ended'
   ],
@@ -355,7 +380,7 @@ const stateKeys = {
   players: [
     'current', 'open', 'dummy',
     'validBids', 'lastBid', 'contract',
-    'selecting',
+    'selecting', 'nominating',
     'validPlays', 'restrictJokers', 'hand', 'tricks'
   ],
   contract: true,
@@ -487,6 +512,9 @@ io.on('connection', socket => {
             kitty.contractorIndex = game.lastBidder
           }
           socket.emit('updateKitty', kitty)
+          if (game.nominateJoker && player.nominating) {
+            socket.emit('showJoker', true)
+          }
           if (game.trick) {
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
           }
@@ -557,6 +585,11 @@ io.on('connection', socket => {
         kitty.contractorIndex = game.lastBidder
       }
       io.in(gameName).emit('updateKitty', kitty)
+      io.in(gameName).emit('showJoker', false)
+      if (game.nominateJoker) {
+        const player = game.players.find(p => p.nominating)
+        io.in(player.socketId).emit('showJoker', true)
+      }
       if (game.trick) {
         io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
       }
@@ -781,23 +814,16 @@ io.on('connection', socket => {
               appendLog(gameName, `${current.name} exchanges with the kitty.`)
               delete game.selectKitty
               delete current.selecting
-              // TODO: nominate joker suit if possible and desired
-              if (current.contract.suit === Misere) {
-                const partner = game.players[opposite(game.whoseTurn)]
-                partner.open = true
-                partner.dummy = true
-                if (current.contract.n === 10) {
-                  current.open = true
-                }
-              }
-              game.playing = true
-              game.players.forEach(player => player.tricks = [])
-              game.unledSuits = [Spades, Clubs, Diamonds, Hearts]
-              current.validPlays = true
-              game.leader = game.whoseTurn
-              game.trick = []
-              io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateKitty', { kitty: game.kitty })
+              if ((current.contract.suit === Misere || current.contract.suit === NoTrumps) &&
+                  current.hand.find(c => c.effectiveRank === Joker)) {
+                game.nominateJoker = true
+                current.nominating = true
+                socket.emit('showJoker', true)
+              }
+              else {
+                startPlaying(gameName)
+              }
             }
           }
           else {
@@ -818,6 +844,51 @@ io.on('connection', socket => {
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of phase`)
       socket.emit('errorMsg', `Error: taking from ${data.from} is not currently possible`)
+    }
+  }))
+
+  socket.on('jokerRequest', index => inGame((gameName, game) => {
+    if (game.nominateJoker) {
+      const current = game.players[game.whoseTurn]
+      if (current) {
+        if (current.name === socket.playerName && current.current && current.nominating) {
+          if (Number.isInteger(index) && 0 <= index && index < 5) {
+            const joker = current.hand.find(c => c.effectiveRank === Joker)
+            if (joker) {
+              if (index < 4) {
+                appendUndo(gameName)
+                reformatJoker(joker, index + 1)
+                current.hand.sort(byEffective)
+                appendLog(gameName, `${current.name} nominates joker suit ${joker.formatted.chr[2]}.`)
+              }
+              delete game.nominateJoker
+              delete current.nominating
+              socket.emit('showJoker', false)
+              startPlaying(gameName)
+            }
+            else {
+              console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker without it`)
+              socket.emit('errorMsg', `Error: you do not have the joker`)
+            }
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker with invalid index`)
+            socket.emit('errorMsg', `Error: invalid index for nominating joker suit`)
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker out of turn`)
+          socket.emit('errorMsg', `Error: it is not your turn to nominate the joker suit`)
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker but there is no current player`)
+        socket.emit('errorMsg', 'Error: could not find current player')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker out of phase`)
+      socket.emit('errorMsg', `Error: nominating joker suit is not currently possible`)
     }
   }))
 
@@ -906,7 +977,7 @@ io.on('connection', socket => {
                   winner.current = true
                   winner.validPlays = true
                   if ((trump === Misere || trump === NoTrumps) &&
-                      winner.hand.find(c => c.effectiveRank === Joker) &&
+                      winner.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit) &&
                       current.hand.length > 1) {
                     winner.restrictJokers = game.unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
                   }

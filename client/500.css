@@ -132,6 +132,9 @@ div.tricks {
   align-items: center;
   height: 100%;
 }
+#joker[hidden] {
+  display: none;
+}
 #rotate[hidden] {
   display: none;
 }
