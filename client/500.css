@@ -71,6 +71,9 @@ ul.inline > li {
   cursor: pointer;
   background-color: MediumSeaGreen;
 }
+.tricks > .cards > a:hover {
+  background-color: transparent;
+}
 .joker {
   position: relative;
 }
