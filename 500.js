@@ -990,6 +990,7 @@ io.on('connection', socket => {
                   const promise = new Promise(resolve => setTimeout(resolve, 1500))
                   promise.then(() => {
                     io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
+                    io.in(gameName).emit('updatePlayers', game.players)
                     delete game.leader
                     delete game.playing
                     const contract = contractor.contract
