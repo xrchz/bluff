@@ -258,7 +258,7 @@ function formatBid(b) {
 }
 
 function validBids(lastBid) {
-  const bids = []
+  const bids = [{ pass: true }]
   for (let n = 6; n <= 7; n++) {
     if (lastBid && lastBid.n > n) { continue }
     for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
@@ -281,7 +281,6 @@ function validBids(lastBid) {
     bids.push({ n: 10, trumps: trumps })
     if (trumps === Diamonds) { bids.push({ n: 10, trumps: Misere }) }
   }
-  bids.push({ pass: true })
   bids.forEach(formatBid)
   return bids
 }
@@ -294,6 +293,7 @@ function startRound(gameName) {
   game.whoseTurn = clockwise(game.dealer)
   game.players[game.whoseTurn].current = true
   game.players[game.whoseTurn].validBids = validBids()
+  game.players[game.whoseTurn].bidFilter = NoTrumps
   io.in(gameName).emit('updatePlayers', game.players)
   io.in(gameName).emit('updateKitty', { kitty: game.kitty })
 }
@@ -383,7 +383,7 @@ const stateKeys = {
   trick: true, unledSuits: true,
   players: [
     'current', 'open', 'dummy',
-    'validBids', 'lastBid', 'contract',
+    'validBids', 'bidFilter', 'lastBid', 'contract',
     'selecting', 'nominating',
     'validPlays', 'restrictJokers', 'hand', 'tricks'
   ],
@@ -710,14 +710,47 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('filterRequest', index => inGame((gameName, game) => {
+    if (game.bidding) {
+      const current = game.players[game.whoseTurn]
+      if (current) {
+        if (current.name === socket.playerName && current.current && current.bidFilter) {
+          if (Number.isInteger(index) && 0 <= index && index < 5) {
+            current.bidFilter = index + 1
+            sortAndFormat(current.hand, current.bidFilter)
+            socket.emit('updatePlayers', game.players)
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} tried filtering an invalid index`)
+            socket.emit('errorMsg', 'Error: that is not a valid bid filter')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} tried bid filter out of turn`)
+          socket.emit('errorMsg', 'Error: it is not your turn to bid filter')
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} tried bid filter but there is no current player`)
+        socket.emit('errorMsg', 'Error: could not find current player')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried bid filter out of phase`)
+      socket.emit('errorMsg', 'Error: bid filtering is not currently possible')
+    }
+  }))
+
   socket.on('bidRequest', bid => inGame((gameName, game) => {
     if (game.bidding) {
       const current = game.players[game.whoseTurn]
       if (current) {
         if (current.name === socket.playerName && current.current) {
-          if (current.validBids && (bid.pass || current.validBids.find(b => b.n === bid.n && b.trumps === bid.trumps))) {
+          if (current.validBids && (bid.pass || current.validBids.find(b => b.n === bid.n && b.trumps === bid.trumps)) &&
+              current.bidFilter && (bid.pass || bid.trumps === current.bidFilter || bid.trumps === Misere && current.bidFilter === NoTrumps)) {
             appendUndo(gameName)
             delete current.validBids
+            delete current.bidFilter
             delete current.current
             current.lastBid = bid
             if (!bid.pass) {
@@ -725,6 +758,7 @@ io.on('connection', socket => {
               appendLog(gameName, `${current.name} bids ${bid.formatted}.`)
             }
             else {
+              sortAndFormat(current.hand, NoTrumps)
               appendLog(gameName, `${current.name} passes.`)
             }
             let nextTurn = clockwise(game.whoseTurn)
@@ -737,7 +771,7 @@ io.on('connection', socket => {
             const lastBid = lastBidder ? lastBidder.lastBid : null
             if (nextTurn === game.whoseTurn && bid.pass) {
               appendLog(gameName, 'Bidding ends with no contract. Redealing...')
-              game.players.forEach(player => delete player.lastBid)
+              game.players.forEach(player => { delete player.lastBid; delete player.bidFilter })
               game.dealer = clockwise(game.dealer)
               startRound(gameName)
             }
@@ -745,7 +779,7 @@ io.on('connection', socket => {
               appendLog(gameName, `Bidding ends with ${lastBidder.name} contracting ${lastBid.formatted}.`)
               delete game.bidding
               lastBidder.contract = lastBid
-              game.players.forEach(player => delete player.lastBid)
+              game.players.forEach(player => { delete player.lastBid; delete player.bidFilter })
               game.selectKitty = true
               game.whoseTurn = game.lastBidder
               lastBidder.current = true
@@ -760,8 +794,11 @@ io.on('connection', socket => {
             }
             else {
               game.whoseTurn = nextTurn
-              game.players[game.whoseTurn].current = true
-              game.players[game.whoseTurn].validBids = validBids(lastBid)
+              const next = game.players[game.whoseTurn]
+              next.current = true
+              next.validBids = validBids(lastBid)
+              const prevBid = next.lastBid
+              next.bidFilter = prevBid ? (prevBid.trumps === Misere ? NoTrumps : prevBid.trumps) : NoTrumps
               io.in(gameName).emit('updatePlayers', game.players)
             }
           }

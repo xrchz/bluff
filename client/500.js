@@ -141,6 +141,13 @@ socket.on('updateSeats', seats => {
   errorMsg.innerHTML = ''
 })
 
+const bidFilters = [
+  {cls: ['spades'], chr: '♠'},
+  {cls: ['clubs'], chr: '♣'},
+  {cls: ['diamonds'], chr: '♦'},
+  {cls: ['hearts'], chr: '♥'},
+  {cls: [], chr: 'NT'}]
+
 socket.on('updatePlayers', players => {
   for (let i = 0; i < 4; i++) {
     const div = seatDivs[i]
@@ -208,13 +215,25 @@ socket.on('updatePlayers', players => {
     }
     if (player.name === nameInput.value && player.validBids && !spectateInput.checked) {
       elem = document.createElement('div')
+      elem.classList.add('bids')
+      fragment.appendChild(elem)
+      for (let i = 0; i < bidFilters.length; i++) {
+        const f = bidFilters[i]
+        const a = elem.appendChild(document.createElement('a'))
+        for (const c of f.cls) { a.classList.add(c) }
+        a.textContent = f.chr
+        a.onclick = () => { socket.emit('filterRequest', i) }
+      }
+      elem = document.createElement('div')
       fragment.appendChild(elem)
       elem.classList.add('bids')
       for (const b of player.validBids) {
-        const a = elem.appendChild(document.createElement('a'))
-        if (b.cls) { a.classList.add(b.cls) }
-        a.textContent = b.formatted
-        a.onclick = () => { socket.emit('bidRequest', b) }
+        if (b.pass || b.trumps === player.bidFilter || !Number.isInteger(b.trumps) && player.bidFilter > 4) {
+          const a = elem.appendChild(document.createElement('a'))
+          if (b.cls) { a.classList.add(b.cls) }
+          a.textContent = b.formatted
+          a.onclick = () => { socket.emit('bidRequest', b) }
+        }
       }
     }
     if (player.tricks) {
