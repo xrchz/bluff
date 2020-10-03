@@ -119,15 +119,13 @@ const opposite = playerIndex => clockwise(clockwise(playerIndex))
 function setEffective(trump) {
   if (trump < NoTrumps && trump !== Misere) {
     return function (c) {
-      if (c.rank === Jack) {
-        if (c.suit === trump) {
-          c.effectiveRank = RightBower
-          c.effectiveSuit = trump
-        }
-        else if (sameColour(c.suit, trump)) {
-          c.effectiveRank = LeftBower
-          c.effectiveSuit = trump
-        }
+      if (c.rank === Jack && c.suit === trump) {
+        c.effectiveRank = RightBower
+        c.effectiveSuit = trump
+      }
+      else if (c.rank === Jack && sameColour(c.suit, trump)) {
+        c.effectiveRank = LeftBower
+        c.effectiveSuit = trump
       }
       else if (c.rank === Joker) {
         c.effectiveRank = Joker
