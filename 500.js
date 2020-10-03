@@ -794,7 +794,6 @@ io.on('connection', socket => {
             if (!data.done) {
               const fromTo = data.from === 'hand' ? [current.hand, game.kitty] : [game.kitty, current.hand]
               if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
-                appendUndo(gameName)
                 const removed = fromTo[0].splice(data.index, 1)[0]
                 fromTo[1].push(removed)
                 fromTo[1].sort(byEffective)
