@@ -79,13 +79,13 @@ const sameColour = (s1, s2) =>
   s1 + s2 === 3 || s1 + s2 === 7
 
 const contractValue = c =>
-  c.suit === Misere ?
+  c.trumps === Misere ?
     (c.n < 10 ? 250 : 500) :
-    (c.n - 6) * 100 + (c.suit + 1) * 20
+    (c.n - 6) * 100 + (c.trumps + 1) * 20
 
 function calculateScore(contract, contractTricks) {
-  const contractMade = contract.suit === Misere ? contractTricks === 0 : contractTricks >= contract.n
-  const opponentScore = contract.suit === Misere ? 0 : (10 - contractTricks) * 10
+  const contractMade = contract.trumps === Misere ? contractTricks === 0 : contractTricks >= contract.n
+  const opponentScore = contract.trumps === Misere ? 0 : (10 - contractTricks) * 10
   const contractScore = contractMade ?
     (contractTricks === 10 ? Math.min(250, contractValue(contract)) : contractValue(contract)) :
     -contractValue(contract)
@@ -96,17 +96,15 @@ function makeDeck() {
   const deck = []
   for (let suit = Spades; suit <= Clubs; suit++) {
     for (let rank = 5; rank <= Ace; rank++) {
-      deck.push({ rank: rank, suit: suit,
-        effectiveRank: rank, effectiveSuit: suit })
+      deck.push({ rank: rank, suit: suit })
     }
   }
   for (let suit = Diamonds; suit <= Hearts; suit++) {
     for (let rank = 4; rank <= Ace; rank++) {
-      deck.push({ rank: rank, suit: suit,
-       effectiveRank: rank,  effectiveSuit: suit })
+      deck.push({ rank: rank, suit: suit })
     }
   }
-  deck.push({ rank: Joker, suit: JokerSuit, effectiveRank: Joker, effectiveSuit: JokerSuit })
+  deck.push({ rank: Joker, suit: JokerSuit })
   return deck
 }
 
@@ -124,6 +122,7 @@ function setEffective(trump) {
       if (c.rank === Jack) {
         if (c.suit === trump) {
           c.effectiveRank = RightBower
+          c.effectiveSuit = trump
         }
         else if (sameColour(c.suit, trump)) {
           c.effectiveRank = LeftBower
@@ -131,14 +130,21 @@ function setEffective(trump) {
         }
       }
       else if (c.rank === Joker) {
-        c.suit = trump
+        c.effectiveRank = Joker
         c.effectiveSuit = trump
+      }
+      else {
+        c.effectiveRank = c.rank
+        c.effectiveSuit = c.suit
       }
       if (c.effectiveSuit === trump) { c.effectiveSuit = TrumpSuit }
     }
   }
   else {
-    return function (c) {}
+    return function (c) {
+      c.effectiveRank = c.rank
+      c.effectiveSuit = c.suit
+    }
   }
 }
 
@@ -219,7 +225,7 @@ function formatBid(b) {
   if (b.pass) {
     b.formatted = 'Pass'
   }
-  else if (b.suit === Misere) {
+  else if (b.trumps === Misere) {
     if (b.n < 10) {
       b.formatted = 'Mis'
     }
@@ -229,23 +235,23 @@ function formatBid(b) {
   }
   else {
     b.formatted = b.n.toString()
-    if (b.suit === Spades) {
+    if (b.trumps === Spades) {
       b.formatted += '♠'
       b.cls = 'spades'
     }
-    else if (b.suit === Clubs) {
+    else if (b.trumps === Clubs) {
       b.formatted += '♣'
       b.cls = 'clubs'
     }
-    else if (b.suit === Diamonds) {
+    else if (b.trumps === Diamonds) {
       b.formatted += '♦'
       b.cls = 'diamonds'
     }
-    else if (b.suit === Hearts) {
+    else if (b.trumps === Hearts) {
       b.formatted += '♥'
       b.cls = 'hearts'
     }
-    else if (b.suit === NoTrumps) {
+    else if (b.trumps === NoTrumps) {
       b.formatted += 'NT'
     }
   }
@@ -255,25 +261,25 @@ function validBids(lastBid) {
   const bids = []
   for (let n = 6; n <= 7; n++) {
     if (lastBid && lastBid.n > n) { continue }
-    for (let suit = Spades; suit <= NoTrumps; suit++) {
-      if (lastBid && lastBid.n === n && lastBid.suit >= suit) { continue }
-      bids.push({ n: n, suit: suit })
+    for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
+      if (lastBid && lastBid.n === n && lastBid.trumps >= trumps) { continue }
+      bids.push({ n: n, trumps: trumps })
     }
   }
   if (lastBid && lastBid.n === 7) {
-    bids.push({ n: 7.5, suit: Misere })
+    bids.push({ n: 7.5, trumps: Misere })
   }
   for (let n = 8; n < 10; n++) {
     if (lastBid && lastBid.n > n) { continue }
-    for (let suit = Spades; suit <= NoTrumps; suit++) {
-      if (lastBid && lastBid.n === n && lastBid.suit >= suit) { continue }
-      bids.push({ n: n, suit: suit })
+    for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
+      if (lastBid && lastBid.n === n && lastBid.trumps >= trumps) { continue }
+      bids.push({ n: n, trumps: trumps })
     }
   }
-  for (let suit = Spades; suit <= NoTrumps; suit++) {
-    if (lastBid && lastBid.n === 10 && lastBid.suit >= suit) { continue }
-    bids.push({ n: 10, suit: suit })
-    if (suit === Diamonds) { bids.push({ n: 10, suit: Misere }) }
+  for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
+    if (lastBid && lastBid.n === 10 && lastBid.trumps >= trumps) { continue }
+    bids.push({ n: 10, trumps: trumps })
+    if (trumps === Diamonds) { bids.push({ n: 10, trumps: Misere }) }
   }
   bids.push({ pass: true })
   bids.forEach(formatBid)
@@ -295,7 +301,7 @@ function startRound(gameName) {
 function startPlaying(gameName) {
   const game = games[gameName]
   const contractor = game.players[game.lastBidder]
-  const trump = contractor.contract.suit
+  const trump = contractor.contract.trumps
   if (trump === Misere) {
     const partner = game.players[opposite(game.lastBidder)]
     partner.open = true
@@ -372,22 +378,17 @@ const stateKeys = {
     'playing', 'leader', 'trick', 'unledSuits',
     'ended'
   ],
-  teamNames: true,
-  total: true,
+  teamNames: true, total: true,
   kitty: true,
-  trick: true,
-  unledSuits: true,
+  trick: true, unledSuits: true,
   players: [
     'current', 'open', 'dummy',
     'validBids', 'lastBid', 'contract',
     'selecting', 'nominating',
     'validPlays', 'restrictJokers', 'hand', 'tricks'
   ],
-  contract: true,
-  validBids: true,
-  validPlays: true,
-  restrictJokers: true,
-  hand: true
+  validBids: true, lastBid: true, contract: true,
+  validPlays: true, restrictJokers: true, hand: true
 }
 
 function copy(keys, from, to, restore) {
@@ -714,7 +715,7 @@ io.on('connection', socket => {
       const current = game.players[game.whoseTurn]
       if (current) {
         if (current.name === socket.playerName && current.current) {
-          if (current.validBids && (bid.pass || current.validBids.find(b => b.n === bid.n && b.suit === b.suit))) {
+          if (current.validBids && (bid.pass || current.validBids.find(b => b.n === bid.n && b.trumps === bid.trumps))) {
             appendUndo(gameName)
             delete current.validBids
             delete current.current
@@ -749,8 +750,8 @@ io.on('connection', socket => {
               game.whoseTurn = game.lastBidder
               lastBidder.current = true
               lastBidder.selecting = true
-              game.players.forEach(player => sortAndFormat(player.hand, lastBid.suit))
-              sortAndFormat(game.kitty, lastBid.suit)
+              game.players.forEach(player => sortAndFormat(player.hand, lastBid.trumps))
+              sortAndFormat(game.kitty, lastBid.trumps)
               io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateKitty',
                 { kitty: game.kitty,
@@ -814,7 +815,7 @@ io.on('connection', socket => {
               delete game.selectKitty
               delete current.selecting
               io.in(gameName).emit('updateKitty', { kitty: game.kitty })
-              if ((current.contract.suit === Misere || current.contract.suit === NoTrumps) &&
+              if ((current.contract.trumps === Misere || current.contract.trumps === NoTrumps) &&
                   current.hand.find(c => c.effectiveRank === Joker)) {
                 game.nominateJoker = true
                 current.nominating = true
@@ -916,7 +917,7 @@ io.on('connection', socket => {
               io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
               io.in(gameName).emit('updatePlayers', game.players)
               const contractor = game.players[game.lastBidder]
-              const trump = contractor.contract.suit
+              const trump = contractor.contract.trumps
               const calling = game.trick[0].effectiveSuit
               if (trump === Misere || trump === NoTrumps) {
                 game.unledSuits = game.unledSuits.filter(s => s !== played.effectiveSuit)
@@ -996,7 +997,7 @@ io.on('connection', socket => {
                     const contract = contractor.contract
                     delete contractor.contract
                     const contractorPartner = game.players[opposite(game.lastBidder)]
-                    if (contract.suit === Misere) {
+                    if (contract.trumps === Misere) {
                       delete contractor.open
                       delete contractorPartner.open
                       delete contractorPartner.dummy
