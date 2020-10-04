@@ -158,6 +158,7 @@ socket.on('updatePlayers', players => {
     elem = document.createElement('div')
     fragment.appendChild(elem)
     elem = elem.appendChild(document.createElement('span'))
+    elem.classList.add('name')
     elem.textContent = player.name
     if (player.current) {
       elem.textContent += ' (*)'
@@ -348,6 +349,9 @@ socket.on('updateUnseated', players => {
 socket.on('updateSpectators', spectators => {
   spectatorsDiv.innerHTML = ''
   let elem
+  if (spectators.length) {
+    spectators.unshift({ name: 'Spectators:' })
+  }
   for (spectator of spectators) {
     elem = document.createElement('li')
     elem.textContent = spectator.name
@@ -373,6 +377,7 @@ socket.on('initScore', teamNames => {
   elem.appendChild(document.createElement('th')).textContent = `${teamNames[0]} Total`
   elem.appendChild(document.createElement('th')).textContent = `${teamNames[1]} Total`
   scoreTable.appendChild(fragment)
+  scoreTable.hidden = false
   errorMsg.innerHTML = ''
 })
 
@@ -386,9 +391,13 @@ socket.on('appendScore', data => {
   elem.appendChild(document.createElement('td')).appendChild(contract)
   elem.appendChild(document.createElement('td')).textContent = data.tricks.toString()
   elem.appendChild(document.createElement('td')).textContent = data.score[0]
+  elem.lastElementChild.classList.add('score')
   elem.appendChild(document.createElement('td')).textContent = data.score[1]
+  elem.lastElementChild.classList.add('score')
   elem.appendChild(document.createElement('td')).textContent = data.total[0]
+  elem.lastElementChild.classList.add('score')
   elem.appendChild(document.createElement('td')).textContent = data.total[1]
+  elem.lastElementChild.classList.add('score')
   scoreTable.appendChild(fragment)
   errorMsg.innerHTML = ''
 })

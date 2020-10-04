@@ -1,7 +1,8 @@
 body {
+  font-family: 'DejaVu Sans', sans-serif;
   font-size: large;
-  background-color: DarkSeaGreen;
-  color: Indigo;
+  background-color: #004;
+  color: Lavender;
   margin-left: 2vw;
   width: 96vw;
 }
@@ -9,20 +10,20 @@ input {
   font-size: large;
 }
 input[type=text] {
-  background-color: Khaki;
-  color: MidnightBlue;
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
   width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button] {
+  background-color: RoyalBlue;
+  color: LightYellow;
 }
 #game {
   width: 2em;
   text-transform: uppercase;
-}
-input[type=text]:disabled {
-  background-color: DarkKhaki;
-}
-input[type=button] {
-  background-color: DarkOliveGreen;
-  color: Lavender;
 }
 #log {
   height: 15vh;
@@ -30,14 +31,32 @@ input[type=button] {
   overflow-y: scroll;
   list-style-type: none;
   padding-left: 0;
-  background-color: SeaGreen;
-  color: Plum;
 }
-.disconnected, .empty {
-  color: Thistle;
+#log, #score {
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  margin: auto;
 }
-#spectators {
+#score {
+  margin-top: 2vh;
+}
+th {
+  color: Moccasin;
+  vertical-align: top;
+}
+td.score {
+  text-align: center;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators, .empty {
   color: SlateGray
+}
+.disconnected {
+  color: Pink;
 }
 ul.inline {
   list-style-type: none;
@@ -48,7 +67,12 @@ ul.inline > li {
   padding-left: 1em;
 }
 .current {
-  background-color: MediumSeaGreen;
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
 }
 .cards {
   font-size: xx-large;
@@ -58,7 +82,7 @@ ul.inline > li {
   align-items: center;
 }
 .cards > span, .cards > a, .bids > a {
-  padding: 0.25em;
+  padding: 0.2em;
 }
 .bids {
   font-size: larger;
@@ -69,10 +93,12 @@ ul.inline > li {
 }
 .bids > a:hover, .cards > a:hover, a.joker:hover {
   cursor: pointer;
-  background-color: MediumSeaGreen;
+  background-color: LightBlue;
+  color: Black;
 }
 .tricks > .cards > a:hover {
   background-color: transparent;
+  color: inherit;
 }
 .joker {
   position: relative;
@@ -83,6 +109,8 @@ ul.inline > li {
   transform: translate(-50%, 0)
 }
 #playArea {
+  margin: auto;
+  width: 96vw;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -97,8 +125,8 @@ ul.inline > li {
 div.player {
   display: flex;
   flex-direction: column;
-  width: 30vw;
-  height: 30vh;
+  width: 32vw;
+  height: 32vh;
   justify-content: space-around;
   align-items: center;
 }
@@ -123,7 +151,7 @@ div.player {
 div.tricks {
   display: flex;
   flex-flow: row wrap;
-  color: DarkBlue;
+  color: MediumPurple;
 }
 #playedCenter {
   display: flex;
@@ -139,8 +167,9 @@ div.tricks {
   display: none;
 }
 #rotate {
+  margin: auto;
+  width: 96vw;
   display: flex;
-  width: 84vw;
   justify-content: space-around;
   align-items: center;
   font-size: x-large;
@@ -149,14 +178,26 @@ div.tricks {
   cursor: pointer;
 }
 .hearts {
-  color: red
+  color: LightPink;
 }
 .diamonds {
-  color: blue
+  color: CornSilk;
 }
 .clubs {
-  color: green
+  color: PaleGreen;
 }
 .spades {
-  color: black
+  color: PowderBlue;
+}
+a.hearts:hover {
+  color: #800;
+}
+a.diamonds:hover {
+  color: #430;
+}
+a.clubs:hover {
+  color: #050;
+}
+a.spades:hover {
+  color: #005;
 }
