@@ -86,10 +86,10 @@ const contractValue = c =>
 function calculateScore(contract, contractTricks) {
   const contractMade = contract.trumps === Misere ? contractTricks === 0 : contractTricks >= contract.n
   const opponentScore = contract.trumps === Misere ? 0 : (10 - contractTricks) * 10
-  const contractScore = contractMade ?
-    (contractTricks === 10 ? Math.min(250, contractValue(contract)) : contractValue(contract)) :
-    -contractValue(contract)
-  return { made: contractMade, score: [contractScore, opponentScore] }
+  const value = contractValue(contract)
+  const slam = contractTricks === 10 && value < 250
+  const contractScore = contractMade ? (slam ? 250 : value) : -value
+  return { made: contractMade, score: [contractScore, opponentScore], slam: slam }
 }
 
 function makeDeck() {
@@ -1043,7 +1043,8 @@ io.on('connection', socket => {
                     }
                     game.rounds.push({ contractorIndex: game.lastBidder, contract: contract, tricksMade: contractTricks })
                     const result = calculateScore(contract, contractTricks)
-                    appendLog(gameName, `${contractor.name}'s partnership ${result.made ? 'makes' : 'fails'} their contract, scoring ${result.score[0]}.`)
+                    appendLog(gameName,
+                      `${contractor.name}'s partnership ${result.made ? 'makes' : 'fails'} their contract, ${result.slam ? 'slamming' : 'scoring'} ${result.score[0]}.`)
                     appendLog(gameName, `The opponents score ${result.score[1]}.`)
                     if (game.lastBidder % 2) { result.score.push(result.score.shift()) }
                     for (const i of [0, 1]) { game.total[i] += result.score[i] }
