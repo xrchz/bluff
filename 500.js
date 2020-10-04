@@ -188,15 +188,15 @@ const suitCls = suit =>
   suit === Hearts   ? 'hearts'   : null
 
 const suitChr = suit =>
-  suit === Spades   ? '♠' :
-  suit === Clubs    ? '♣' :
-  suit === Diamonds ? '♦' :
-  suit === Hearts   ? '♥' : ''
+  suit === Spades   ? '♤' :
+  suit === Clubs    ? '♧' :
+  suit === Diamonds ? '♢' :
+  suit === Hearts   ? '♡' : ''
 
 function formatCard(c, trump) {
   let chr
   if (c.rank === Joker) {
-    chr = '\u{1F0DF}'
+    chr = '🃟'
   }
   else {
     let codepoint = 0x1F000
@@ -215,7 +215,7 @@ function formatCard(c, trump) {
 
 function reformatJoker(c, jsuit) {
   c.formatted.cls = suitCls(jsuit)
-  c.formatted.chr += suitChr(jsuit)
+  c.formatted.chr = `🃏${suitChr(jsuit)}`
   c.effectiveSuit = jsuit
 }
 
