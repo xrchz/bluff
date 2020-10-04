@@ -28,23 +28,23 @@
     <div id="settings">
       <input id="start" type="button" value="Join game" />
       <div>
-        <label for="name">Name: </label><input id="name" type=text autocomplete=on pattern="\w+"/>
+        <label for="name">Name: </label><input id="name" type=text autocomplete=on pattern="\w+" />
       </div>
       <div>
         <label for="game">Game: </label><input id="game" type=text maxlength=2 autocomplete=off />
       </div>
       <div>
-        <label for="spectate">Spectate</label><input id="spectate" type=checkbox autocomplete=off />
+        <label for="spectate">Spectate</label><input id="spectate" type=checkbox />
       </div>
       <a id="showHideSettings" hidden></a>
       <div id="gameSettings" hidden>
         <div>
           Valid claims:
-          <label id="=">same<input type=checkbox checked autocomplete=off></label>
-          <label id="+1">+1<input type=checkbox checked autocomplete=off></label>
-          <label id="-1">-1<input type=checkbox checked autocomplete=off></label>
-          <label id="any">any<input type=checkbox autocomplete=off></label>
-          <label id="wrap">wrap<input type=checkbox checked autocomplete=off></label>
+          <label id="=">same<input type=checkbox checked /></label>
+          <label id="+1">+1<input type=checkbox checked /></label>
+          <label id="-1">-1<input type=checkbox checked /></label>
+          <label id="any">any<input type=checkbox /></label>
+          <label id="wrap">wrap<input type=checkbox checked /></label>
         </div>
         <div class=slider>
           <label for="noise">Noise:</label><input id="noise" type=range min=0 max=10 autocomplete=off /><output for="noise"></output>
