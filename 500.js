@@ -274,6 +274,13 @@ function validBids(lastBid) {
   return bids
 }
 
+function setRestrictJokers(player, trump, unledSuits) {
+  if ((trump === Misere || trump === NoTrumps) &&
+      player.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit)) {
+    player.restrictJokers = unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
+  }
+}
+
 function startRound(gameName) {
   const game = games[gameName]
   appendLog(gameName, `${game.players[game.dealer].name} deals.`)
@@ -302,10 +309,7 @@ function startPlaying(gameName) {
   game.players.forEach(player => player.tricks = [])
   game.unledSuits = [Spades, Clubs, Diamonds, Hearts]
   contractor.validPlays = true
-  if ((trump === Misere || trump === NoTrumps) &&
-    contractor.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit)) {
-    contractor.restrictJokers = game.unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
-  }
+  setRestrictJokers(contractor, trump, game.unledSuits)
   game.leader = game.lastBidder
   game.trick = []
   io.in(gameName).emit('updatePlayers', game.players)
@@ -999,10 +1003,8 @@ io.on('connection', socket => {
                   game.whoseTurn = winningIndex
                   winner.current = true
                   winner.validPlays = true
-                  if ((trump === Misere || trump === NoTrumps) &&
-                      winner.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit) &&
-                      current.hand.length > 1) {
-                    winner.restrictJokers = game.unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
+                  if (current.hand.length > 1) {
+                    setRestrictJokers(winner, trump, game.unledSuits)
                   }
                   const promise = new Promise(resolve => setTimeout(resolve, 1500))
                   promise.then(() => {
