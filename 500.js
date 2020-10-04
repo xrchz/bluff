@@ -193,6 +193,13 @@ const suitChr = suit =>
   suit === Diamonds ? '♢' :
   suit === Hearts   ? '♡' : ''
 
+const trumpsChr = suit =>
+  suit === Spades   ? '♠' :
+  suit === Clubs    ? '♣' :
+  suit === Diamonds ? '♦' :
+  suit === Hearts   ? '♥' :
+  suit === NoTrumps ? 'NT' : ''
+
 function formatCard(c, trump) {
   let chr
   if (c.rank === Joker) {
@@ -233,25 +240,9 @@ function formatBid(b) {
   }
   else {
     b.formatted = b.n.toString()
-    if (b.trumps === Spades) {
-      b.formatted += '♠'
-      b.cls = 'spades'
-    }
-    else if (b.trumps === Clubs) {
-      b.formatted += '♣'
-      b.cls = 'clubs'
-    }
-    else if (b.trumps === Diamonds) {
-      b.formatted += '♦'
-      b.cls = 'diamonds'
-    }
-    else if (b.trumps === Hearts) {
-      b.formatted += '♥'
-      b.cls = 'hearts'
-    }
-    else if (b.trumps === NoTrumps) {
-      b.formatted += 'NT'
-    }
+    b.formatted += trumpsChr(b.trumps)
+    b.cls = suitCls(b.trumps)
+    if (!b.cls) delete b.cls
   }
 }
 
