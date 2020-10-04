@@ -173,9 +173,9 @@ socket.on('updatePlayers', players => {
     elem.classList.add('cards')
     if (player.name === nameInput.value ||
         spectateInput.checked ||
-        player.open && (player.dummy || players.every(p => p.hand.length < 10))) {
-      const playableBase = !spectateInput.checked && player.validPlays &&
-        (player.dummy ? partner.name : player.name) === nameInput.value
+        player.open && players.every(p => p.dummy || p.hand.length < 10)) {
+      const playableBase = !spectateInput.checked &&
+        player.validPlays && player.name === nameInput.value
       for (let i = 0; i < player.hand.length; i++) {
         const playable = playableBase && (player.validPlays === true || player.validPlays.includes(i))
         const h = player.hand[i]
@@ -323,7 +323,7 @@ socket.on('updateTrick', data => {
   for(let i = 0; i < 4; i++) {
     const div = cardDivs[(data.leader + i) % 4]
     div.innerHTML = ''
-    if (i < data.trick.length) {
+    if (i < data.trick.length && data.trick[i]) {
       const c = data.trick[i].formatted
       const elem = div.appendChild(document.createElement('span'))
       elem.textContent = c.chr

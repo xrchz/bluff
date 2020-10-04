@@ -302,7 +302,6 @@ function startPlaying(gameName) {
   const trump = contractor.contract.trumps
   if (trump === Misere) {
     const partner = game.players[opposite(game.lastBidder)]
-    partner.open = true
     partner.dummy = true
     if (contractor.contract.n === 10) {
       contractor.open = true
@@ -930,10 +929,8 @@ io.on('connection', socket => {
   socket.on('playRequest', data => inGame((gameName, game) => {
     if (game.playing && game.trick) {
       const current = game.players[game.whoseTurn]
-      const partner = game.players[opposite(game.whoseTurn)]
-      if (current && partner) {
-        if (current.name === socket.playerName && current.current ||
-            current.dummy && partner.name === socket.playerName && partner.current) {
+      if (current) {
+        if (current.name === socket.playerName && current.current) {
           if (current.validPlays) {
             if ((current.validPlays === true &&
                  Number.isInteger(data.index) && 0 <= data.index && data.index < current.hand.length ||
@@ -944,7 +941,6 @@ io.on('connection', socket => {
               delete current.validPlays
               delete current.restrictJokers
               delete current.current
-              delete partner.current
               const played = current.hand.splice(data.index, 1)[0]
               if (data.jsuit) reformatJoker(played, data.jsuit)
               game.trick.push(played)
@@ -957,15 +953,14 @@ io.on('connection', socket => {
               if (trump === Misere || trump === NoTrumps) {
                 game.unledSuits = game.unledSuits.filter(s => s !== played.effectiveSuit)
               }
-              if (game.trick.length < 4) {
+              game.whoseTurn = clockwise(game.whoseTurn)
+              if (game.players[game.whoseTurn].dummy) {
+                game.trick.push(null)
                 game.whoseTurn = clockwise(game.whoseTurn)
+              }
+              if (game.trick.length < 4) {
                 const next = game.players[game.whoseTurn]
-                if (next.dummy) {
-                  game.players[opposite(game.whoseTurn)].current = true
-                }
-                else {
-                  next.current = true
-                }
+                next.current = true
                 if (next.hand.some(c => c.effectiveSuit === calling)) {
                   next.validPlays = []
                   next.hand.forEach((c, i) => { if (c.effectiveSuit === calling) { next.validPlays.push(i) } })
@@ -990,23 +985,25 @@ io.on('connection', socket => {
                 for (let i = 1; i < 4; i++) {
                   const currentCard = game.trick[i]
                   const winningCard = game.trick[winningIndex]
-                  if ((currentCard.effectiveSuit === JokerSuit) ||
-                      (currentCard.effectiveSuit === TrumpSuit &&
-                        (winningCard.effectiveSuit !== TrumpSuit ||
-                         winningCard.effectiveRank < currentCard.effectiveRank)) ||
-                      (currentCard.effectiveSuit === calling &&
-                        (winningCard.effectiveSuit !== calling && winningCard.effectiveSuit < TrumpSuit ||
-                         winningCard.effectiveSuit === calling && winningCard.effectiveRank < currentCard.effectiveRank))) {
+                  if (currentCard &&
+                      ((currentCard.effectiveSuit === JokerSuit) ||
+                       (currentCard.effectiveSuit === TrumpSuit &&
+                         (winningCard.effectiveSuit !== TrumpSuit ||
+                          winningCard.effectiveRank < currentCard.effectiveRank)) ||
+                       (currentCard.effectiveSuit === calling &&
+                         (winningCard.effectiveSuit !== calling && winningCard.effectiveSuit < TrumpSuit ||
+                          winningCard.effectiveSuit === calling && winningCard.effectiveRank < currentCard.effectiveRank)))) {
                     winningIndex = i
                   }
                 }
                 winningIndex = (game.leader + winningIndex) % 4
                 const winner = game.players[winningIndex]
                 const winnerPartner = game.players[opposite(winningIndex)]
-                winner.tricks.push({ cards: game.trick, open: false })
+                winner.tricks.push({ cards: game.trick.filter(c => c), open: false })
                 appendLog(gameName, `${winner.name} wins the trick.`)
+                delete game.whoseTurn
                 game.trick = []
-                if (current.hand.length && !winner.dummy && !winnerPartner.dummy) {
+                if (current.hand.length && !winnerPartner.dummy) {
                   game.leader = winningIndex
                   game.whoseTurn = winningIndex
                   winner.current = true
@@ -1034,8 +1031,8 @@ io.on('connection', socket => {
                     const contractorPartner = game.players[opposite(game.lastBidder)]
                     if (contract.trumps === Misere) {
                       delete contractor.open
-                      delete contractorPartner.open
                       delete contractorPartner.dummy
+                      contractorPartner.hand = []
                     }
                     const contractTricks = contractor.tricks.length + contractorPartner.tricks.length
                     if (!game.rounds.length) {
@@ -1064,6 +1061,7 @@ io.on('connection', socket => {
                       checkEnd(gameName)
                       if (game.ended) {
                         io.in(gameName).emit('updatePlayers', game.players)
+                        delete game.dealer
                         delete game.kitty
                         io.in(gameName).emit('updateKitty')
                       }
