@@ -1154,10 +1154,6 @@ io.on('connection', socket => {
           game.players.find(player => player.socketId === socket.id).socketId = null
           io.in(gameName).emit('updatePlayers', game.players)
         }
-        if (game.ended && game.players.every(player => !player.socketId)) {
-          console.log(`removing finished game ${gameName}`)
-          delete games[gameName]
-        }
       }
     }
     console.log("active games: " + Object.keys(games).join(', '))
