@@ -94,26 +94,17 @@ function calculateScore(contract, contractTricks) {
 
 function makeDeck() {
   const deck = []
-  for (let suit = Spades; suit <= Clubs; suit++) {
-    for (let rank = 5; rank <= Ace; rank++) {
+  for (let suit = Spades; suit <= Clubs; suit++)
+    for (let rank = 5; rank <= Ace; rank++)
       deck.push({ rank: rank, suit: suit })
-    }
-  }
-  for (let suit = Diamonds; suit <= Hearts; suit++) {
-    for (let rank = 4; rank <= Ace; rank++) {
+  for (let suit = Diamonds; suit <= Hearts; suit++)
+    for (let rank = 4; rank <= Ace; rank++)
       deck.push({ rank: rank, suit: suit })
-    }
-  }
   deck.push({ rank: Joker, suit: JokerSuit })
   return deck
 }
 
-function clockwise(playerIndex) {
-  playerIndex++
-  if (playerIndex === 4) playerIndex = 0
-  return playerIndex
-}
-
+const clockwise = playerIndex => ++playerIndex === 4 ? 0 : playerIndex
 const opposite = playerIndex => clockwise(clockwise(playerIndex))
 
 function setEffective(trump) {
@@ -135,7 +126,7 @@ function setEffective(trump) {
         c.effectiveRank = c.rank
         c.effectiveSuit = c.suit
       }
-      if (c.effectiveSuit === trump) { c.effectiveSuit = TrumpSuit }
+      if (c.effectiveSuit === trump) c.effectiveSuit = TrumpSuit
     }
   }
   else {
@@ -159,18 +150,15 @@ function sortAndFormat(cards, trump) {
 function deal(game) {
   const deck = makeDeck()
   shuffleInPlace(deck)
-  for (const player of game.players) {
-    player.hand = []
-  }
+  game.players.forEach(player => player.hand = [])
   game.kitty = []
   function dealRound(numCards) {
     let dealTo = game.dealer
     do {
       dealTo = clockwise(dealTo)
       let left = numCards
-      while (left-- > 0) {
+      while (left--)
         game.players[dealTo].hand.push(deck.shift())
-      }
     } while (dealTo !== game.dealer)
     game.kitty.push(deck.shift())
   }
@@ -227,17 +215,10 @@ function reformatJoker(c, jsuit) {
 }
 
 function formatBid(b) {
-  if (b.pass) {
+  if (b.pass)
     b.formatted = 'Pass'
-  }
-  else if (b.trumps === Misere) {
-    if (b.n < 10) {
-      b.formatted = 'Mis'
-    }
-    else {
-      b.formatted = 'OMis'
-    }
-  }
+  else if (b.trumps === Misere)
+    b.formatted = b.n < 10 ? 'Mis' : 'OMis'
   else {
     b.formatted = b.n.toString()
     b.formatted += trumpsChr(b.trumps)
@@ -249,26 +230,25 @@ function formatBid(b) {
 function validBids(lastBid) {
   const bids = [{ pass: true }]
   for (let n = 6; n <= 7; n++) {
-    if (lastBid && lastBid.n > n) { continue }
+    if (lastBid && lastBid.n > n) continue
     for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
-      if (lastBid && lastBid.n === n && lastBid.trumps >= trumps) { continue }
+      if (lastBid && lastBid.n === n && lastBid.trumps >= trumps) continue
       bids.push({ n: n, trumps: trumps })
     }
   }
-  if (lastBid && lastBid.n === 7) {
+  if (lastBid && lastBid.n === 7)
     bids.push({ n: 7.5, trumps: Misere })
-  }
   for (let n = 8; n < 10; n++) {
-    if (lastBid && lastBid.n > n) { continue }
+    if (lastBid && lastBid.n > n) continue
     for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
-      if (lastBid && lastBid.n === n && lastBid.trumps >= trumps) { continue }
+      if (lastBid && lastBid.n === n && lastBid.trumps >= trumps) continue
       bids.push({ n: n, trumps: trumps })
     }
   }
   for (let trumps = Spades; trumps <= NoTrumps; trumps++) {
-    if (lastBid && lastBid.n === 10 && lastBid.trumps >= trumps) { continue }
+    if (lastBid && lastBid.n === 10 && lastBid.trumps >= trumps) continue
     bids.push({ n: 10, trumps: trumps })
-    if (trumps === Diamonds) { bids.push({ n: 10, trumps: Misere }) }
+    if (trumps === Diamonds) bids.push({ n: 10, trumps: Misere })
   }
   bids.forEach(formatBid)
   return bids
@@ -276,9 +256,8 @@ function validBids(lastBid) {
 
 function setRestrictJokers(player, trump, unledSuits) {
   if ((trump === Misere || trump === NoTrumps) &&
-      player.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit)) {
+      player.hand.find(c => c.effectiveRank === Joker && c.effectiveSuit === JokerSuit))
     player.restrictJokers = unledSuits.map(s => ({ suit: s, chr: suitChr(s), cls: suitCls(s) }))
-  }
 }
 
 function startRound(gameName) {
@@ -301,9 +280,8 @@ function startPlaying(gameName) {
   if (trump === Misere) {
     const partner = game.players[opposite(game.lastBidder)]
     partner.dummy = true
-    if (contractor.contract.n === 10) {
+    if (contractor.contract.n === 10)
       contractor.open = true
-    }
   }
   game.playing = true
   game.players.forEach(player => player.tricks = [])
@@ -328,8 +306,8 @@ function restoreScore(room, teamNames, rounds, players) {
     for (let i = 0; i < rounds.length; i++) {
       const round = rounds[i]
       const score = calculateScore(round.contract, round.tricksMade).score
-      if (round.contractorIndex % 2) { score.push(score.shift()) }
-      for (const i of [0, 1]) { total[i] += score[i] }
+      if (round.contractorIndex % 2) score.push(score.shift())
+      for (const i of [0, 1]) total[i] += score[i]
       io.in(room).emit('appendScore', {
         round: i+1,
         contractor: players[round.contractorIndex].name,
@@ -384,23 +362,19 @@ const stateKeys = {
 }
 
 function copy(keys, from, to, restore) {
-  for (const key of keys) {
+  for (const key of keys)
     if (key in from) {
-      if (stateKeys[key] === true) {
+      if (stateKeys[key] === true)
         to[key] = JSON.parse(JSON.stringify(from[key]))
-      }
       else if (key === 'players') {
-        if (!restore) {
+        if (!restore)
           to.players = [{}, {}, {}, {}]
-        }
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 4; i++)
           copy(stateKeys.players, from.players[i], to.players[i], restore)
-        }
       }
       else if (stateKeys[key]) {
-        if (!restore || !(key in to)) {
+        if (!restore || !(key in to))
           to[key] = {}
-        }
         copy(stateKeys[key], from[key], to[key], restore)
       }
       else if (key === 'tricks') {
@@ -409,14 +383,11 @@ function copy(keys, from, to, restore) {
           (trick => JSON.parse(JSON.stringify(trick.cards)))
         to.tricks = from.tricks.map(func)
       }
-      else {
+      else
         to[key] = from[key]
-      }
     }
-    else if (restore && key in to) {
+    else if (restore && key in to)
       delete to[key]
-    }
-  }
 }
 
 function appendUndo(gameName) {
@@ -435,9 +406,7 @@ io.on('connection', socket => {
   socket.on('joinRequest', data => {
     let game
     let gameName = data.gameName
-    if (!gameName) {
-      gameName = randomUnusedGameName(games)
-    }
+    if (!gameName) gameName = randomUnusedGameName(games)
     if (!(gameName in games)) {
       console.log(`new game ${gameName}`)
       game = { seats: [{}, {}, {}, {}],
@@ -445,9 +414,8 @@ io.on('connection', socket => {
                spectators: [] }
       games[gameName] = game
     }
-    else {
+    else
       game = games[gameName]
-    }
     if (!data.playerName) {
       socket.playerName = 'Bauer'+Math.floor(Math.random()*20)
       console.log(`random name ${socket.playerName} for ${socket.id}`)
@@ -473,12 +441,10 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
           socket.emit('updateKitty', { kitty: game.kitty })
-          if (game.trick) {
+          if (game.trick)
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
-          }
-          for (const entry of game.log) {
+          for (const entry of game.log)
             socket.emit('appendLog', entry)
-          }
           restoreScore(socket.id, game.teamNames, game.rounds, game.players)
         }
       }
@@ -505,19 +471,15 @@ io.on('connection', socket => {
             kitty.contractorIndex = game.lastBidder
           }
           socket.emit('updateKitty', kitty)
-          if (game.nominateJoker && player.nominating) {
+          if (game.nominateJoker && player.nominating)
             socket.emit('showJoker', true)
-          }
-          if (game.trick) {
+          if (game.trick)
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
-          }
-          for (const entry of game.log) {
+          for (const entry of game.log)
             socket.emit('appendLog', entry)
-          }
           restoreScore(socket.id, game.teamNames, game.rounds, game.players)
-          if (game.undoLog.length) {
+          if (game.undoLog.length)
             socket.emit('showUndo', true)
-          }
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in other rooms`)
@@ -558,9 +520,7 @@ io.on('connection', socket => {
   function inGame(func) {
     const gameName = socket.gameName
     const game = games[gameName]
-    if (game) {
-      func(gameName, game)
-    }
+    if (game) func(gameName, game)
     else {
       console.log(`${socket.playerName} failed to find game ${gameName}`)
       socket.emit('errorMsg', `Game ${gameName} not found`)
@@ -583,16 +543,14 @@ io.on('connection', socket => {
         const player = game.players.find(p => p.nominating)
         io.in(player.socketId).emit('showJoker', true)
       }
-      if (game.trick) {
+      if (game.trick)
         io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
-      }
       io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
       game.log.length = entry.logLength
       game.rounds.length = entry.roundsLength
       restoreScore(gameName, game.teamNames, game.rounds, game.players)
-      if (!game.undoLog.length) {
+      if (!game.undoLog.length)
         io.in(gameName).emit('showUndo', false)
-      }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
@@ -755,10 +713,9 @@ io.on('connection', socket => {
             }
             let nextTurn = clockwise(game.whoseTurn)
             while (game.players[nextTurn].lastBid &&
-              game.players[nextTurn].lastBid.pass &&
-              nextTurn !== game.whoseTurn) {
+                   game.players[nextTurn].lastBid.pass &&
+                   nextTurn !== game.whoseTurn)
               nextTurn = clockwise(nextTurn)
-            }
             const lastBidder = game.players[game.lastBidder]
             const lastBid = lastBidder ? lastBidder.lastBid : null
             if (nextTurn === game.whoseTurn && bid.pass) {
@@ -945,9 +902,8 @@ io.on('connection', socket => {
               const contractor = game.players[game.lastBidder]
               const trump = contractor.contract.trumps
               const calling = game.trick[0].effectiveSuit
-              if (trump === Misere || trump === NoTrumps) {
+              if (trump === Misere || trump === NoTrumps)
                 game.unledSuits = game.unledSuits.filter(s => s !== played.effectiveSuit)
-              }
               game.whoseTurn = clockwise(game.whoseTurn)
               if (game.players[game.whoseTurn].dummy) {
                 game.trick.push(null)
@@ -963,16 +919,10 @@ io.on('connection', socket => {
                 else if (trump === Misere) {
                   const jokerIndex = next.hand.findIndex(c =>
                     c.effectiveRank === Joker && c.effectiveSuit === JokerSuit)
-                  if (0 <= jokerIndex) {
-                    next.validPlays = [jokerIndex]
-                  }
-                  else {
-                    next.validPlays = true
-                  }
+                  next.validPlays = 0 <= jokerIndex ? [jokerIndex] : true
                 }
-                else {
+                else
                   next.validPlays = true
-                }
                 io.in(gameName).emit('updatePlayers', game.players)
               }
               else {
@@ -987,9 +937,8 @@ io.on('connection', socket => {
                           winningCard.effectiveRank < currentCard.effectiveRank)) ||
                        (currentCard.effectiveSuit === calling &&
                          (winningCard.effectiveSuit !== calling && winningCard.effectiveSuit < TrumpSuit ||
-                          winningCard.effectiveSuit === calling && winningCard.effectiveRank < currentCard.effectiveRank)))) {
+                          winningCard.effectiveSuit === calling && winningCard.effectiveRank < currentCard.effectiveRank))))
                     winningIndex = i
-                  }
                 }
                 winningIndex = (game.leader + winningIndex) % 4
                 const winner = game.players[winningIndex]
@@ -1003,9 +952,8 @@ io.on('connection', socket => {
                   game.whoseTurn = winningIndex
                   winner.current = true
                   winner.validPlays = true
-                  if (current.hand.length > 1) {
+                  if (current.hand.length > 1)
                     setRestrictJokers(winner, trump, game.unledSuits)
-                  }
                   const promise = new Promise(resolve => setTimeout(resolve, 1500))
                   promise.then(() => {
                     io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
@@ -1028,16 +976,15 @@ io.on('connection', socket => {
                       contractorPartner.hand = []
                     }
                     const contractTricks = contractor.tricks.length + contractorPartner.tricks.length
-                    if (!game.rounds.length) {
+                    if (!game.rounds.length)
                       io.in(gameName).emit('initScore', game.teamNames)
-                    }
                     game.rounds.push({ contractorIndex: game.lastBidder, contract: contract, tricksMade: contractTricks })
                     const result = calculateScore(contract, contractTricks)
                     appendLog(gameName,
                       `${contractor.name}'s partnership ${result.made ? 'makes' : 'fails'} their contract, ${result.slam ? 'slamming' : 'scoring'} ${result.score[0]}.`)
                     appendLog(gameName, `The opponents score ${result.score[1]}.`)
-                    if (game.lastBidder % 2) { result.score.push(result.score.shift()) }
-                    for (const i of [0, 1]) { game.total[i] += result.score[i] }
+                    if (game.lastBidder % 2) result.score.push(result.score.shift())
+                    for (const i of [0, 1]) game.total[i] += result.score[i]
                     io.in(gameName).emit('appendScore', {
                       round: game.rounds.length,
                       contractor: contractor.name,
@@ -1127,7 +1074,7 @@ io.on('connection', socket => {
         game.players = game.players.filter(player => player.socketId !== socket.id)
         game.spectators = game.spectators.filter(player => player.socketId !== socket.id)
         const seat = game.seats.find(seat => seat.player && seat.player.socketId === socket.id)
-        if (seat) { delete seat.player }
+        if (seat) delete seat.player
         io.in(gameName).emit('updateSpectators', game.spectators)
         io.in(gameName).emit('updateSeats', game.seats)
         io.in(gameName).emit('updateUnseated', game.players)
