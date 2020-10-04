@@ -189,6 +189,9 @@ socket.on('updatePlayers', players => {
             a.classList.add(j.cls)
             a.onclick = () => { socket.emit('playRequest', { index: i, jsuit: j.suit }) }
           }
+          if (!player.restrictJokers.length) {
+            elem.appendChild(document.createElement('span')).textContent = '🃟'
+          }
         }
         else {
           const a = elem.appendChild(document.createElement(playable ? 'a' : 'span'))
