@@ -384,20 +384,18 @@ socket.on('initScore', teamNames => {
 socket.on('appendScore', data => {
   const elem = fragment.appendChild(document.createElement('tr'))
   elem.appendChild(document.createElement('th')).textContent = data.round.toString()
+  elem.lastElementChild.classList.add('round')
   elem.appendChild(document.createElement('td')).textContent = data.contractor
+  elem.lastElementChild.classList.add('contractor')
   const contract = document.createElement('span')
   if (data.contract.cls) { contract.classList.add(data.contract.cls) }
   contract.textContent = data.contract.formatted
   elem.appendChild(document.createElement('td')).appendChild(contract)
   elem.appendChild(document.createElement('td')).textContent = data.tricks.toString()
   elem.appendChild(document.createElement('td')).textContent = data.score[0]
-  elem.lastElementChild.classList.add('score')
   elem.appendChild(document.createElement('td')).textContent = data.score[1]
-  elem.lastElementChild.classList.add('score')
   elem.appendChild(document.createElement('td')).textContent = data.total[0]
-  elem.lastElementChild.classList.add('score')
   elem.appendChild(document.createElement('td')).textContent = data.total[1]
-  elem.lastElementChild.classList.add('score')
   scoreTable.appendChild(fragment)
   errorMsg.innerHTML = ''
 })

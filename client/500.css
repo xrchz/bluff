@@ -41,13 +41,28 @@ input[type=button] {
 }
 #score {
   margin-top: 2vh;
+  border-collapse: collapse;
 }
 th {
-  color: Moccasin;
+  color: Cornsilk;
   vertical-align: top;
 }
-td.score {
+th, td {
+  border-left: 1px solid;
+  padding: 0.5em;
   text-align: center;
+}
+th {
+  border-bottom: 1px solid;
+}
+th.round {
+  border-bottom: none;
+}
+tr:nth-child(even) {
+  background-color: #222;
+}
+td.contractor {
+  text-align: left;
 }
 .name {
   color: #b7abfe;
@@ -181,7 +196,7 @@ div.tricks {
   color: LightPink;
 }
 .diamonds {
-  color: CornSilk;
+  color: Moccasin;
 }
 .clubs {
   color: PaleGreen;
