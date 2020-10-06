@@ -4,6 +4,7 @@ var socket = io("https://xrchz.net:4500")
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
+const blameMsg = document.getElementById('blame')
 const log = document.getElementById('log')
 const joinButton = document.getElementById('join')
 const startButton = document.getElementById('start')
@@ -439,4 +440,8 @@ socket.on('showJoker', show => {
 
 socket.on('errorMsg', msg => {
   errorMsg.innerHTML = msg
+})
+
+socket.on('blameMsg', msg => {
+  blameMsg.innerHTML = msg
 })

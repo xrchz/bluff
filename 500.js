@@ -1043,6 +1043,10 @@ io.on('connection', socket => {
       if (player) {
         if (player.tricks && Number.isInteger(data.index) && 0 <= data.index && data.index < player.tricks.length) {
           player.tricks[data.index].open = Boolean(data.open)
+          if (data.open)
+            io.in(gameName).emit('blameMsg', `${socket.playerName} is opening tricks!`)
+          else if (game.players.every(player => player.tricks.every(trick => !trick.open)))
+            io.in(gameName).emit('blameMsg', '')
           io.in(gameName).emit('updatePlayers', game.players)
         }
         else {
