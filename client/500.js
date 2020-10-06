@@ -127,7 +127,7 @@ socket.on('updateSeats', seats => {
         elem = document.createElement('input')
         elem.type = 'button'
         elem.value = 'Sit here'
-        elem.onclick = () => { socket.emit('sitHere', { playerName: nameInput.value, seatIndex: i }) }
+        elem.onclick = () => { socket.emit('sitHere', i) }
         div.appendChild(elem)
       }
     }

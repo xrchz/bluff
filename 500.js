@@ -6,7 +6,7 @@ const fs = require('fs')
 const options = {
   key: fs.readFileSync('/etc/ssl/xrchz/key.pem'),
   cert: fs.readFileSync('/etc/ssl/xrchz/cert.pem')
-};
+}
 var app = express()
 var server = https.createServer(options, app)
 var io = require('socket.io')(server)
@@ -47,9 +47,8 @@ const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
 
 function saveGames() {
   let toSave = {}
-  for(const [gameName, game] of Object.entries(games)) {
-    if (game.started) { toSave[gameName] = game }
-  }
+  for (const [gameName, game] of Object.entries(games))
+    if (game.started) toSave[gameName] = game
   fs.writeFileSync(saveFile,
     JSON.stringify(
       toSave,
@@ -57,7 +56,6 @@ function saveGames() {
                 k === 'spectators' ? [] : v))
 }
 
-const Ten   = 10
 const Jack  = 11
 const Queen = 12
 const King  = 13
@@ -144,7 +142,7 @@ const byEffective = (c1, c2) =>
 function sortAndFormat(cards, trump) {
   cards.forEach(setEffective(trump))
   cards.sort(byEffective)
-  cards.forEach(c => { c.formatted = formatCard(c, trump) })
+  cards.forEach(c => c.formatted = formatCard(c, trump))
 }
 
 function deal(game) {
@@ -158,9 +156,9 @@ function deal(game) {
       dealTo = clockwise(dealTo)
       let left = numCards
       while (left--)
-        game.players[dealTo].hand.push(deck.shift())
+        game.players[dealTo].hand.push(deck.pop())
     } while (dealTo !== game.dealer)
-    game.kitty.push(deck.shift())
+    game.kitty.push(deck.pop())
   }
   dealRound(3)
   dealRound(4)
@@ -190,9 +188,8 @@ const trumpsChr = suit =>
 
 function formatCard(c, trump) {
   let chr
-  if (c.rank === Joker) {
+  if (c.rank === Joker)
     chr = '🃟'
-  }
   else {
     let codepoint = 0x1F000
     codepoint +=
@@ -318,9 +315,8 @@ function restoreScore(room, teamNames, rounds, players) {
       })
     }
   }
-  else {
+  else
     io.in(room).emit('removeScore')
-  }
 }
 
 function checkEnd(gameName) {
@@ -406,7 +402,7 @@ io.on('connection', socket => {
   socket.on('joinRequest', data => {
     let game
     let gameName = data.gameName
-    if (!gameName) gameName = randomUnusedGameName(games)
+    if (!gameName) gameName = randomUnusedGameName()
     if (!(gameName in games)) {
       console.log(`new game ${gameName}`)
       game = { seats: [{}, {}, {}, {}],
@@ -417,7 +413,7 @@ io.on('connection', socket => {
     else
       game = games[gameName]
     if (!data.playerName) {
-      socket.playerName = 'Bauer'+Math.floor(Math.random()*20)
+      socket.playerName = `Bauer${Math.floor(Math.random()*20)}`
       console.log(`random name ${socket.playerName} for ${socket.id}`)
     }
     else {
@@ -429,9 +425,9 @@ io.on('connection', socket => {
         console.log(`${socket.playerName} joining ${gameName} as spectator`)
         socket.gameName = gameName
         socket.join(gameName)
-        const spectator = { socketId: socket.id, name: socket.playerName }
-        game.spectators.push(spectator)
-        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName, spectating: true })
+        game.spectators.push({ socketId: socket.id, name: socket.playerName })
+        socket.emit('joinedGame',
+          { gameName: gameName, playerName: socket.playerName, spectating: true })
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started) {
           socket.emit('updateUnseated', game.players)
@@ -443,14 +439,13 @@ io.on('connection', socket => {
           socket.emit('updateKitty', { kitty: game.kitty })
           if (game.trick)
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
-          for (const entry of game.log)
-            socket.emit('appendLog', entry)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
           restoreScore(socket.id, game.teamNames, game.rounds, game.players)
         }
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate spectator`)
-        socket.emit('errorMsg', 'Game ' + gameName + ' already contains spectator ' + socket.playerName)
+        socket.emit('errorMsg', `Game ${gameName} already contains spectator ${socket.playerName}.`)
       }
     }
     else if (game.started) {
@@ -475,20 +470,19 @@ io.on('connection', socket => {
             socket.emit('showJoker', true)
           if (game.trick)
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
-          for (const entry of game.log)
-            socket.emit('appendLog', entry)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
           restoreScore(socket.id, game.teamNames, game.rounds, game.players)
           if (game.undoLog.length)
             socket.emit('showUndo', true)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in other rooms`)
-          socket.emit('errorMsg', 'Error: somehow this connection is already used in another game')
+          socket.emit('errorMsg', 'Error: somehow this connection is already used in another game.')
         }
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as extra player`)
-        socket.emit('errorMsg', 'Game ' + gameName + ' has already started. Try spectating.')
+        socket.emit('errorMsg', `Game ${gameName} has already started. Try spectating.`)
       }
     }
     else {
@@ -497,8 +491,7 @@ io.on('connection', socket => {
           console.log(`${socket.playerName} joining ${gameName}`)
           socket.join(gameName)
           socket.gameName = gameName
-          const player = { socketId: socket.id, name: socket.playerName }
-          game.players.push(player)
+          game.players.push({ socketId: socket.id, name: socket.playerName })
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           io.in(gameName).emit('updateUnseated', game.players)
@@ -506,15 +499,15 @@ io.on('connection', socket => {
         }
         else {
           console.log(`${socket.playerName} barred from joining ${gameName} which is full`)
-          socket.emit('errorMsg', 'Game ' + gameName + ' already has enough players. Try spectating.')
+          socket.emit('errorMsg', `Game ${gameName} already has enough players. Try spectating.`)
         }
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
-        socket.emit('errorMsg', 'Game ' + gameName + ' already contains player ' + socket.playerName)
+        socket.emit('errorMsg', `Game ${gameName} already contains player ${socket.playerName}.`)
       }
     }
-    console.log("active games: " + Object.keys(games).join(', '))
+    console.log(`active games: ${Object.keys(games).join(', ')}`)
   })
 
   function inGame(func) {
@@ -523,7 +516,7 @@ io.on('connection', socket => {
     if (game) func(gameName, game)
     else {
       console.log(`${socket.playerName} failed to find game ${gameName}`)
-      socket.emit('errorMsg', `Game ${gameName} not found`)
+      socket.emit('errorMsg', `Game ${gameName} not found.`)
     }
   }
 
@@ -554,16 +547,16 @@ io.on('connection', socket => {
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
-      socket.emit('errorMsg', 'Error: there is nothing to undo')
+      socket.emit('errorMsg', 'Error: there is nothing to undo.')
     }
   }))
 
-  socket.on('sitHere', data => inGame((gameName, game) => {
+  socket.on('sitHere', index => inGame((gameName, game) => {
     if (!game.started) {
-      const seat = game.seats[data.seatIndex]
+      const seat = game.seats[index]
       if (seat) {
         if (!seat.player) {
-          const player = game.players.find(player => player.name === data.playerName)
+          const player = game.players.find(player => player.socketId === socket.id)
           if (player) {
             if (!player.seated) {
               seat.player = player
@@ -574,33 +567,33 @@ io.on('connection', socket => {
             }
             else {
               console.log(`error: ${socket.playerName} in ${gameName} tried to sit but is already seated`)
-              socket.emit('errorMsg', 'Error: you are already seated')
+              socket.emit('errorMsg', 'Error: you are already seated.')
             }
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried to sit but is not a player`)
-            socket.emit('errorMsg', 'Error: a non-player cannot sit')
+            socket.emit('errorMsg', 'Error: a non-player cannot sit.')
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried sitting in an occupied seat`)
-          socket.emit('errorMsg', 'Error: trying to sit in an occupied seat')
+          socket.emit('errorMsg', 'Error: trying to sit in an occupied seat.')
         }
       }
       else {
-        console.log(`error: ${socket.playerName} in ${gameName} tried sitting at invalid index ${data.seatIndex}`)
-        socket.emit('errorMsg', 'Error: trying to sit at an invalid seat index')
+        console.log(`error: ${socket.playerName} in ${gameName} tried sitting at invalid index ${index}`)
+        socket.emit('errorMsg', 'Error: trying to sit at an invalid seat index.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried sitting when game already started`)
-      socket.emit('errorMsg', 'Error: cannot sit after the game has started')
+      socket.emit('errorMsg', 'Error: cannot sit after the game has started.')
     }
   }))
 
   socket.on('leaveSeat', () => inGame((gameName, game) => {
     if (!game.started) {
-      const player = game.players.find(player => player.name === socket.playerName)
+      const player = game.players.find(player => player.socketId === socket.id)
       if (player) {
         if (player.seated) {
           const seat = game.seats.find(seat => seat.player && seat.player.name === player.name)
@@ -613,22 +606,22 @@ io.on('connection', socket => {
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} is tried to leave seat but no seat has them`)
-            socket.emit('errorMsg', 'Error: could not find you in any seat')
+            socket.emit('errorMsg', 'Error: could not find you in any seat.')
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} is not seated but tried to leave their seat`)
-          socket.emit('errorMsg', 'Error: you are not seated so cannot leave your seat')
+          socket.emit('errorMsg', 'Error: you are not seated so cannot leave your seat.')
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} is not a player but tried to leave a seat`)
-        socket.emit('errorMsg', 'Error: non-player trying to leave seat')
+        socket.emit('errorMsg', 'Error: non-player trying to leave seat.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried leaving seat when game already started`)
-      socket.emit('errorMsg', 'Error: cannot leave seat after the game has started')
+      socket.emit('errorMsg', 'Error: cannot leave seat after the game has started.')
     }
   }))
 
@@ -641,6 +634,7 @@ io.on('connection', socket => {
         game.log = []
         game.players = game.seats.map(seat => seat.player)
         delete game.seats
+        game.players.forEach(player => delete player.seated)
         game.teamNames = [`${game.players[0].name} & ${game.players[2].name}`,
                           `${game.players[1].name} & ${game.players[3].name}`]
         game.total = [0, 0]
@@ -651,12 +645,12 @@ io.on('connection', socket => {
         startRound(gameName)
       }
       else {
-        socket.emit('errorMsg', '4 seated players required to start the game')
+        socket.emit('errorMsg', 'Error: 4 seated players required to start the game.')
       }
     }
     else {
       console.log(`${socket.playerName} attempted to start ${gameName} again`)
-      socket.emit('errorMsg', `Error: ${gameName} has already started`)
+      socket.emit('errorMsg', `Error: ${gameName} has already started.`)
     }
   }))
 
@@ -672,22 +666,22 @@ io.on('connection', socket => {
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried filtering an invalid index`)
-            socket.emit('errorMsg', 'Error: that is not a valid bid filter')
+            socket.emit('errorMsg', 'Error: that is not a valid bid filter.')
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried bid filter out of turn`)
-          socket.emit('errorMsg', 'Error: it is not your turn to bid filter')
+          socket.emit('errorMsg', 'Error: it is not your turn to bid filter.')
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} tried bid filter but there is no current player`)
-        socket.emit('errorMsg', 'Error: could not find current player')
+        socket.emit('errorMsg', 'Error: could not find current player.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried bid filter out of phase`)
-      socket.emit('errorMsg', 'Error: bid filtering is not currently possible')
+      socket.emit('errorMsg', 'Error: bid filtering is not currently possible.')
     }
   }))
 
@@ -753,22 +747,22 @@ io.on('connection', socket => {
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried bidding an invalid bid`)
-            socket.emit('errorMsg', 'Error: that is not a valid bid')
+            socket.emit('errorMsg', 'Error: that is not a valid bid.')
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried bidding out of turn`)
-          socket.emit('errorMsg', 'Error: it is not your turn to bid')
+          socket.emit('errorMsg', 'Error: it is not your turn to bid.')
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} tried bidding but there is no current player`)
-        socket.emit('errorMsg', 'Error: could not find current player')
+        socket.emit('errorMsg', 'Error: could not find current player.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried bidding out of phase`)
-      socket.emit('errorMsg', 'Error: bidding is not currently possible')
+      socket.emit('errorMsg', 'Error: bidding is not currently possible.')
     }
   }))
 
@@ -776,11 +770,14 @@ io.on('connection', socket => {
     if (game.selectKitty) {
       const current = game.players[game.whoseTurn]
       if (current) {
-        if (current.name === socket.playerName && current.current && current.selecting) {
+        if (current.name === socket.playerName &&
+            current.current && current.selecting) {
           if (current.contract) {
             if (!data.done) {
-              const fromTo = data.from === 'hand' ? [current.hand, game.kitty] : [game.kitty, current.hand]
-              if (Number.isInteger(data.index) && 0 <= data.index && data.index < fromTo[0].length) {
+              const fromTo = data.from === 'hand' ?
+                [current.hand, game.kitty] : [game.kitty, current.hand]
+              if (Number.isInteger(data.index) &&
+                  0 <= data.index && data.index < fromTo[0].length) {
                 const removed = fromTo[0].splice(data.index, 1)[0]
                 fromTo[1].push(removed)
                 fromTo[1].sort(byEffective)
@@ -792,7 +789,7 @@ io.on('connection', socket => {
               }
               else {
                 console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} with bad index ${data.index}`)
-                socket.emit('errorMsg', `Error: index ${data.index} for taking from ${data.from} is invalid`)
+                socket.emit('errorMsg', `Error: index ${data.index} for taking from ${data.from} is invalid.`)
               }
             }
             else {
@@ -807,29 +804,28 @@ io.on('connection', socket => {
                 current.nominating = true
                 socket.emit('showJoker', true)
               }
-              else {
+              else
                 startPlaying(gameName)
-              }
             }
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} but has no contract`)
-            socket.emit('errorMsg', 'Error: you do not have the contract')
+            socket.emit('errorMsg', 'Error: you do not have the contract.')
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of turn`)
-          socket.emit('errorMsg', `Error: it is not your turn to take from ${data.from}`)
+          socket.emit('errorMsg', `Error: it is not your turn to take from ${data.from}.`)
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} but there is no current player`)
-        socket.emit('errorMsg', 'Error: could not find current player')
+        socket.emit('errorMsg', 'Error: could not find current player.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried taking from ${data.from} out of phase`)
-      socket.emit('errorMsg', `Error: taking from ${data.from} is not currently possible`)
+      socket.emit('errorMsg', `Error: taking from ${data.from} is not currently possible.`)
     }
   }))
 
@@ -854,27 +850,27 @@ io.on('connection', socket => {
             }
             else {
               console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker without it`)
-              socket.emit('errorMsg', `Error: you do not have the joker`)
+              socket.emit('errorMsg', `Error: you do not have the joker.`)
             }
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker with invalid index`)
-            socket.emit('errorMsg', `Error: invalid index for nominating joker suit`)
+            socket.emit('errorMsg', `Error: invalid index for nominating joker suit.`)
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker out of turn`)
-          socket.emit('errorMsg', `Error: it is not your turn to nominate the joker suit`)
+          socket.emit('errorMsg', `Error: it is not your turn to nominate the joker suit.`)
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker but there is no current player`)
-        socket.emit('errorMsg', 'Error: could not find current player')
+        socket.emit('errorMsg', 'Error: could not find current player.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried nominating joker out of phase`)
-      socket.emit('errorMsg', `Error: nominating joker suit is not currently possible`)
+      socket.emit('errorMsg', `Error: nominating joker suit is not currently possible.`)
     }
   }))
 
@@ -1017,27 +1013,27 @@ io.on('connection', socket => {
             }
             else {
               console.log(`error: ${socket.playerName} in ${gameName} tried playing with bad index ${data.index}`)
-              socket.emit('errorMsg', `Error: index ${data.index} is invalid`)
+              socket.emit('errorMsg', `Error: index ${data.index} is invalid.`)
             }
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried playing but has no validPlays`)
-            socket.emit('errorMsg', 'Error: you do not have any valid plays')
+            socket.emit('errorMsg', 'Error: you do not have any valid plays.')
           }
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried playing out of turn`)
-          socket.emit('errorMsg', 'Error: it is not your turn')
+          socket.emit('errorMsg', 'Error: it is not your turn.')
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} tried playing but there is no current player`)
-        socket.emit('errorMsg', 'Error: could not find current player')
+        socket.emit('errorMsg', 'Error: could not find current player.')
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried playing out of phase`)
-      socket.emit('errorMsg', `Error: playing is not currently possible`)
+      socket.emit('errorMsg', `Error: playing is not currently possible.`)
     }
   }))
 
@@ -1051,17 +1047,17 @@ io.on('connection', socket => {
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick with bad index`)
-          socket.emit('errorMsg', `Error: toggling a trick with an invalid index`)
+          socket.emit('errorMsg', `Error: toggling a trick with an invalid index.`)
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick of an unknown player`)
-        socket.emit('errorMsg', `Error: toggling a trick of an unknown player`)
+        socket.emit('errorMsg', `Error: toggling a trick of an unknown player.`)
       }
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried toggling a trick out of phase`)
-      socket.emit('errorMsg', `Error: toggling a trick is not currently possible`)
+      socket.emit('errorMsg', `Error: toggling a trick is not currently possible.`)
     }
   }))
 
