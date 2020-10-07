@@ -30,7 +30,7 @@ input[type=button] {
   text-transform: uppercase;
 }
 #log {
-  height: 15vh;
+  height: 13ex;
   resize: both;
   overflow-y: scroll;
   list-style-type: none;
@@ -44,7 +44,7 @@ input[type=button] {
   margin: auto;
 }
 #score {
-  margin-top: 2vh;
+  margin-top: 1ex;
   border-collapse: collapse;
 }
 th {
@@ -145,7 +145,7 @@ div.player {
   display: flex;
   flex-direction: column;
   width: 32vw;
-  height: 32vh;
+  height: 19ex;
   justify-content: space-around;
   align-items: center;
 }
@@ -161,7 +161,7 @@ div.player {
 #board {
   display: flex;
   width: 20vw;
-  height: 20vh;
+  height: 13ex;
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
