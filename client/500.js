@@ -315,7 +315,7 @@ socket.on('updateKitty', data => {
     }
   }
   else {
-    div.innerHTML = '<span>🂠</span>'.repeat(3)
+    div.innerHTML = '🐈'
   }
   errorMsg.innerHTML = ''
 })
