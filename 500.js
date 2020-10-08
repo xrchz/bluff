@@ -224,6 +224,19 @@ function formatBid(b) {
   }
 }
 
+const bidSpan = b => b.cls ?
+  `<span class=${b.cls}>${b.formatted}</span>` : b.formatted
+
+const cardSpan = c =>
+  c.chr.length > 2 ?
+    `<span class="${c.cls} joker">${c.chr.slice(0, -1)}<span>${c.chr[2]}</span></span>`
+  : c.cls ?
+    `<span class=${c.cls}>${c.chr}</span>`
+  : c.chr
+
+const jokerSuitSpan = j =>
+  `<span class=${j.formatted.cls}>${trumpsChr(j.effectiveSuit)}</span>`
+
 function validBids(lastBid) {
   const bids = [{ pass: true }]
   for (let n = 6; n <= 7; n++) {
@@ -701,7 +714,7 @@ io.on('connection', socket => {
             current.lastBid = bid
             if (!bid.pass) {
               game.lastBidder = game.whoseTurn
-              appendLog(gameName, `${current.name} bids ${bid.formatted}.`)
+              appendLog(gameName, `${current.name} bids ${bidSpan(bid)}.`)
             }
             else {
               sortAndFormat(current.hand, NoTrumps)
@@ -721,7 +734,7 @@ io.on('connection', socket => {
               startRound(gameName)
             }
             else if (nextTurn === game.lastBidder) {
-              appendLog(gameName, `Bidding ends with ${lastBidder.name} contracting ${lastBid.formatted}.`)
+              appendLog(gameName, `Bidding ends with ${lastBidder.name} contracting ${bidSpan(lastBid)}.`)
               delete game.bidding
               lastBidder.contract = lastBid
               game.players.forEach(player => { delete player.lastBid; delete player.bidFilter })
@@ -843,7 +856,7 @@ io.on('connection', socket => {
                 appendUndo(gameName)
                 reformatJoker(joker, index + 1)
                 current.hand.sort(byEffective)
-                appendLog(gameName, `${current.name} nominates joker suit ${joker.formatted.chr[2]}.`)
+                appendLog(gameName, `${current.name} nominates joker suit ${jokerSuitSpan(joker)}.`)
               }
               delete game.nominateJoker
               delete current.nominating
@@ -894,7 +907,7 @@ io.on('connection', socket => {
               const played = current.hand.splice(data.index, 1)[0]
               if (data.jsuit) reformatJoker(played, data.jsuit)
               game.trick.push(played)
-              appendLog(gameName, `${current.name} plays ${played.formatted.chr}.`)
+              appendLog(gameName, `${current.name} plays ${cardSpan(played.formatted)}.`)
               io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
               io.in(gameName).emit('updatePlayers', game.players)
               const contractor = game.players[game.lastBidder]
