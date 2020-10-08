@@ -529,7 +529,7 @@ io.on('connection', socket => {
     if (game) func(gameName, game)
     else {
       console.log(`${socket.playerName} failed to find game ${gameName}`)
-      socket.emit('errorMsg', `Game ${gameName} not found.`)
+      socket.emit('errorMsg', `Game ${gameName} not found. Try reconnecting.`)
     }
   }
 
