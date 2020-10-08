@@ -77,6 +77,15 @@ td.contractor {
 .disconnected {
   color: Pink;
 }
+#games {
+  list-style-type: none;
+}
+#games > li > ul {
+  display: inline;
+}
+#games a:hover {
+  cursor: pointer;
+}
 ul.inline {
   list-style-type: none;
   padding: 0;

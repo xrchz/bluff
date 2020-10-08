@@ -409,8 +409,20 @@ function appendUndo(gameName) {
   io.in(gameName).emit('showUndo', true)
 }
 
+function updateGames(room) {
+  if (!room) room = 'lobby'
+  const data = []
+  for (const [gameName, game] of Object.entries(games))
+    data.push({ name: gameName,
+                players: game.players.map(player => ({ name: player.name, disconnected: !player.socketId }))
+              })
+  io.in(room).emit('updateGames', data)
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
+
+  socket.join('lobby'); updateGames(socket.id)
 
   socket.on('joinRequest', data => {
     let game
@@ -437,6 +449,7 @@ io.on('connection', socket => {
       if (game.spectators.every(spectator => spectator.name !== socket.playerName)) {
         console.log(`${socket.playerName} joining ${gameName} as spectator`)
         socket.gameName = gameName
+        socket.leave('lobby'); socket.emit('updateGames', [])
         socket.join(gameName)
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
@@ -463,9 +476,11 @@ io.on('connection', socket => {
     }
     else if (game.started) {
       if (game.players.find(player => player.name === socket.playerName && !player.socketId)) {
-        if (Object.keys(socket.rooms).length === 1) {
+        const rooms = Object.keys(socket.rooms)
+        if (rooms.length === 2 && rooms.includes(socket.id) && rooms.includes('lobby')) {
           console.log(`${socket.playerName} rejoining ${gameName}`)
           socket.gameName = gameName
+          socket.leave('lobby'); socket.emit('updateGames', [])
           socket.join(gameName)
           const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
@@ -489,7 +504,7 @@ io.on('connection', socket => {
             socket.emit('showUndo', true)
         }
         else {
-          console.log(`error: ${socket.playerName} rejoining ${gameName} while in other rooms`)
+          console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)
           socket.emit('errorMsg', 'Error: somehow this connection is already used in another game.')
         }
       }
@@ -502,6 +517,7 @@ io.on('connection', socket => {
       if (game.players.every(player => player.name !== socket.playerName)) {
         if (game.players.length < 4) {
           console.log(`${socket.playerName} joining ${gameName}`)
+          socket.leave('lobby'); socket.emit('updateGames', [])
           socket.join(gameName)
           socket.gameName = gameName
           game.players.push({ socketId: socket.id, name: socket.playerName })
@@ -521,6 +537,7 @@ io.on('connection', socket => {
       }
     }
     console.log(`active games: ${Object.keys(games).join(', ')}`)
+    updateGames()
   })
 
   function inGame(func) {
@@ -658,6 +675,7 @@ io.on('connection', socket => {
         io.in(gameName).emit('gameStarted')
         appendLog(gameName, 'The game begins!')
         startRound(gameName)
+        updateGames()
       }
       else {
         socket.emit('errorMsg', 'Error: 4 seated players required to start the game.')
@@ -1015,6 +1033,7 @@ io.on('connection', socket => {
                         delete game.dealer
                         delete game.kitty
                         io.in(gameName).emit('updateKitty')
+                        updateGames()
                       }
                       else {
                         appendLog(gameName, 'The next round begins.')
@@ -1109,6 +1128,7 @@ io.on('connection', socket => {
           io.in(gameName).emit('updatePlayers', game.players)
         }
       }
+      updateGames()
     }
     console.log("active games: " + Object.keys(games).join(', '))
   })
