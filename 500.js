@@ -536,7 +536,6 @@ io.on('connection', socket => {
         socket.emit('errorMsg', `Game ${gameName} already contains player ${socket.playerName}.`)
       }
     }
-    console.log(`active games: ${Object.keys(games).join(', ')}`)
     updateGames()
   })
 
@@ -1130,7 +1129,11 @@ io.on('connection', socket => {
       }
       updateGames()
     }
-    console.log("active games: " + Object.keys(games).join(', '))
+  })
+
+  socket.on('deleteGame', gameName => {
+    delete games[gameName]
+    updateGames()
   })
 
   socket.on('saveGames', saveGames)
