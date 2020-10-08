@@ -544,6 +544,8 @@ io.on('connection', socket => {
       restoreScore(gameName, game.teamNames, game.rounds, game.players)
       if (!game.undoLog.length)
         io.in(gameName).emit('showUndo', false)
+      io.in(gameName).emit('errorMsg', `${socket.playerName} pressed Undo.`)
+      io.in(gameName).emit('blameMsg', '')
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
