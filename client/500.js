@@ -115,6 +115,27 @@ socket.on('updateGames', games => {
   gamesList.hidden = !games.length
 })
 
+socket.on('ensureLobby', () => {
+  errorMsg.innerHTML = ''
+  gameInput.disabled = false
+  nameInput.disabled = false
+  joinButton.hidden = false
+  spectateInput.hidden = false
+  spectateInput.disabled = false
+  undoButton.hidden = true
+  unseated.innerHTML = ''
+  startButton.hidden = true
+  spectatorsDiv.innerHTML = ''
+  log.hidden = true
+  blameMsg.innerHTML = ''
+  for (const div of seatDivs) div.innerHTML = ''
+  for (const div of cardDivs) div.innerHTML = ''
+  kittyDiv.innerHTML = ''
+  jokerDiv.hidden = true
+  rotateDiv.hidden = true
+  scoreTable.hidden = true
+})
+
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
   nameInput.value = data.playerName
@@ -126,7 +147,7 @@ socket.on('joinedGame', data => {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
   }
-  joinButton.parentNode.removeChild(joinButton)
+  joinButton.hidden = true
   rotateDiv.hidden = false
   errorMsg.innerHTML = ''
 })
@@ -438,7 +459,7 @@ socket.on('appendScore', data => {
 })
 
 socket.on('gameStarted', () => {
-  startButton.parentNode.removeChild(startButton)
+  startButton.hidden = true
   log.hidden = false
   errorMsg.innerHTML = ''
 })

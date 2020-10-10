@@ -422,6 +422,7 @@ function updateGames(room) {
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
+  socket.emit('ensureLobby')
   socket.join('lobby'); updateGames(socket.id)
 
   socket.on('joinRequest', data => {
