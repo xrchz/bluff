@@ -33,7 +33,7 @@ function randomNormal(samples) {
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
 function randomUnusedGameName() {
-  if (Object.keys(games).length == 26 * 26) {
+  if (Object.keys(games).length === 26 * 26) {
     console.log('all game names in use')
     return 'Overflow'
   }
@@ -47,7 +47,7 @@ function formatPlayer(player, forWhom, current, disconnected) {
   if (forWhom.handLength && forWhom.handLength[player.name]) {
     s += ' ' + '🂠'.repeat(forWhom.handLength[player.name])
   }
-  else if (player.hand && player.name == forWhom.name) {
+  else if (player.hand && player.name === forWhom.name) {
     s += ' ' + '🂠'.repeat(player.hand.length)
   }
   else if (player.hand && forWhom.spectating) {
@@ -91,7 +91,7 @@ function updateHands(game) {
 }
 
 const noisyObservation = (n, noise) =>
-  n == 0 ? 0 : Math.max(1, Math.round(n + randomNormal() * noise * Math.sqrt(2 * n)))
+  n === 0 ? 0 : Math.max(1, Math.round(n + randomNormal() * noise * Math.sqrt(2 * n)))
 
 function updatePile(player, pile) {
   if (player.spectating) {
@@ -121,20 +121,20 @@ const Ace = 14
 const Joker = 15
 
 const cardName = r =>
-  r == Ten   ? 'T' :
-  r == Jack  ? 'J' :
-  r == Queen ? 'Q' :
-  r == King  ? 'K' :
-  r == Ace   ? 'A' :
-  r == Joker ? '?' : String.fromCharCode(48 + r)
+  r === Ten   ? 'T' :
+  r === Jack  ? 'J' :
+  r === Queen ? 'Q' :
+  r === King  ? 'K' :
+  r === Ace   ? 'A' :
+  r === Joker ? '?' : String.fromCharCode(48 + r)
 
 const cardNum = c =>
-  c == 'T' ? Ten :
-  c == 'J' ? Jack :
-  c == 'Q' ? Queen :
-  c == 'K' ? King :
-  c == 'A' ? Ace :
-  c == '?' ? Joker : parseInt(c)
+  c === 'T' ? Ten :
+  c === 'J' ? Jack :
+  c === 'Q' ? Queen :
+  c === 'K' ? King :
+  c === 'A' ? Ace :
+  c === '?' ? Joker : parseInt(c)
 
 function validCards(game) {
   const any = '23456789TJQKA'
@@ -146,7 +146,7 @@ function validCards(game) {
     const lastCard = cardNum(lastPlay.say[0])
     let valid = []
     if (game.settingsData.allowDown) {
-      if (lastCard == 2 && game.settingsData.wrap) {
+      if (lastCard === 2 && game.settingsData.wrap) {
         valid.push(Ace)
       }
       else if (lastCard > 2) {
@@ -157,7 +157,7 @@ function validCards(game) {
       valid.push(lastCard)
     }
     if (game.settingsData.allowUp) {
-      if (lastCard == Ace && game.settingsData.wrap) {
+      if (lastCard === Ace && game.settingsData.wrap) {
         valid.push(2)
       }
       else if (lastCard < Ace) {
@@ -175,7 +175,7 @@ function tryPlay(player, str, pile) {
   const cards = Array.from(str).map(cardNum).sort(asc)
   const toPile = []
   const hand = player.hand.filter(card => {
-    if (cards.length > 0 && card == cards[0]) {
+    if (cards.length > 0 && card === cards[0]) {
       toPile.push(cards.shift())
       return false
     }
@@ -209,7 +209,7 @@ function makeDeck(decks, jokers) {
 function changeTurn(gameName) {
   const game = games[gameName]
   const player = game.players[game.whoseTurn]
-  if (game.pendingWinner && game.pendingWinner.hand.length == 0) {
+  if (game.pendingWinner && game.pendingWinner.hand.length === 0) {
     console.log(`${gameName} ends with winner ${game.pendingWinner.name}`)
     game.log.push(game.pendingWinner.name + ' wins!')
     io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
@@ -237,7 +237,7 @@ function findLastPlay(log, forValidity, numPlayers) {
       }
     }
     else if (log[i].who) {
-      if (forValidity && passes == numPlayers) {
+      if (forValidity && passes === numPlayers) {
         return false
       }
       else {
@@ -256,7 +256,7 @@ function formatMove(entry, forWhom, spectating, noise) {
     }
     else {
       let result = entry.who + ' claims ' + cardsSpan(entry.say) + ' ('
-      if ( entry.who == forWhom || spectating ) {
+      if ( entry.who === forWhom || spectating ) {
         result += 'actually ' + cardsSpan(entry.act)
       }
       else {
@@ -302,12 +302,12 @@ io.on('connection', socket => {
     }
     if (game.started) {
       if (game.missingPlayers.has(socket.playerName)) {
-        if (Object.keys(socket.rooms).length == 1) {
+        if (Object.keys(socket.rooms).length === 1) {
           console.log(`${socket.playerName} rejoining ${gameName}`)
           socket.gameName = gameName
           socket.join(gameName)
           game.missingPlayers.delete(socket.playerName)
-          const player = game.players.find(player => player.name == socket.playerName)
+          const player = game.players.find(player => player.name === socket.playerName)
           player.id = socket.id
           updatePlayers(gameName)
           updatePile(player, game.pile)
@@ -315,11 +315,11 @@ io.on('connection', socket => {
           if (!game.ended) {
             const current = game.players[game.whoseTurn]
             socket.emit('setCurrent', current.name)
-            if (current.name == player.name) {
+            if (current.name === player.name) {
               socket.emit('showMove', validCards(game))
             }
             const last = findLastPlay(game.log)
-            if (last && last.who != player.name) {
+            if (last && last.who !== player.name) {
               socket.emit('showBluff')
             }
           }
@@ -327,7 +327,7 @@ io.on('connection', socket => {
             socket.emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise))
           }
           socket.emit('rejoinGame', player.name, player.spectating, game.settingsData)
-          if (player.spectating != data.spectate) {
+          if (player.spectating !== data.spectate) {
             socket.emit('errorMsg', 'You cannot become a spectator: rejoined as player')
           }
         }
@@ -337,7 +337,7 @@ io.on('connection', socket => {
         }
       }
       else if (data.spectate) {
-        if (game.members.every(player => player.name != socket.playerName)) {
+        if (game.members.every(player => player.name !== socket.playerName)) {
           console.log(`${socket.playerName} joining ${gameName} as spectator`)
           socket.gameName = gameName
           socket.join(gameName)
@@ -365,7 +365,7 @@ io.on('connection', socket => {
       }
     }
     else {
-      if (game.members.every(player => player.name != socket.playerName)) {
+      if (game.members.every(player => player.name !== socket.playerName)) {
         console.log(`${socket.playerName} joining ${gameName}`)
         socket.join(gameName)
         socket.gameName = gameName
@@ -401,7 +401,7 @@ io.on('connection', socket => {
       game.log = []
       game.lastActivity = Date.now()
       game.timeout = setInterval(game => {
-        if (game.missingPlayers.size == game.players.length &&
+        if (game.missingPlayers.size === game.players.length &&
             Date.now() - game.lastActivity > 30 * 60 * 1000) {
           console.log(`ending ${gameName} due to inactivity`)
           clearInterval(game.timeout)
@@ -417,7 +417,7 @@ io.on('connection', socket => {
       let i = 0
       while (deck.length) {
         game.players[i++].hand.push(deck.shift())
-        if (i == game.players.length) { i = 0 }
+        if (i === game.players.length) { i = 0 }
       }
       for (const player of game.members) {
         player.pileLength = 0
@@ -426,7 +426,7 @@ io.on('connection', socket => {
           player.hand.sort(asc)
           player.handLength = new Map()
           for (const other of game.players) {
-            if (player.name != other.name) {
+            if (player.name !== other.name) {
               player.handLength[other.name] = noisyObservation(other.hand.length, game.settingsData.noise)
             }
           }
@@ -451,8 +451,8 @@ io.on('connection', socket => {
     game.lastActivity = Date.now()
     const last = findLastPlay(game.log)
     if (last) {
-      const legit = (last.say.length == last.act.length &&
-        Array.from(last.act).every(c => c == '?' || c == last.say[0]))
+      const legit = (last.say.length === last.act.length &&
+        Array.from(last.act).every(c => c === '?' || c === last.say[0]))
       game.log.push(socket.playerName + ' accuses ' + last.who)
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
       let loserName
@@ -468,13 +468,13 @@ io.on('connection', socket => {
       }
       game.log.push({ bluff: true, msg: loserName + ' takes the pile to hand' })
       io.in(gameName).emit('appendLog', game.log[game.log.length - 1].msg)
-      const loser = game.players.find(player => player.name == loserName)
+      const loser = game.players.find(player => player.name === loserName)
       loser.hand = loser.hand.concat(game.pile).sort(asc)
       game.pile = []
       for (const player of game.members) {
         player.pileLength = 0
         updatePile(player, game.pile)
-        if (player.name != loserName && !player.spectating) {
+        if (player.name !== loserName && !player.spectating) {
           player.handLength[loserName] = noisyObservation(loser.hand.length, game.settingsData.noise)
         }
       }
@@ -493,7 +493,7 @@ io.on('connection', socket => {
     const gameName = socket.gameName
     const game = games[gameName]
     game.lastActivity = Date.now()
-    if (game.players[game.whoseTurn].name == socket.playerName) {
+    if (game.players[game.whoseTurn].name === socket.playerName) {
       const currentPlayer = game.players[game.whoseTurn]
       if (data) {
         const sayRegExp = new RegExp(`^([${validCards(game)}])\\1*$`)
@@ -506,7 +506,7 @@ io.on('connection', socket => {
               io.in(player.id).emit('appendLog', formatMove(entry, player.name, player.spectating, game.settingsData.noise))
               if (!player.spectating) {
                 player.pileLength = noisyObservation(game.pile.length, game.settingsData.noise)
-                if (player.name != currentPlayer.name) {
+                if (player.name !== currentPlayer.name) {
                   player.handLength[currentPlayer.name] = noisyObservation(currentPlayer.hand.length, game.settingsData.noise)
                 }
               }
@@ -516,8 +516,8 @@ io.on('connection', socket => {
             socket.emit('hideBluff')
             socket.to(gameName).emit('showBluff')
             game.whoseTurn++
-            if (game.whoseTurn == game.players.length) { game.whoseTurn = 0 }
-            if (currentPlayer.hand.length == 0) {
+            if (game.whoseTurn === game.players.length) { game.whoseTurn = 0 }
+            if (currentPlayer.hand.length === 0) {
               game.log.push(currentPlayer.name + ' wins unless they are caught...')
               io.in(gameName).emit('appendLog', game.log[game.log.length - 1])
               io.in(gameName).emit('setCurrent')
@@ -543,7 +543,7 @@ io.on('connection', socket => {
         io.in(gameName).emit('hideBluff')
         socket.emit('hideMove')
         game.whoseTurn++
-        if (game.whoseTurn == game.players.length) { game.whoseTurn = 0 }
+        if (game.whoseTurn === game.players.length) { game.whoseTurn = 0 }
         changeTurn(gameName)
         updatePlayers(gameName)
       }
@@ -558,26 +558,26 @@ io.on('connection', socket => {
     const game = games[socket.gameName]
     if (game) {
       if (!game.started) {
-        game.members = game.members.filter( player => player.name != socket.playerName )
-        game.players = game.players.filter( player => player.name != socket.playerName )
-        game.spectators = game.spectators.filter( player => player.name != socket.playerName )
+        game.members = game.members.filter( player => player.name !== socket.playerName )
+        game.players = game.players.filter( player => player.name !== socket.playerName )
+        game.spectators = game.spectators.filter( player => player.name !== socket.playerName )
         updatePlayers(socket.gameName)
-        if (game.members.length == 0) {
+        if (game.members.length === 0) {
           console.log(`removing empty game ${socket.gameName}`)
           delete games[socket.gameName]
         }
       }
       else {
-        const spectators = game.spectators.filter( player => player.name != socket.playerName )
+        const spectators = game.spectators.filter( player => player.name !== socket.playerName )
         if (spectators.length < game.spectators.length) {
-          game.members = game.members.filter( player => player.name != socket.playerName )
+          game.members = game.members.filter( player => player.name !== socket.playerName )
           game.spectators = spectators
         }
         else {
           game.missingPlayers.add(socket.playerName)
         }
         updatePlayers(socket.gameName)
-        if (game.ended && game.missingPlayers.size == game.players.length) {
+        if (game.ended && game.missingPlayers.size === game.players.length) {
           console.log(`removing finished game ${socket.gameName}`)
           delete games[socket.gameName]
         }
