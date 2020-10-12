@@ -81,9 +81,11 @@ const contractValue = c =>
     (c.n < 10 ? 250 : 500) :
     (c.n - 6) * 100 + (c.trumps + 1) * 20
 
-function calculateScore(contract, contractTricks) {
-  const contractMade = contract.trumps === Misere ? contractTricks === 0 : contractTricks >= contract.n
-  const opponentScore = contract.trumps === Misere ? 0 : (10 - contractTricks) * 10
+function calculateScore(contract, contractTricks, opponentTotal) {
+  const contractMade = contract.trumps === Misere ? contractTricks === 0 :
+    contractTricks >= contract.n
+  const opponentScore = contract.trumps === Misere ? 0 :
+    Math.min((10 - contractTricks) * 10, Math.max(460 - opponentTotal, 0))
   const value = contractValue(contract)
   const slam = contractTricks === 10 && value < 250
   const contractScore = contractMade ? (slam ? 250 : value) : -value
@@ -315,8 +317,10 @@ function restoreScore(room, teamNames, rounds, players) {
     const total = [0, 0]
     for (let i = 0; i < rounds.length; i++) {
       const round = rounds[i]
-      const score = calculateScore(round.contract, round.tricksMade).score
-      if (round.contractorIndex % 2) score.push(score.shift())
+      const team = round.contractorIndex % 2
+      const score = calculateScore(
+        round.contract, round.tricksMade, total[1 - team]).score
+      if (team) score.push(score.shift())
       for (const i of [0, 1]) total[i] += score[i]
       io.in(room).emit('appendScore', {
         round: i+1,
@@ -1008,11 +1012,12 @@ io.on('connection', socket => {
                     if (!game.rounds.length)
                       io.in(gameName).emit('initScore', game.teamNames)
                     game.rounds.push({ contractorIndex: game.lastBidder, contract: contract, tricksMade: contractTricks })
-                    const result = calculateScore(contract, contractTricks)
+                    const contractTeam = game.lastBidder % 2
+                    const result = calculateScore(contract, contractTricks, game.total[1 - contractTeam])
                     appendLog(gameName,
                       `${contractor.name}'s partnership ${result.made ? 'makes' : 'fails'} their contract, ${result.slam ? 'slamming' : 'scoring'} ${result.score[0]}.`)
                     appendLog(gameName, `The opponents score ${result.score[1]}.`)
-                    if (game.lastBidder % 2) result.score.push(result.score.shift())
+                    if (contractTeam) result.score.push(result.score.shift())
                     for (const i of [0, 1]) game.total[i] += result.score[i]
                     io.in(gameName).emit('appendScore', {
                       round: game.rounds.length,
