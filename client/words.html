@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang=en>
+  <head>
+    <title>Couchwords</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel=stylesheet href="words.css" type="text/css" />
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+    <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+    <input id=join type=button value="Join" />
+    <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    <ul id=games hidden></ul>
+    <div>
+      <ul id=unseated class=inline></ul>
+      <input id=start type=button value="Start!" hidden />
+      <ul id=spectators class=inline></ul>
+    </div>
+    <div id=setupArea hidden>
+      <div><h2>Blue Team</h2>
+        <ul id=blueTeam class=team>
+          <li><input type=radio name=blueLeader value=Example>Example</li>
+          <li><input type=radio name=blueLeader value=Example2>Example2 <input type=button value="Leave" /></li>
+        </ul>
+        <input id=joinBlue type=button value="Join Blue" />
+      </div>
+      <div><h2>Red Team</h2>
+        <ul id=redTeam class=team>
+          <li>Foobar</li>
+        </ul>
+        <input id=joinRed type=button value="Join Red" />
+      </div>
+    </div>
+    <div id=playArea hidden>
+    </div>
+    <ul id=log hidden></ul>
+    <div id=settings>
+    </div>
+    <script src="words.js"></script>
+  </body>
+</html>

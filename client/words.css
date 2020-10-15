@@ -1,0 +1,114 @@
+body {
+  font-size: large;
+  background-color: #004;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button] {
+  background-color: RoyalBlue;
+  color: LightYellow;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators, .empty {
+  color: SlateGray
+}
+.disconnected {
+  color: Pink;
+}
+#games {
+  list-style-type: none;
+}
+#games > li > ul {
+  display: inline;
+}
+#games a:hover {
+  cursor: pointer;
+}
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  margin: auto;
+}
+th {
+  color: Cornsilk;
+  vertical-align: top;
+}
+th, td {
+  border-left: 1px solid;
+  padding: 0.5em;
+  text-align: center;
+}
+th {
+  border-bottom: 1px solid;
+}
+th.round {
+  border-bottom: none;
+}
+tr:nth-child(even) {
+  background-color: #222;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+ul.team {
+  list-style-type: none;
+  padding: 0;
+}
+ul.team > li {
+  padding: 0.5em;
+}
+#setupArea {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: top;
+}
+#setupArea[hidden] {
+  display: none;
+}
+#playArea {
+  margin: auto;
+  width: 96vw;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
