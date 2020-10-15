@@ -140,21 +140,15 @@ io.on('connection', socket => {
     }
     else {
       if (game.players.every(player => player.name !== socket.playerName)) {
-        if (game.players.length < 4) {
-          console.log(`${socket.playerName} joining ${gameName}`)
-          socket.leave('lobby'); socket.emit('updateGames', [])
-          socket.join(gameName)
-          socket.gameName = gameName
-          game.players.push({ socketId: socket.id, name: socket.playerName })
-          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-          socket.emit('updateSpectators', game.spectators)
-          io.in(gameName).emit('updateUnseated', game.players)
-          io.in(gameName).emit('updateTeams', game.teams)
-        }
-        else {
-          console.log(`${socket.playerName} barred from joining ${gameName} which is full`)
-          socket.emit('errorMsg', `Game ${gameName} already has enough players. Try spectating.`)
-        }
+        console.log(`${socket.playerName} joining ${gameName}`)
+        socket.leave('lobby'); socket.emit('updateGames', [])
+        socket.join(gameName)
+        socket.gameName = gameName
+        game.players.push({ socketId: socket.id, name: socket.playerName })
+        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+        socket.emit('updateSpectators', game.spectators)
+        socket.emit('updateTeams', game.teams)
+        io.in(gameName).emit('updateUnseated', game.players)
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
@@ -174,110 +168,55 @@ io.on('connection', socket => {
     }
   }
 
-  socket.on('undoRequest', () => inGame((gameName, game) => {
-    if (game.started && game.undoLog.length) {
-      const entry = game.undoLog.pop()
-      copy(stateKeys.game, entry, game, true)
-      io.in(gameName).emit('updatePlayers', game.players)
-      let kitty = { kitty: game.kitty }
-      if (game.selectKitty) {
-        kitty.contractorName = game.players[game.lastBidder].name,
-        kitty.contractorIndex = game.lastBidder
-      }
-      io.in(gameName).emit('updateKitty', kitty)
-      io.in(gameName).emit('showJoker', false)
-      if (game.nominateJoker) {
-        const player = game.players.find(p => p.nominating)
-        io.in(player.socketId).emit('showJoker', true)
-      }
-      if (game.trick)
-        io.in(gameName).emit('updateTrick', { trick: game.trick, leader: game.leader })
-      io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
-      game.log.length = entry.logLength
-      game.rounds.length = entry.roundsLength
-      restoreScore(gameName, game.teamNames, game.rounds, game.players)
-      if (!game.undoLog.length)
-        io.in(gameName).emit('showUndo', false)
-      io.in(gameName).emit('errorMsg', `${socket.playerName} pressed Undo.`)
-      io.in(gameName).emit('blameMsg', '')
-    }
-    else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
-      socket.emit('errorMsg', 'Error: there is nothing to undo.')
-    }
-  }))
-
-  socket.on('sitHere', index => inGame((gameName, game) => {
+  socket.on('joinTeam', colour => inGame((gameName, game) => {
     if (!game.started) {
-      const seat = game.seats[index]
-      if (seat) {
-        if (!seat.player) {
-          const player = game.players.find(player => player.socketId === socket.id)
-          if (player) {
-            if (!player.seated) {
-              seat.player = player
-              player.seated = true
-              io.in(gameName).emit('updateUnseated', game.players)
-              io.in(gameName).emit('updateSeats', game.seats)
-              console.log(`${socket.playerName} in ${gameName} took their seat`)
-            }
-            else {
-              console.log(`error: ${socket.playerName} in ${gameName} tried to sit but is already seated`)
-              socket.emit('errorMsg', 'Error: you are already seated.')
-            }
-          }
-          else {
-            console.log(`error: ${socket.playerName} in ${gameName} tried to sit but is not a player`)
-            socket.emit('errorMsg', 'Error: a non-player cannot sit.')
-          }
+      if (colour === Red || colour === Blue) {
+        const player = game.players.find(player => player.socketId === socket.id)
+        if (player && player.team === undefined) {
+          game.teams[colour].push(player)
+          player.team = colour
+          if (game.teams[colour].length === 1) player.leader = true
+          io.in(gameName).emit('updateUnseated', game.players)
+          io.in(gameName).emit('updateTeams', game.teams)
+          console.log(`${socket.playerName} in ${gameName} joined team ${colour}`)
         }
         else {
-          console.log(`error: ${socket.playerName} in ${gameName} tried sitting in an occupied seat`)
-          socket.emit('errorMsg', 'Error: trying to sit in an occupied seat.')
+          console.log(`error: ${socket.playerName} in ${gameName} failed to join ${colour}`)
+          socket.emit('errorMsg', 'Error: you are not a player or already on a team.')
         }
       }
       else {
-        console.log(`error: ${socket.playerName} in ${gameName} tried sitting at invalid index ${index}`)
-        socket.emit('errorMsg', 'Error: trying to sit at an invalid seat index.')
+        console.log(`error: ${socket.playerName} in ${gameName} tried joining invalid team ${colour}`)
+        socket.emit('errorMsg', 'Error: trying to join an invalid team colour.')
       }
     }
     else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried sitting when game already started`)
-      socket.emit('errorMsg', 'Error: cannot sit after the game has started.')
+      console.log(`error: ${socket.playerName} in ${gameName} tried joining when game already started`)
+      socket.emit('errorMsg', 'Error: cannot join a team after the game has started.')
     }
   }))
 
-  socket.on('leaveSeat', () => inGame((gameName, game) => {
+  socket.on('leaveTeam', () => inGame((gameName, game) => {
     if (!game.started) {
       const player = game.players.find(player => player.socketId === socket.id)
-      if (player) {
-        if (player.seated) {
-          const seat = game.seats.find(seat => seat.player && seat.player.name === player.name)
-          if (seat) {
-            delete seat.player
-            player.seated = false
-            io.in(gameName).emit('updateUnseated', game.players)
-            io.in(gameName).emit('updateSeats', game.seats)
-            console.log(`${socket.playerName} in ${gameName} left their seat`)
-          }
-          else {
-            console.log(`error: ${socket.playerName} in ${gameName} is tried to leave seat but no seat has them`)
-            socket.emit('errorMsg', 'Error: could not find you in any seat.')
-          }
-        }
-        else {
-          console.log(`error: ${socket.playerName} in ${gameName} is not seated but tried to leave their seat`)
-          socket.emit('errorMsg', 'Error: you are not seated so cannot leave your seat.')
-        }
+      if (player && player.team !== undefined) {
+        game.teams[player.team] = game.teams[player.team].filter(x => x.socketId !== player.socketId)
+        if (game.teams[player.team].length === 1)
+          game.teams[player.team][0].leader = true
+        delete player.leader
+        delete player.team
+        io.in(gameName).emit('updateUnseated', game.players)
+        io.in(gameName).emit('updateTeams', game.teams)
+        console.log(`${socket.playerName} in ${gameName} left their team`)
       }
       else {
-        console.log(`error: ${socket.playerName} in ${gameName} is not a player but tried to leave a seat`)
-        socket.emit('errorMsg', 'Error: non-player trying to leave seat.')
+        console.log(`error: ${socket.playerName} in ${gameName} failed to leave their team`)
+        socket.emit('errorMsg', 'Error: you are not a player or not on a team.')
       }
     }
     else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried leaving seat when game already started`)
-      socket.emit('errorMsg', 'Error: cannot leave seat after the game has started.')
+      console.log(`error: ${socket.playerName} in ${gameName} tried leaving when game already started`)
+      socket.emit('errorMsg', 'Error: cannot leave a team after the game has started.')
     }
   }))
 

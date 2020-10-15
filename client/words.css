@@ -95,6 +95,9 @@ ul.team {
 ul.team > li {
   padding: 0.5em;
 }
+ul.team > li > input[type=button] {
+  margin-left: 0.75em;
+}
 #setupArea {
   display: flex;
   flex-direction: row;

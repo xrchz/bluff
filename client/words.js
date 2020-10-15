@@ -1,12 +1,19 @@
 /* global io */
 var socket = io("https://xrchz.net:4321")
 
+const Blue = 0
+const Red = 1
+const colourName = index => index === Blue ? 'blue' : index === Red ? 'red' : null
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
 const log = document.getElementById('log')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
+const joinBlueButton = document.getElementById('joinBlue')
+const joinRedButton = document.getElementById('joinRed')
+const blueTeamList = document.getElementById('blueTeam')
+const redTeamList = document.getElementById('redTeam')
 const startButton = document.getElementById('start')
 const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
@@ -23,7 +30,9 @@ joinButton.onclick = () => {
   })
 }
 
-startButton.onclick = () => { socket.emit('startGame') }
+joinBlueButton.onclick = () => socket.emit('joinTeam', Blue)
+joinRedButton.onclick = () => socket.emit('joinTeam', Red)
+startButton.onclick = () => socket.emit('startGame')
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -75,7 +84,11 @@ socket.on('updateUnseated', players => {
   unseated.innerHTML = ''
   let elem
   for (player of players) {
-    if (player.seated) { continue }
+    if (player.team !== undefined) continue
+    if (player.name === nameInput.value && !spectateInput.checked) {
+      joinBlueButton.hidden = false
+      joinRedButton.hidden = false
+    }
     elem = document.createElement('li')
     elem.textContent = player.name
     unseated.appendChild(elem)
@@ -110,6 +123,32 @@ socket.on('joinedGame', data => {
   joinButton.hidden = true
   setupDiv.hidden = false
   errorMsg.innerHTML = ''
+})
+
+socket.on('updateTeams', teams => {
+  for(const index of [Blue, Red]) {
+    const colour = colourName(index)
+    const teamList = [blueTeamList, redTeamList][index]
+    teamList.innerHTML = ''
+    for (const player of teams[index]) {
+      const li = fragment.appendChild(document.createElement('li'))
+      const ra = li.appendChild(document.createElement('input'))
+      ra.name = `${colour}Leader`
+      ra.type = 'radio'
+      ra.value = player.name
+      if (player.leader) ra.checked = true
+      li.appendChild(document.createTextNode(player.name))
+      if (player.name === nameInput.value && !spectateInput.checked) {
+        const bu = li.appendChild(document.createElement('input'))
+        bu.type = 'button'
+        bu.value = 'Leave'
+        bu.onclick = () => socket.emit('leaveTeam')
+        joinBlueButton.hidden = true
+        joinRedButton.hidden = true
+      }
+    }
+    teamList.appendChild(fragment)
+  }
 })
 
 socket.on('gameStarted', () => {
