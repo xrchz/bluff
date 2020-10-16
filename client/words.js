@@ -136,6 +136,10 @@ socket.on('updateTeams', teams => {
       ra.name = `${colour}Leader`
       ra.type = 'radio'
       ra.value = player.name
+      if (spectateInput.checked)
+        ra.disabled = true
+      else
+        ra.onchange = () => socket.emit('setLeader', player.name)
       if (player.leader) ra.checked = true
       li.appendChild(document.createTextNode(player.name))
       if (player.name === nameInput.value && !spectateInput.checked) {

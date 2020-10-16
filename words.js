@@ -201,8 +201,7 @@ io.on('connection', socket => {
       const player = game.players.find(player => player.socketId === socket.id)
       if (player && player.team !== undefined) {
         game.teams[player.team] = game.teams[player.team].filter(x => x.socketId !== player.socketId)
-        if (game.teams[player.team].length === 1)
-          game.teams[player.team][0].leader = true
+        if (game.teams[player.team].length === 1) game.teams[player.team][0].leader = true
         delete player.leader
         delete player.team
         io.in(gameName).emit('updateUnseated', game.players)
@@ -217,6 +216,41 @@ io.on('connection', socket => {
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried leaving when game already started`)
       socket.emit('errorMsg', 'Error: cannot leave a team after the game has started.')
+    }
+  }))
+
+  socket.on('setLeader', playerName => inGame((gameName, game) => {
+    if (!game.started) {
+      const player = game.players.find(player => player.name === playerName)
+      if (player && game.teams[player.team]) {
+        const team = game.teams[player.team]
+        team.forEach(player => delete player.leader)
+        player.leader = true
+        io.in(gameName).emit('updateTeams', game.teams)
+        console.log(`${socket.playerName} in ${gameName} set ${playerName} as leader`)
+        /* leader jumps to top
+        const index = team.findIndex(x => player.socketId === x.socketId)
+        if (0 <= index) {
+          delete team[0].leader
+          team.unshift(team.splice(index, 1)[0])
+          player.leader = true
+          io.in(gameName).emit('updateTeams', game.teams)
+          console.log(`${socket.playerName} in ${gameName} set ${playerName} as leader`)
+        }
+        else {
+          console.log(`error: ${player.name} in ${gameName} not found on their team`)
+          socket.emit('errorMsg', `Error: could not find player ${playerName} on their team.`)
+        }
+        */
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} failed to set ${playerName} as leader`)
+        socket.emit('errorMsg', `Error: could not find player ${playerName} on a team.`)
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried setting leader when game already started`)
+      socket.emit('errorMsg', 'Error: cannot set leader after the game has started.')
     }
   }))
 
@@ -259,10 +293,12 @@ io.on('connection', socket => {
         const notThisPlayer = player => player.socketId !== socket.id
         game.players = game.players.filter(notThisPlayer)
         game.spectators = game.spectators.filter(notThisPlayer)
-        game.teams[Blue] = game.teams[Blue].filter(notThisPlayer)
-        game.teams[Red] = game.teams[Red].filter(notThisPlayer)
+        for (const team of [Blue, Red]) {
+          game.teams[team] = game.teams[team].filter(notThisPlayer)
+          if (game.teams[team].length === 1) game.teams[team][0].leader = true
+        }
         io.in(gameName).emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateSeats', game.seats)
+        io.in(gameName).emit('updateTeams', game.teams)
         io.in(gameName).emit('updateUnseated', game.players)
         if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)
