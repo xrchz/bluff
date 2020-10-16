@@ -62,6 +62,14 @@ function updateGames(room) {
 const Blue = 0
 const Red = 1
 
+function updateTeams(gameName) {
+  const game = games[gameName]
+  io.in(gameName).emit('updateTeams', game.teams)
+  io.in(gameName).emit('showStart',
+    game.teams[Red].length >= 2 && game.teams[Blue].length >= 2 &&
+    game.players.every(player => player.team !== undefined))
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -101,7 +109,7 @@ io.on('connection', socket => {
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started) {
           socket.emit('updateUnseated', game.players)
-          socket.emit('updateTeams', game.teams)
+          updateTeams(gameName)
         }
         else {
           socket.emit('gameStarted')
@@ -147,7 +155,7 @@ io.on('connection', socket => {
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
         socket.emit('updateSpectators', game.spectators)
-        socket.emit('updateTeams', game.teams)
+        updateTeams(gameName)
         io.in(gameName).emit('updateUnseated', game.players)
       }
       else {
@@ -177,7 +185,7 @@ io.on('connection', socket => {
           player.team = colour
           if (game.teams[colour].length === 1) player.leader = true
           io.in(gameName).emit('updateUnseated', game.players)
-          io.in(gameName).emit('updateTeams', game.teams)
+          updateTeams(gameName)
           console.log(`${socket.playerName} in ${gameName} joined team ${colour}`)
         }
         else {
@@ -205,7 +213,7 @@ io.on('connection', socket => {
         delete player.leader
         delete player.team
         io.in(gameName).emit('updateUnseated', game.players)
-        io.in(gameName).emit('updateTeams', game.teams)
+        updateTeams(gameName)
         console.log(`${socket.playerName} in ${gameName} left their team`)
       }
       else {
@@ -226,7 +234,7 @@ io.on('connection', socket => {
         const team = game.teams[player.team]
         team.forEach(player => delete player.leader)
         player.leader = true
-        io.in(gameName).emit('updateTeams', game.teams)
+        updateTeams(gameName)
         console.log(`${socket.playerName} in ${gameName} set ${playerName} as leader`)
         /* leader jumps to top
         const index = team.findIndex(x => player.socketId === x.socketId)
@@ -234,7 +242,7 @@ io.on('connection', socket => {
           delete team[0].leader
           team.unshift(team.splice(index, 1)[0])
           player.leader = true
-          io.in(gameName).emit('updateTeams', game.teams)
+          updateTeams(gameName)
           console.log(`${socket.playerName} in ${gameName} set ${playerName} as leader`)
         }
         else {
@@ -298,7 +306,7 @@ io.on('connection', socket => {
           if (game.teams[team].length === 1) game.teams[team][0].leader = true
         }
         io.in(gameName).emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateTeams', game.teams)
+        updateTeams(gameName)
         io.in(gameName).emit('updateUnseated', game.players)
         if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)

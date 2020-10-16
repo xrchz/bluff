@@ -155,6 +155,11 @@ socket.on('updateTeams', teams => {
   }
 })
 
+socket.on('showStart', show => {
+  if (!spectateInput.checked)
+    startButton.hidden = !show
+})
+
 socket.on('gameStarted', () => {
   startButton.hidden = true
   log.hidden = false
