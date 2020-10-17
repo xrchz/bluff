@@ -181,9 +181,9 @@ io.on('connection', socket => {
       if (colour === Red || colour === Blue) {
         const player = game.players.find(player => player.socketId === socket.id)
         if (player && player.team === undefined) {
+          if (!game.teams[colour].length) player.leader = true
           game.teams[colour].push(player)
           player.team = colour
-          if (game.teams[colour].length === 1) player.leader = true
           io.in(gameName).emit('updateUnseated', game.players)
           updateTeams(gameName)
           console.log(`${socket.playerName} in ${gameName} joined team ${colour}`)
@@ -207,14 +207,22 @@ io.on('connection', socket => {
   socket.on('leaveTeam', () => inGame((gameName, game) => {
     if (!game.started) {
       const player = game.players.find(player => player.socketId === socket.id)
-      if (player && player.team !== undefined) {
-        game.teams[player.team] = game.teams[player.team].filter(x => x.socketId !== player.socketId)
-        if (game.teams[player.team].length === 1) game.teams[player.team][0].leader = true
-        delete player.leader
-        delete player.team
-        io.in(gameName).emit('updateUnseated', game.players)
-        updateTeams(gameName)
-        console.log(`${socket.playerName} in ${gameName} left their team`)
+      const team = game.teams[player.team]
+      if (team) {
+        const index = team.findIndex(player => player.socketId === socket.id)
+        if (0 <= index) {
+          team.splice(index, 1)
+          if (player.leader && team.length) team[0].leader = true
+          delete player.leader
+          delete player.team
+          io.in(gameName).emit('updateUnseated', game.players)
+          updateTeams(gameName)
+          console.log(`${socket.playerName} in ${gameName} left their team`)
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} not found in their team`)
+          socket.emit('errorMsg', 'Error: you were not found in your team.')
+        }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} failed to leave their team`)
