@@ -5,7 +5,7 @@ const Blue = 0, Red = 1, Assassin = 2
 const colourName = i =>
   i === Blue ? 'blue' :
   i === Red ? 'red' :
-  i === Assassin ? 'assassin' : null
+  i === Assassin ? 'assassin' : 'neutral'
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
@@ -64,7 +64,10 @@ socket.on('ensureLobby', () => {
   spectatorsDiv.innerHTML = ''
   playArea.hidden = true
   passButton.hidden = true
-  for (const teamList of TeamLists) teamList.innerHTML = ''
+  for (const teamList of TeamLists) {
+    teamList.previousElementSibling.hidden = true
+    teamList.innerHTML = ''
+  }
   for (const clueLog of ClueLogs) clueLog.innerHTML = ''
   for (const index of [Blue, Red]) teamNames[index] = []
   clueWord.value = ''
@@ -153,11 +156,13 @@ socket.on('updateTeams', data => {
     const colour = colourName(index)
     const teamList = TeamLists[index]
     teamList.innerHTML = ''
+    teamList.previousElementSibling.hidden = !data.teams[index].length
     for (const player of data.teams[index]) {
       const li = fragment.appendChild(document.createElement('li'))
       const la = li.appendChild(document.createElement('label'))
       const ra = la.appendChild(document.createElement('input'))
       la.appendChild(document.createElement('span'))
+      la.classList.add(colour)
       ra.name = `${colour}Leader`
       ra.type = 'radio'
       ra.value = player.name

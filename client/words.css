@@ -1,7 +1,7 @@
 body {
   font-family: sans-serif;
   font-size: large;
-  background-color: #004;
+  background-color: #003;
   color: Lavender;
   margin-left: 2vw;
   width: 96vw;
@@ -42,36 +42,6 @@ input[type=button] {
 }
 a:hover {
   cursor: pointer;
-}
-#log {
-  height: 13ex;
-  resize: both;
-  overflow-y: scroll;
-  list-style-type: none;
-  padding-left: 0;
-  background-color: Black;
-  color: White;
-  border-style: solid;
-  border-color: OldLace;
-  margin: auto;
-}
-th {
-  color: Cornsilk;
-  vertical-align: top;
-}
-th, td {
-  border-left: 1px solid;
-  padding: 0.5em;
-  text-align: center;
-}
-th {
-  border-bottom: 1px solid;
-}
-th.round {
-  border-bottom: none;
-}
-tr:nth-child(even) {
-  background-color: #222;
 }
 ul.inline {
   list-style-type: none;
@@ -125,7 +95,7 @@ ul.team > li > input[type=button] {
   display: none;
 }
 #setupArea > div {
-  width: 20em;
+  width: 25em;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -137,9 +107,30 @@ div.teamclues {
   align-items: flex-start;
   width: 100%;
 }
-ul.clues {
+div.clues {
+  width: 60%;
+}
+div.clues ul {
   list-style-type: none;
   padding: 0;
+}
+div.clues ul li dl {
+  margin-left: 1em;
+}
+h3, h4 {
+  padding: 0;
+  margin: 0;
+}
+dt::after {
+  content: ":";
+  margin-right: 0.5em;
+}
+dd, dt {
+  margin: 0;
+  padding: 0;
+}
+dt {
+  float: left;
 }
 #playArea {
   margin: auto;
@@ -175,19 +166,16 @@ label input[type=radio] {
   width: 0;
   position: fixed;
 }
-#blueTeam li label {
-  color: blue;
-}
-#redTeam li label {
-  color: red;
-}
 .blue {
-  color: blue;
+  color: #ccf;
 }
 .red {
-  color: red;
+  color: #fcc;
+}
+.neutral {
+  color: #ccc;
 }
 .assassin {
-  color: gray;
+  color: #cfc;
   font-weight: bold;
 }

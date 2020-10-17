@@ -75,7 +75,8 @@ const Blue = 0
 const Red = 1
 const Assassin = 2
 const teamName = c => c === Blue ? 'Blue' : c === Red ? 'Red' : null
-const colourName = c => c === Blue ? 'blue' : c === Red ? 'red' : c === Assassin ? 'assassin' : null
+const colourName = c => c === Blue ? 'blue' : c === Red ? 'red' : c === Assassin ? 'assassin' : 'neutral'
+const typeIcon = t => t === 'friend' ? '✓' : t === 'foe' ? '✗' : t === 'assassin' ? '☠' : '–'
 
 const canStart = game =>
   game.teams[Blue].length >= 2 &&
@@ -420,7 +421,7 @@ io.on('connection', socket => {
               type = 'neutral'
               endTurn = true
             }
-            const guess = { who: player.name, what: `${word.word} (${type})`, classes: [type] }
+            const guess = { who: player.name, what: `${word.word} (${typeIcon(type)})`, classes: [type] }
             const colourClass = colourName(word.colour)
             if (colourClass) guess.classes.push(colourClass)
             clue.guesses.push(guess)
