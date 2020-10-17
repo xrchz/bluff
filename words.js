@@ -397,34 +397,44 @@ io.on('connection', socket => {
     if (!!game.guessesLeft) {
       const player = game.teams[game.whoseTurn].find(player => player.socketId === socket.id)
       if (player) {
-        if (Number.isInteger(index) && 0 <= index && index < game.words.length && !game.words[index].guessed) {
-          const word = game.words[index]
-          word.guessed = true
-          game.guessesLeft--
-          if ([Blue, Red].includes(word.colour))
-            game.wordsLeft[word.colour] =
-              game.words.reduce((n, w) => w.colour === word.colour && !w.guessed ? n + 1 : n, 0)
-          let type, endTurn = game.guessesLeft === 0
-          if (word.colour === game.whoseTurn)
-            type = 'friend'
-          else if (word.colour === 1 - game.whoseTurn) {
-            type = 'foe'
+        if (index === false ||
+            Number.isInteger(index) && 0 <= index && index < game.words.length && !game.words[index].guessed) {
+          let endTurn
+          if (index === false) {
+            appendLog(gameName, `${player.name} passes.`)
             endTurn = true
           }
-          else if (word.colour === Assassin)
-            type = 'assassin'
           else {
-            type = 'neutral'
-            endTurn = true
+            const word = game.words[index]
+            word.guessed = true
+            game.guessesLeft--
+            if ([Blue, Red].includes(word.colour))
+              game.wordsLeft[word.colour] =
+                game.words.reduce((n, w) => w.colour === word.colour && !w.guessed ? n + 1 : n, 0)
+            endTurn = game.guessesLeft === 0
+            let type
+            if (word.colour === game.whoseTurn)
+              type = 'friend'
+            else if (word.colour === 1 - game.whoseTurn) {
+              type = 'foe'
+              endTurn = true
+            }
+            else if (word.colour === Assassin) {
+              type = 'assassin'
+              endTurn = type
+            }
+            else {
+              type = 'neutral'
+              endTurn = true
+            }
+            appendLog(gameName, `${player.name} guesses '${word.word}' (${type}).`)
           }
-          appendLog(gameName, `${player.name} guesses '${word.word}' (${type}).`)
-          updateWords(gameName)
           if (game.wordsLeft.includes(0)) {
             appendLog(gameName, `${teamName(game.whoseTurn)} wins!`)
             delete game.guessesLeft
             game.ended = true
           }
-          else if (word.colour === Assassin) {
+          else if (endTurn === 'assassin') {
             appendLog(gameName, `${teamName(1 - game.whoseTurn)} wins!`)
             delete game.guessesLeft
             game.ended = true
@@ -434,9 +444,10 @@ io.on('connection', socket => {
             delete game.guessesLeft
             game.giving = true
             game.teams[game.whoseTurn][0].current = true
-            updateTeams(gameName)
             updateClue(gameName)
           }
+          updateTeams(gameName)
+          updateWords(gameName)
         }
         else {
           console.log(`${socket.playerName} gave invalid guess ${index} in ${gameName}`)

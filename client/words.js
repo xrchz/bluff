@@ -16,6 +16,7 @@ const clueArea = document.getElementById('clueArea')
 const clueWord = document.getElementById('clueWord')
 const clueNumber = document.getElementById('clueNumber')
 const clueSubmit = document.getElementById('clueSubmit')
+const passButton = document.getElementById('pass')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const joinBlueButton = document.getElementById('joinBlue')
@@ -63,6 +64,7 @@ socket.on('ensureLobby', () => {
   startButton.hidden = true
   spectatorsDiv.innerHTML = ''
   playArea.hidden = true
+  passButton.hidden = true
   log.innerHTML = ''
   log.hidden = true
   for (const teamList of TeamLists) teamList.innerHTML = ''
@@ -239,13 +241,16 @@ clueSubmit.onclick = () => {
     })
 }
 
+passButton.onclick = () => socket.emit('guessRequest', false)
+
 socket.on('updateWords', data => {
   wordsList.innerHTML = ''
+  const isPlayer = !(spectateInput.checked || leaders.includes(nameInput.value))
+  const isPlaying = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value)
   for (let i = 0; i < data.words.length; i++) {
     const word = data.words[i]
     const li = fragment.appendChild(document.createElement('li'))
-    const isPlayer = !(spectateInput.checked || leaders.includes(nameInput.value))
-    const isPlayable = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value) && !word.guessed
+    const isPlayable = isPlaying && !word.guessed
     const el = li.appendChild(document.createElement(isPlayable ? 'a' : 'span'))
     el.textContent = word.word
     if (isPlayable)
@@ -254,6 +259,7 @@ socket.on('updateWords', data => {
       el.classList.add(colourName(word.colour))
   }
   wordsList.appendChild(fragment)
+  passButton.hidden = !isPlaying
   errorMsg.innerHTML = ''
 })
 
