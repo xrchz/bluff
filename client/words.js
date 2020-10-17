@@ -11,13 +11,19 @@ const log = document.getElementById('log')
 const wordsList = document.getElementById('words')
 const playArea = document.getElementById('playArea')
 const clueArea = document.getElementById('clueArea')
+const clueWord = document.getElementById('clueWord')
 const clueNumber = document.getElementById('clueNumber')
+const clueSubmit = document.getElementById('clueSubmit')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const joinBlueButton = document.getElementById('joinBlue')
 const joinRedButton = document.getElementById('joinRed')
+const blueHeading = document.getElementById('blueHeading')
+const redHeading = document.getElementById('redHeading')
 const blueTeamList = document.getElementById('blueTeam')
 const redTeamList = document.getElementById('redTeam')
+const blueClues = document.getElementById('blueClues')
+const redClues = document.getElementById('redClues')
 const startButton = document.getElementById('start')
 const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
@@ -25,7 +31,11 @@ const unseated = document.getElementById('unseated')
 const setupDiv = document.getElementById('setupArea')
 
 const fragment = document.createDocumentFragment()
+const Headings = [blueHeading, redHeading]
+const TeamLists = [blueTeamList, redTeamList]
+const ClueLists = [blueClues, redClues]
 const leaders = []
+const teamNames = [[], []]
 
 joinButton.onclick = () => {
   socket.emit('joinRequest', {
@@ -53,6 +63,10 @@ socket.on('ensureLobby', () => {
   playArea.hidden = true
   log.innerHTML = ''
   log.hidden = true
+  for (const teamList of TeamLists) teamList.innerHTML = ''
+  for (const clueList of ClueLists) clueList.innerHTML = ''
+  for (const index of [Blue, Red]) teamNames[index] = []
+  document.querySelectorAll('h3').forEach(h => h.hidden = true)
   setupDiv.hidden = true
 })
 
@@ -136,7 +150,7 @@ socket.on('joinedGame', data => {
 socket.on('updateTeams', data => {
   for(const index of [Blue, Red]) {
     const colour = colourName(index)
-    const teamList = [blueTeamList, redTeamList][index]
+    const teamList = TeamLists[index]
     teamList.innerHTML = ''
     for (const player of data.teams[index]) {
       const li = fragment.appendChild(document.createElement('li'))
@@ -166,6 +180,10 @@ socket.on('updateTeams', data => {
     }
     teamList.appendChild(fragment)
   }
+  if (data.guessing)
+    Headings[data.whoseTurn].classList.add('current')
+  else
+    Headings.forEach(x => x.classList.remove('current'))
 })
 
 socket.on('showStart', show => {
@@ -178,7 +196,7 @@ socket.on('gameStarted', () => {
   joinRedButton.hidden = true
   joinBlueButton.hidden = true
   for (const index of [Blue, Red]) {
-    const teamList = [blueTeamList, redTeamList][index]
+    const teamList = TeamLists[index]
     for (const el of teamList.getElementsByTagName('input')) {
       if (el.type === 'button')
         el.hidden = true
@@ -186,11 +204,13 @@ socket.on('gameStarted', () => {
         el.disabled = true
         if (el.checked)
           leaders[index] = el.value
+        teamNames[index].push(el.value)
       }
     }
   }
   playArea.hidden = false
   log.hidden = false
+  document.querySelectorAll('h3').forEach(h => h.hidden = false)
   errorMsg.innerHTML = ''
 })
 
@@ -201,19 +221,27 @@ socket.on('showClue', wordsLeft => {
     for(let i = 0; i <= wordsLeft; i++)
       fragment.appendChild(document.createElement('option')).textContent = i.toString()
     fragment.appendChild(document.createElement('option')).textContent = '∞'
+    if (1 <= wordsLeft) fragment.children[1].selected = true
     clueNumber.appendChild(fragment)
   }
   else
     clueArea.hidden = true
 })
 
-socket.on('updateWords', words => {
+clueSubmit.onclick = () => {
+  socket.emit('clueRequest',
+    { clue: clueWord.value,
+      n: Array.from(clueNumber.children).findIndex(x => x.selected)
+    })
+}
+
+socket.on('updateWords', data => {
   wordsList.innerHTML = ''
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i]
+  for (let i = 0; i < data.words.length; i++) {
+    const word = data.words[i]
     const li = fragment.appendChild(document.createElement('li'))
     const isPlayer = !(spectateInput.checked || leaders.includes(nameInput.value))
-    const isPlayable = isPlayer && !word.revealed
+    const isPlayable = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value) && !word.revealed
     const el = li.appendChild(document.createElement(isPlayable ? 'a' : 'span'))
     el.textContent = word.word
     if (isPlayable)
@@ -240,6 +268,10 @@ socket.on('removeLog', n => {
     log.removeChild(log.lastElementChild)
   }
   errorMsg.innerHTML = ''
+})
+
+socket.on('appendClue', data => {
+  ClueLists[data.team].appendChild(document.createElement('li')).textContent = `${data.clue} (${data.n})`
 })
 
 socket.on('errorMsg', msg => {

@@ -40,7 +40,7 @@ input[type=button] {
 #games > li > ul {
   display: inline;
 }
-#games a:hover {
+a:hover {
   cursor: pointer;
 }
 #log {
@@ -112,14 +112,34 @@ ul.team > li > input[type=button] {
   text-transform: uppercase;
   padding: 1em;
 }
+#words > li > a:hover {
+  text-decoration: underline;
+}
 #setupArea {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  align-items: top;
+  align-items: flex-start;
 }
 #setupArea[hidden] {
   display: none;
+}
+#setupArea > div {
+  width: 20em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+div.teamclues {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: flex-start;
+  width: 100%;
+}
+ul.clues {
+  list-style-type: none;
+  padding: 0;
 }
 #playArea {
   margin: auto;

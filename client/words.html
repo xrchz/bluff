@@ -23,18 +23,36 @@
       <div id=clueArea hidden>
         <input id=clueWord type=text placeholder=clue autocomplete=off pattern="\w+" />
         <select id=clueNumber></select>
-        <input id=giveClue type=button value="Submit" />
+        <input id=clueSubmit type=button value="Submit" />
       </div>
     </div>
     <ul id=log hidden></ul>
     <div id=setupArea hidden>
-      <div><h2>Blue Team</h2>
-        <ul id=blueTeam class=team></ul>
-        <input id=joinBlue type=button value="Join Blue" hidden />
+      <div>
+        <h2 id=blueHeading>Blue Team</h2>
+        <div class=teamclues>
+          <div>
+            <ul id=blueTeam class=team></ul>
+            <input id=joinBlue type=button value="Join Blue" hidden />
+          </div>
+          <div>
+            <h3 hidden>Clues</h3>
+            <ul id=blueClues class=clues></ul>
+          </div>
+        </div>
       </div>
-      <div><h2>Red Team</h2>
-        <ul id=redTeam class=team></ul>
-        <input id=joinRed type=button value="Join Red" hidden />
+      <div>
+        <h2 id=redHeading>Red Team</h2>
+        <div class=teamclues>
+          <div>
+            <ul id=redTeam class=team></ul>
+            <input id=joinRed type=button value="Join Red" hidden />
+          </div>
+          <div>
+            <h3 hidden>Clues</h3>
+            <ul id=redClues class=clues></ul>
+          </div>
+        </div>
       </div>
     </div>
     <div id=settings>

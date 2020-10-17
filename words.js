@@ -84,21 +84,37 @@ const canStart = game =>
   game.teams[Red].length >= 2 &&
   game.players.every(player => player.team !== undefined)
 
-function updateTeams(gameName) {
+function updateTeams(gameName, socketId) {
   const game = games[gameName]
-  io.in(gameName).emit('updateTeams', { teams: game.teams, started: game.started })
+  const room = socketId ? socketId : gameName
+  io.in(room).emit('updateTeams',
+    { teams: game.teams,
+      started: game.started,
+      guessing: game.guessing,
+      whoseTurn: game.whoseTurn
+    })
   if (!game.started)
-    io.in(gameName).emit('showStart', canStart(game))
+    io.in(room).emit('showStart', canStart(game))
 }
 
 function updateClue(gameName, socketId) {
   const game = games[gameName]
-  const wordsLeft = game.words.reduce((n, word) => word.colour === game.whoseTurn && !word.guessed ? n + 1 : n, 0)
   const leaderId = game.teams[game.whoseTurn][0].socketId
   if (!socketId || leaderId === socketId) {
     io.in(gameName).emit('showClue', false)
-    io.in(leaderId).emit('showClue', wordsLeft)
+    if (game.giving)
+      io.in(leaderId).emit('showClue', game.wordsLeft[game.whoseTurn])
   }
+}
+
+function updateWords(gameName, socketId) {
+  const room = socketId ? socketId : gameName
+  const game = games[gameName]
+  io.in(room).emit('updateWords', {
+    words: game.words,
+    guessing: game.guessing,
+    whoseTurn: game.whoseTurn
+  })
 }
 
 io.on('connection', socket => {
@@ -143,11 +159,12 @@ io.on('connection', socket => {
           updateTeams(gameName)
         }
         else {
-          socket.emit('updateTeams', { teams: game.teams, started: true })
+          updateTeams(gameName, socket.id)
           socket.emit('gameStarted')
-          socket.emit('updateWords', game.words)
+          updateWords(gameName, socket.id)
           updateClue(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
+          game.clues.forEach(clue => socket.emit('appendClue', clue))
           // ...
         }
       }
@@ -168,11 +185,12 @@ io.on('connection', socket => {
           player.socketId = socket.id
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
-          socket.emit('updateTeams', { teams: game.teams, started: true })
+          updateTeams(gameName)
           socket.emit('gameStarted')
-          socket.emit('updateWords', game.words)
+          updateWords(gameName, socket.id)
           updateClue(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
+          game.clues.forEach(clue => socket.emit('appendClue', clue))
           // ...
         }
         else {
@@ -314,6 +332,8 @@ io.on('connection', socket => {
           colours[i++] = game.whoseTurn
           colours[i] = 1 - game.whoseTurn
         }
+        game.wordsLeft = [TeamWords, TeamWords]
+        game.wordsLeft[game.whoseTurn]++
         shuffleInPlace(colours)
         game.words.forEach((x, i) => { if (colours[i] !== undefined) x.colour = colours[i] })
         const assassins = []
@@ -325,7 +345,9 @@ io.on('connection', socket => {
         game.log = []
         io.in(gameName).emit('gameStarted')
         appendLog(gameName, 'The game begins!')
-        io.in(gameName).emit('updateWords', game.words)
+        updateWords(gameName)
+        game.giving = true
+        game.clues = []
         game.teams[game.whoseTurn][0].current = true
         updateTeams(gameName)
         updateClue(gameName)
@@ -339,6 +361,40 @@ io.on('connection', socket => {
       socket.emit('errorMsg', `Error: ${gameName} has already started.`)
     }
   }))
+
+  socket.on('clueRequest', data => inGame((gameName, game) => {
+    if (game.started && game.giving) {
+      const leader = game.teams[game.whoseTurn][0]
+      if (leader && leader.current && leader.socketId === socket.id) {
+        if (Number.isInteger(data.n) && 0 <= data.n && data.n <= game.wordsLeft[game.whoseTurn] + 1) {
+          data.team = game.whoseTurn
+          game.clues.push(data)
+          io.in(gameName).emit('appendClue', data)
+          appendLog(gameName, `${socket.playerName} gives clue '${data.clue}' (${data.n}).`)
+          delete game.giving
+          delete leader.current
+          game.guessing = true
+          updateTeams(gameName)
+          updateClue(gameName)
+          updateWords(gameName)
+        }
+        else {
+          console.log(`${socket.playerName} gave invalid clue in ${gameName}`)
+          socket.emit('errorMsg', `Error: not a valid clue number.`)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} attempted to give clue in ${gameName} out of turn`)
+        socket.emit('errorMsg', `Error: it is not your turn to give a clue.`)
+      }
+    }
+    else {
+      console.log(`${socket.playerName} attempted to give clue in ${gameName}`)
+      socket.emit('errorMsg', `Error: it is not time to give clues.`)
+    }
+  }))
+
+  // const wordsLeft = game.words.reduce((n, word) => word.colour === game.whoseTurn && !word.guessed ? n + 1 : n, 0)
 
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
@@ -370,7 +426,7 @@ io.on('connection', socket => {
           game.players.find(player => player.socketId === socket.id).socketId = null
         }
       }
-      updateTeams(gameName)
+      if (gameName in games) updateTeams(gameName)
       updateGames()
     }
   })
