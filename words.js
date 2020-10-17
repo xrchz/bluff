@@ -271,20 +271,6 @@ io.on('connection', socket => {
         player.leader = true
         updateTeams(gameName)
         console.log(`${socket.playerName} in ${gameName} set ${playerName} as leader`)
-        /* leader jumps to top
-        const index = team.findIndex(x => player.socketId === x.socketId)
-        if (0 <= index) {
-          delete team[0].leader
-          team.unshift(team.splice(index, 1)[0])
-          player.leader = true
-          updateTeams(gameName)
-          console.log(`${socket.playerName} in ${gameName} set ${playerName} as leader`)
-        }
-        else {
-          console.log(`error: ${player.name} in ${gameName} not found on their team`)
-          socket.emit('errorMsg', `Error: could not find player ${playerName} on their team.`)
-        }
-        */
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} failed to set ${playerName} as leader`)
@@ -302,9 +288,11 @@ io.on('connection', socket => {
       if (canStart(game)) {
         console.log(`starting ${gameName}`)
         game.started = true
-        game.leaders = []
-        for (const team of [Blue, Red])
-          game.leaders[team] = game.teams[team].find(player => player.leader)
+        for (const index of [Blue, Red]) {
+          const team = game.teams[index]
+          const leaderIndex = team.findIndex(player => player.leader)
+          team.unshift(team.splice(leaderIndex, 1)[0])
+        }
         game.words = randomWords().sort().map(word => ({word: word}))
         game.whoseTurn = Math.floor(Math.random() * 2)
         const colours = []
@@ -326,10 +314,9 @@ io.on('connection', socket => {
         io.in(gameName).emit('gameStarted')
         appendLog(gameName, 'The game begins!')
         io.in(gameName).emit('updateWords', game.words)
-        io.in(gameName).emit('showClue', false)
-        game.leaders[game.whoseTurn].current = true
+        game.teams[game.whoseTurn][0].current = true
         updateTeams(gameName)
-        io.in(game.leaders[game.whoseTurn].socketId).emit('showClue', true)
+        updateClue(gameName)
       }
       else {
         socket.emit('errorMsg', 'Error: missing players or not enough players to start.')
