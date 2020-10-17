@@ -25,6 +25,7 @@ const TeamWords = 8
 const Assassins = 1
 
 const wordList = fs.readFileSync('words.txt', 'utf8').split('\n')
+wordList.pop()
 
 const games = {}
 
