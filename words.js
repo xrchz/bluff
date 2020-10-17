@@ -91,6 +91,16 @@ function updateTeams(gameName) {
     io.in(gameName).emit('showStart', canStart(game))
 }
 
+function updateClue(gameName, socketId) {
+  const game = games[gameName]
+  const wordsLeft = game.words.reduce((n, word) => word.colour === game.whoseTurn && !word.guessed ? n + 1 : n, 0)
+  const leaderId = game.teams[game.whoseTurn][0].socketId
+  if (!socketId || leaderId === socketId) {
+    io.in(gameName).emit('showClue', false)
+    io.in(leaderId).emit('showClue', wordsLeft)
+  }
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -136,6 +146,7 @@ io.on('connection', socket => {
           socket.emit('updateTeams', { teams: game.teams, started: true })
           socket.emit('gameStarted')
           socket.emit('updateWords', game.words)
+          updateClue(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
           // ...
         }
@@ -160,6 +171,7 @@ io.on('connection', socket => {
           socket.emit('updateTeams', { teams: game.teams, started: true })
           socket.emit('gameStarted')
           socket.emit('updateWords', game.words)
+          updateClue(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
           // ...
         }

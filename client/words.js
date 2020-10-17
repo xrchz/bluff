@@ -11,6 +11,7 @@ const log = document.getElementById('log')
 const wordsList = document.getElementById('words')
 const playArea = document.getElementById('playArea')
 const clueArea = document.getElementById('clueArea')
+const clueNumber = document.getElementById('clueNumber')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const joinBlueButton = document.getElementById('joinBlue')
@@ -193,7 +194,18 @@ socket.on('gameStarted', () => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('showClue', show => clueArea.hidden = !show)
+socket.on('showClue', wordsLeft => {
+  if (wordsLeft) {
+    clueArea.hidden = false
+    clueNumber.innerHTML = ''
+    for(let i = 0; i <= wordsLeft; i++)
+      fragment.appendChild(document.createElement('option')).textContent = i.toString()
+    fragment.appendChild(document.createElement('option')).textContent = '∞'
+    clueNumber.appendChild(fragment)
+  }
+  else
+    clueArea.hidden = true
+})
 
 socket.on('updateWords', words => {
   wordsList.innerHTML = ''
