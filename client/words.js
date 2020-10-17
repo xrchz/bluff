@@ -8,6 +8,9 @@ const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
 const log = document.getElementById('log')
+const wordsList = document.getElementById('words')
+const playArea = document.getElementById('playArea')
+const clueArea = document.getElementById('clueArea')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const joinBlueButton = document.getElementById('joinBlue')
@@ -21,6 +24,7 @@ const unseated = document.getElementById('unseated')
 const setupDiv = document.getElementById('setupArea')
 
 const fragment = document.createDocumentFragment()
+const leaders = []
 
 joinButton.onclick = () => {
   socket.emit('joinRequest', {
@@ -40,10 +44,13 @@ socket.on('ensureLobby', () => {
   nameInput.disabled = false
   joinButton.hidden = false
   spectateInput.hidden = false
+  spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false
   unseated.innerHTML = ''
   startButton.hidden = true
   spectatorsDiv.innerHTML = ''
+  playArea.hidden = true
+  log.innerHTML = ''
   log.hidden = true
   setupDiv.hidden = true
 })
@@ -125,24 +132,29 @@ socket.on('joinedGame', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('updateTeams', teams => {
+socket.on('updateTeams', data => {
   for(const index of [Blue, Red]) {
     const colour = colourName(index)
     const teamList = [blueTeamList, redTeamList][index]
     teamList.innerHTML = ''
-    for (const player of teams[index]) {
+    for (const player of data.teams[index]) {
       const li = fragment.appendChild(document.createElement('li'))
-      const ra = li.appendChild(document.createElement('input'))
+      const la = li.appendChild(document.createElement('label'))
+      const ra = la.appendChild(document.createElement('input'))
+      la.appendChild(document.createElement('span'))
       ra.name = `${colour}Leader`
       ra.type = 'radio'
       ra.value = player.name
-      if (spectateInput.checked)
+      if (spectateInput.checked || data.started)
         ra.disabled = true
       else
         ra.onchange = () => socket.emit('setLeader', player.name)
       if (player.leader) ra.checked = true
-      li.appendChild(document.createTextNode(player.name))
-      if (player.name === nameInput.value && !spectateInput.checked) {
+      const span = li.appendChild(document.createElement('span'))
+      span.textContent = player.name
+      if (player.current) span.classList.add('current')
+      if (!player.socketId) span.classList.add('disconnected')
+      if (!data.started && player.name === nameInput.value && !spectateInput.checked) {
         const bu = li.appendChild(document.createElement('input'))
         bu.type = 'button'
         bu.value = 'Leave'
@@ -162,7 +174,44 @@ socket.on('showStart', show => {
 
 socket.on('gameStarted', () => {
   startButton.hidden = true
+  joinRedButton.hidden = true
+  joinBlueButton.hidden = true
+  for (const index of [Blue, Red]) {
+    const teamList = [blueTeamList, redTeamList][index]
+    for (const el of teamList.getElementsByTagName('input')) {
+      if (el.type === 'button')
+        el.hidden = true
+      else if (el.type === 'radio') {
+        el.disabled = true
+        if (el.checked)
+          leaders[index] = el.value
+      }
+    }
+  }
+  playArea.hidden = false
   log.hidden = false
+  errorMsg.innerHTML = ''
+})
+
+socket.on('showClue', show => clueArea.hidden = !show)
+
+socket.on('updateWords', words => {
+  wordsList.innerHTML = ''
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]
+    const li = fragment.appendChild(document.createElement('li'))
+    const isPlayer = !(spectateInput.checked || leaders.includes(nameInput.value))
+    const isPlayable = isPlayer && !word.revealed
+    const el = li.appendChild(document.createElement(isPlayable ? 'a' : 'span'))
+    el.textContent = word.word
+    if (isPlayable)
+      el.onclick = () => socket.emit('guessRequest', i)
+    if (!isPlayer && word.colour !== undefined)
+      el.classList.add(colourName(word.colour))
+    if (!isPlayer && word.assassin)
+      el.classList.add('assassin')
+  }
+  wordsList.appendChild(fragment)
   errorMsg.innerHTML = ''
 })
 

@@ -18,6 +18,15 @@
       <input id=start type=button value="Start!" hidden />
       <ul id=spectators class=inline></ul>
     </div>
+    <div id=playArea hidden>
+      <ul id=words></ul>
+      <div id=clueArea hidden>
+        <input id=clueWord type=text placeholder=clue autocomplete=off pattern="\w+" />
+        <input id=clueNumber type=range min=0 /><input id=clueNumberText type=text pattern="\d+" />
+        <input id=giveClue type=button value="Submit" />
+      </div>
+    </div>
+    <ul id=log hidden></ul>
     <div id=setupArea hidden>
       <div><h2>Blue Team</h2>
         <ul id=blueTeam class=team></ul>
@@ -28,9 +37,6 @@
         <input id=joinRed type=button value="Join Red" hidden />
       </div>
     </div>
-    <div id=playArea hidden>
-    </div>
-    <ul id=log hidden></ul>
     <div id=settings>
     </div>
     <script src="words.js"></script>

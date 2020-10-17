@@ -20,6 +20,12 @@ const port = 4321
 server.listen(port, "0.0.0.0")
 console.log(`server started on https://xrchz.net:${port}`)
 
+const TotalWords = 25
+const TeamWords = 8
+const Assassins = 1
+
+const wordList = fs.readFileSync('words.txt', 'utf8').split('\n')
+
 const games = {}
 
 function shuffleInPlace(array) {
@@ -29,6 +35,17 @@ function shuffleInPlace(array) {
     array[i] = array[j]
     array[j] = t
   }
+}
+
+function randomWords() {
+  const a = []
+  for (let i = 0; i < wordList.length; i++) {
+    const j = Math.floor(Math.random() * (i+1))
+    if (j < i) a[i] = a[j]
+    a[j] = wordList[i]
+  }
+  a.length = TotalWords
+  return a
 }
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
@@ -62,12 +79,16 @@ function updateGames(room) {
 const Blue = 0
 const Red = 1
 
+const canStart = game =>
+  game.teams[Blue].length >= 2 &&
+  game.teams[Red].length >= 2 &&
+  game.players.every(player => player.team !== undefined)
+
 function updateTeams(gameName) {
   const game = games[gameName]
-  io.in(gameName).emit('updateTeams', game.teams)
-  io.in(gameName).emit('showStart',
-    game.teams[Red].length >= 2 && game.teams[Blue].length >= 2 &&
-    game.players.every(player => player.team !== undefined))
+  io.in(gameName).emit('updateTeams', { teams: game.teams, started: game.started })
+  if (!game.started)
+    io.in(gameName).emit('showStart', canStart(game))
 }
 
 io.on('connection', socket => {
@@ -112,7 +133,10 @@ io.on('connection', socket => {
           updateTeams(gameName)
         }
         else {
+          socket.emit('updateTeams', { teams: game.teams, started: true })
           socket.emit('gameStarted')
+          socket.emit('updateWords', game.words)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
           // ...
         }
       }
@@ -133,7 +157,10 @@ io.on('connection', socket => {
           player.socketId = socket.id
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
+          socket.emit('updateTeams', { teams: game.teams, started: true })
           socket.emit('gameStarted')
+          socket.emit('updateWords', game.words)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
           // ...
         }
         else {
@@ -272,26 +299,40 @@ io.on('connection', socket => {
 
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
-      if (game.players.length === 4 && game.seats.every(seat => seat.player)) {
+      if (canStart(game)) {
         console.log(`starting ${gameName}`)
         game.started = true
-        game.undoLog = []
+        game.leaders = []
+        for (const team of [Blue, Red])
+          game.leaders[team] = game.teams[team].find(player => player.leader)
+        game.words = randomWords().sort().map(word => ({word: word}))
+        game.whoseTurn = Math.floor(Math.random() * 2)
+        const colours = []
+        colours.length = game.words.length
+        colours[0] = game.whoseTurn
+        for (let i = 1; i < 2 * TeamWords; i++) {
+          colours[i++] = game.whoseTurn
+          colours[i] = 1 - game.whoseTurn
+        }
+        shuffleInPlace(colours)
+        game.words.forEach((x, i) => { if (colours[i] !== undefined) x.colour = colours[i] })
+        const assassins = []
+        assassins.length = game.words.length
+        assassins.fill(false)
+        for (let i = 0; i < Assassins; i++) assassins[i] = true
+        shuffleInPlace(assassins)
+        game.words.forEach((x, i) => { if (assassins[i]) x.assassin = true })
         game.log = []
-        game.players = game.seats.map(seat => seat.player)
-        delete game.seats
-        game.players.forEach(player => delete player.seated)
-        game.teamNames = [`${game.players[0].name} & ${game.players[2].name}`,
-                          `${game.players[1].name} & ${game.players[3].name}`]
-        game.total = [0, 0]
-        game.rounds = []
-        game.dealer = Math.floor(Math.random() * 4)
         io.in(gameName).emit('gameStarted')
         appendLog(gameName, 'The game begins!')
-        startRound(gameName)
-        updateGames()
+        io.in(gameName).emit('updateWords', game.words)
+        io.in(gameName).emit('showClue', false)
+        game.leaders[game.whoseTurn].current = true
+        updateTeams(gameName)
+        io.in(game.leaders[game.whoseTurn].socketId).emit('showClue', true)
       }
       else {
-        socket.emit('errorMsg', 'Error: 4 seated players required to start the game.')
+        socket.emit('errorMsg', 'Error: missing players or not enough players to start.')
       }
     }
     else {
@@ -314,7 +355,6 @@ io.on('connection', socket => {
           if (game.teams[team].length === 1) game.teams[team][0].leader = true
         }
         io.in(gameName).emit('updateSpectators', game.spectators)
-        updateTeams(gameName)
         io.in(gameName).emit('updateUnseated', game.players)
         if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)
@@ -329,9 +369,9 @@ io.on('connection', socket => {
         }
         else {
           game.players.find(player => player.socketId === socket.id).socketId = null
-          io.in(gameName).emit('updatePlayers', game.players)
         }
       }
+      updateTeams(gameName)
       updateGames()
     }
   })
