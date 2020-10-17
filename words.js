@@ -61,12 +61,6 @@ function randomUnusedGameName() {
   return name
 }
 
-function appendLog(gameName, entry) {
-  const game = games[gameName]
-  game.log.push(entry)
-  io.in(gameName).emit('appendLog', entry)
-}
-
 function updateGames(room) {
   if (!room) room = 'lobby'
   const data = []
@@ -81,6 +75,7 @@ const Blue = 0
 const Red = 1
 const Assassin = 2
 const teamName = c => c === Blue ? 'Blue' : c === Red ? 'Red' : null
+const colourName = c => c === Blue ? 'blue' : c === Red ? 'red' : c === Assassin ? 'assassin' : null
 
 const canStart = game =>
   game.teams[Blue].length >= 2 &&
@@ -166,9 +161,8 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           updateWords(gameName, socket.id)
           updateClue(gameName, socket.id)
-          game.log.forEach(entry => socket.emit('appendLog', entry))
-          game.clues.forEach(clue => socket.emit('appendClue', clue))
-          // ...
+          socket.emit('updateClues', { team: Blue, clues: game.clues[Blue] })
+          socket.emit('updateClues', { team: Red, clues: game.clues[Red] })
         }
       }
       else {
@@ -192,9 +186,8 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           updateWords(gameName, socket.id)
           updateClue(gameName, socket.id)
-          game.log.forEach(entry => socket.emit('appendLog', entry))
-          game.clues.forEach(clue => socket.emit('appendClue', clue))
-          // ...
+          socket.emit('updateClues', { team: Blue, clues: game.clues[Blue] })
+          socket.emit('updateClues', { team: Red, clues: game.clues[Red] })
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)
@@ -341,9 +334,8 @@ io.on('connection', socket => {
         game.wordsLeft[game.whoseTurn]++
         game.log = []
         io.in(gameName).emit('gameStarted')
-        appendLog(gameName, 'The game begins!')
         game.giving = true
-        game.clues = []
+        game.clues = [[], []]
         game.teams[game.whoseTurn][0].current = true
         updateTeams(gameName)
         updateWords(gameName)
@@ -364,12 +356,11 @@ io.on('connection', socket => {
       const leader = game.teams[game.whoseTurn][0]
       if (leader && leader.current && leader.socketId === socket.id) {
         if (Number.isInteger(data.n) && 0 <= data.n && data.n <= game.wordsLeft[game.whoseTurn] + 1) {
-          data.team = game.whoseTurn
           if (data.n > game.wordsLeft[game.whoseTurn]) data.n = Infinity
-          data.nf = data.n === Infinity ? '∞' : data.n.toString()
-          game.clues.push(data)
-          io.in(gameName).emit('appendClue', data)
-          appendLog(gameName, `${socket.playerName} gives clue '${data.clue}' (${data.nf}).`)
+          const clue = { text: `${data.clue} (${data.n === Infinity ? '∞' : data.n.toString()})`,
+                         guesses: [] }
+          game.clues[game.whoseTurn].push(clue)
+          io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: game.clues[game.whoseTurn] })
           delete game.giving
           delete leader.current
           game.guessesLeft = data.n === 0 ? Infinity : data.n + 1
@@ -396,12 +387,14 @@ io.on('connection', socket => {
   socket.on('guessRequest', index => inGame((gameName, game) => {
     if (!!game.guessesLeft) {
       const player = game.teams[game.whoseTurn].find(player => player.socketId === socket.id)
-      if (player) {
+      const clues = game.clues[game.whoseTurn]
+      const clue = clues && clues[clues.length - 1]
+      if (player && clue) {
         if (index === false ||
             Number.isInteger(index) && 0 <= index && index < game.words.length && !game.words[index].guessed) {
           let endTurn
           if (index === false) {
-            appendLog(gameName, `${player.name} passes.`)
+            clue.guesses.push({ who: player.name, what: 'pass', classes: ['pass'] })
             endTurn = true
           }
           else {
@@ -427,15 +420,19 @@ io.on('connection', socket => {
               type = 'neutral'
               endTurn = true
             }
-            appendLog(gameName, `${player.name} guesses '${word.word}' (${type}).`)
+            const guess = { who: player.name, what: `${word.word} (${type})`, classes: [type] }
+            const colourClass = colourName(word.colour)
+            if (colourClass) guess.classes.push(colourClass)
+            clue.guesses.push(guess)
           }
+          io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
           if (game.wordsLeft.includes(0)) {
-            appendLog(gameName, `${teamName(game.whoseTurn)} wins!`)
+            // TODO appendLog(gameName, `${teamName(game.whoseTurn)} wins!`)
             delete game.guessesLeft
             game.ended = true
           }
           else if (endTurn === 'assassin') {
-            appendLog(gameName, `${teamName(1 - game.whoseTurn)} wins!`)
+            // TODO appendLog(gameName, `${teamName(1 - game.whoseTurn)} wins!`)
             delete game.guessesLeft
             game.ended = true
           }

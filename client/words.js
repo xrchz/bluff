@@ -9,7 +9,6 @@ const colourName = i =>
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
-const log = document.getElementById('log')
 const wordsList = document.getElementById('words')
 const playArea = document.getElementById('playArea')
 const clueArea = document.getElementById('clueArea')
@@ -36,7 +35,7 @@ const setupDiv = document.getElementById('setupArea')
 const fragment = document.createDocumentFragment()
 const Headings = [blueHeading, redHeading]
 const TeamLists = [blueTeamList, redTeamList]
-const ClueLists = [blueClues, redClues]
+const ClueLogs = [blueClues, redClues]
 const leaders = []
 const teamNames = [[], []]
 
@@ -65,12 +64,9 @@ socket.on('ensureLobby', () => {
   spectatorsDiv.innerHTML = ''
   playArea.hidden = true
   passButton.hidden = true
-  log.innerHTML = ''
-  log.hidden = true
   for (const teamList of TeamLists) teamList.innerHTML = ''
-  for (const clueList of ClueLists) clueList.innerHTML = ''
+  for (const clueLog of ClueLogs) clueLog.innerHTML = ''
   for (const index of [Blue, Red]) teamNames[index] = []
-  document.querySelectorAll('h3').forEach(h => h.hidden = true)
   clueWord.value = ''
   setupDiv.hidden = true
 })
@@ -214,8 +210,6 @@ socket.on('gameStarted', () => {
     }
   }
   playArea.hidden = false
-  log.hidden = false
-  document.querySelectorAll('h3').forEach(h => h.hidden = false)
   errorMsg.innerHTML = ''
 })
 
@@ -263,23 +257,28 @@ socket.on('updateWords', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('appendLog', markup => {
-  const li = document.createElement('li')
-  li.innerHTML = markup
-  log.appendChild(li)
-  li.scrollIntoView(false)
-  errorMsg.innerHTML = ''
-})
-
-socket.on('removeLog', n => {
-  while(n-- > 0) {
-    log.removeChild(log.lastElementChild)
+socket.on('updateClues', data => {
+  const clueLog = ClueLogs[data.team]
+  clueLog.innerHTML = ''
+  if (data.clues.length) {
+    fragment.appendChild(document.createElement('h3')).textContent = 'Clues'
+    const ul = fragment.appendChild(document.createElement('ul'))
+    for (const clue of data.clues) {
+      const li = ul.appendChild(document.createElement('li'))
+      li.textContent = clue.text
+      if (clue.guesses.length) {
+        li.appendChild(document.createElement('h4')).textContent = 'Guesses'
+        const dl = li.appendChild(document.createElement('dl'))
+        for (const guess of clue.guesses) {
+          dl.appendChild(document.createElement('dt')).textContent = guess.who
+          const dd = dl.appendChild(document.createElement('dd'))
+          dd.textContent = guess.what
+          guess.classes.forEach(c => dd.classList.add(c))
+        }
+      }
+    }
+    clueLog.appendChild(fragment)
   }
-  errorMsg.innerHTML = ''
-})
-
-socket.on('appendClue', data => {
-  ClueLists[data.team].appendChild(document.createElement('li')).textContent = `${data.clue} (${data.n})`
 })
 
 socket.on('errorMsg', msg => {
