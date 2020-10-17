@@ -78,6 +78,8 @@ function updateGames(room) {
 
 const Blue = 0
 const Red = 1
+const Assassin = 2
+const teamName = c => c === Blue ? 'Blue' : c === Red ? 'Red' : null
 
 const canStart = game =>
   game.teams[Blue].length >= 2 &&
@@ -90,7 +92,7 @@ function updateTeams(gameName, socketId) {
   io.in(room).emit('updateTeams',
     { teams: game.teams,
       started: game.started,
-      guessing: game.guessing,
+      guessing: !!game.guessesLeft,
       whoseTurn: game.whoseTurn
     })
   if (!game.started)
@@ -112,7 +114,7 @@ function updateWords(gameName, socketId) {
   const game = games[gameName]
   io.in(room).emit('updateWords', {
     words: game.words,
-    guessing: game.guessing,
+    guessing: !!game.guessesLeft,
     whoseTurn: game.whoseTurn
   })
 }
@@ -327,29 +329,23 @@ io.on('connection', socket => {
         game.whoseTurn = Math.floor(Math.random() * 2)
         const colours = []
         colours.length = game.words.length
-        colours[0] = game.whoseTurn
-        for (let i = 1; i < 2 * TeamWords; i++) {
-          colours[i++] = game.whoseTurn
-          colours[i] = 1 - game.whoseTurn
-        }
-        game.wordsLeft = [TeamWords, TeamWords]
-        game.wordsLeft[game.whoseTurn]++
+        let i = 0
+        colours[i++] = game.whoseTurn
+        for (let j = 0; j < TeamWords; j++) colours[i++] = game.whoseTurn
+        for (let j = 0; j < TeamWords; j++) colours[i++] = 1 - game.whoseTurn
+        for (let j = 0; j < Assassins; j++) colours[i++] = Assassin
         shuffleInPlace(colours)
         game.words.forEach((x, i) => { if (colours[i] !== undefined) x.colour = colours[i] })
-        const assassins = []
-        assassins.length = game.words.length
-        assassins.fill(false)
-        for (let i = 0; i < Assassins; i++) assassins[i] = true
-        shuffleInPlace(assassins)
-        game.words.forEach((x, i) => { if (assassins[i]) x.assassin = true })
+        game.wordsLeft = [TeamWords, TeamWords]
+        game.wordsLeft[game.whoseTurn]++
         game.log = []
         io.in(gameName).emit('gameStarted')
         appendLog(gameName, 'The game begins!')
-        updateWords(gameName)
         game.giving = true
         game.clues = []
         game.teams[game.whoseTurn][0].current = true
         updateTeams(gameName)
+        updateWords(gameName)
         updateClue(gameName)
       }
       else {
@@ -363,20 +359,22 @@ io.on('connection', socket => {
   }))
 
   socket.on('clueRequest', data => inGame((gameName, game) => {
-    if (game.started && game.giving) {
+    if (game.giving) {
       const leader = game.teams[game.whoseTurn][0]
       if (leader && leader.current && leader.socketId === socket.id) {
         if (Number.isInteger(data.n) && 0 <= data.n && data.n <= game.wordsLeft[game.whoseTurn] + 1) {
           data.team = game.whoseTurn
+          if (data.n > game.wordsLeft[game.whoseTurn]) data.n = Infinity
+          data.nf = data.n === Infinity ? '∞' : data.n.toString()
           game.clues.push(data)
           io.in(gameName).emit('appendClue', data)
-          appendLog(gameName, `${socket.playerName} gives clue '${data.clue}' (${data.n}).`)
+          appendLog(gameName, `${socket.playerName} gives clue '${data.clue}' (${data.nf}).`)
           delete game.giving
           delete leader.current
-          game.guessing = true
+          game.guessesLeft = data.n === 0 ? Infinity : data.n + 1
           updateTeams(gameName)
-          updateClue(gameName)
           updateWords(gameName)
+          updateClue(gameName)
         }
         else {
           console.log(`${socket.playerName} gave invalid clue in ${gameName}`)
@@ -394,7 +392,66 @@ io.on('connection', socket => {
     }
   }))
 
-  // const wordsLeft = game.words.reduce((n, word) => word.colour === game.whoseTurn && !word.guessed ? n + 1 : n, 0)
+  socket.on('guessRequest', index => inGame((gameName, game) => {
+    if (!!game.guessesLeft) {
+      const player = game.teams[game.whoseTurn].find(player => player.socketId === socket.id)
+      if (player) {
+        if (Number.isInteger(index) && 0 <= index && index < game.words.length && !game.words[index].guessed) {
+          const word = game.words[index]
+          word.guessed = true
+          game.guessesLeft--
+          if ([Blue, Red].includes(word.colour))
+            game.wordsLeft[word.colour] =
+              game.words.reduce((n, w) => w.colour === word.colour && !w.guessed ? n + 1 : n, 0)
+          let type, endTurn = game.guessesLeft === 0
+          if (word.colour === game.whoseTurn)
+            type = 'friend'
+          else if (word.colour === 1 - game.whoseTurn) {
+            type = 'foe'
+            endTurn = true
+          }
+          else if (word.colour === Assassin)
+            type = 'assassin'
+          else {
+            type = 'neutral'
+            endTurn = true
+          }
+          appendLog(gameName, `${player.name} guesses '${word.word}' (${type}).`)
+          updateWords(gameName)
+          if (game.wordsLeft.includes(0)) {
+            appendLog(gameName, `${teamName(game.whoseTurn)} wins!`)
+            delete game.guessesLeft
+            game.ended = true
+          }
+          else if (word.colour === Assassin) {
+            appendLog(gameName, `${teamName(1 - game.whoseTurn)} wins!`)
+            delete game.guessesLeft
+            game.ended = true
+          }
+          else if (endTurn) {
+            game.whoseTurn = 1 - game.whoseTurn
+            delete game.guessesLeft
+            game.giving = true
+            game.teams[game.whoseTurn][0].current = true
+            updateTeams(gameName)
+            updateClue(gameName)
+          }
+        }
+        else {
+          console.log(`${socket.playerName} gave invalid guess ${index} in ${gameName}`)
+          socket.emit('errorMsg', `Error: that is not a valid word index.`)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} attempted to give guess in ${gameName} out of turn`)
+        socket.emit('errorMsg', `Error: it is not your turn to guess a word.`)
+      }
+    }
+    else {
+      console.log(`${socket.playerName} attempted to give guess in ${gameName}`)
+      socket.emit('errorMsg', `Error: it is not time to give guesses.`)
+    }
+  }))
 
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)

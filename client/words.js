@@ -1,9 +1,11 @@
 /* global io */
 var socket = io("https://xrchz.net:4321")
 
-const Blue = 0
-const Red = 1
-const colourName = index => index === Blue ? 'blue' : index === Red ? 'red' : null
+const Blue = 0, Red = 1, Assassin = 2
+const colourName = i =>
+  i === Blue ? 'blue' :
+  i === Red ? 'red' :
+  i === Assassin ? 'assassin' : null
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
@@ -67,6 +69,7 @@ socket.on('ensureLobby', () => {
   for (const clueList of ClueLists) clueList.innerHTML = ''
   for (const index of [Blue, Red]) teamNames[index] = []
   document.querySelectorAll('h3').forEach(h => h.hidden = true)
+  clueWord.value = ''
   setupDiv.hidden = true
 })
 
@@ -217,6 +220,7 @@ socket.on('gameStarted', () => {
 socket.on('showClue', wordsLeft => {
   if (wordsLeft) {
     clueArea.hidden = false
+    clueWord.value = ''
     clueNumber.innerHTML = ''
     for(let i = 0; i <= wordsLeft; i++)
       fragment.appendChild(document.createElement('option')).textContent = i.toString()
@@ -241,15 +245,13 @@ socket.on('updateWords', data => {
     const word = data.words[i]
     const li = fragment.appendChild(document.createElement('li'))
     const isPlayer = !(spectateInput.checked || leaders.includes(nameInput.value))
-    const isPlayable = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value) && !word.revealed
+    const isPlayable = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value) && !word.guessed
     const el = li.appendChild(document.createElement(isPlayable ? 'a' : 'span'))
     el.textContent = word.word
     if (isPlayable)
       el.onclick = () => socket.emit('guessRequest', i)
-    if (!isPlayer && word.colour !== undefined)
+    if ((!isPlayer || word.guessed) && word.colour !== undefined)
       el.classList.add(colourName(word.colour))
-    if (!isPlayer && word.assassin)
-      el.classList.add('assassin')
   }
   wordsList.appendChild(fragment)
   errorMsg.innerHTML = ''
