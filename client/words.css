@@ -43,6 +43,13 @@ input[type=button] {
 a:hover {
   cursor: pointer;
 }
+#wordLists > ul {
+  list-style-type: none;
+  padding: 0;
+}
+#wordLists > ul > li > ul {
+  display: inline;
+}
 ul.inline {
   list-style-type: none;
   padding: 0;
@@ -86,7 +93,7 @@ ul.team > li > input[type=button] {
 #words > li > a {
   text-decoration: underline;
 }
-#words .guessed {
+.guessed {
   text-decoration: line-through;
 }
 #setupArea {

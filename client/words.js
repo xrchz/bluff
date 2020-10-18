@@ -9,6 +9,7 @@ const colourName = i =>
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
+const wordLists = document.getElementById('wordLists')
 const wordsList = document.getElementById('words')
 const playArea = document.getElementById('playArea')
 const clueArea = document.getElementById('clueArea')
@@ -63,6 +64,7 @@ socket.on('ensureLobby', () => {
   startButton.hidden = true
   spectatorsDiv.innerHTML = ''
   playArea.hidden = true
+  wordLists.innerHTML = ''
   passButton.hidden = true
   for (const teamList of TeamLists) {
     teamList.previousElementSibling.hidden = true
@@ -253,8 +255,31 @@ passButton.onclick = () => socket.emit('guessRequest', false)
 
 socket.on('updateWords', data => {
   wordsList.innerHTML = ''
-  const isPlayer = !(spectateInput.checked || leaders.includes(nameInput.value))
+  const isLeader = leaders.includes(nameInput.value)
+  const isPlayer = !(spectateInput.checked || isLeader)
   const isPlaying = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value)
+  if (isLeader) {
+    wordLists.innerHTML = ''
+    const ul = fragment.appendChild(document.createElement('ul'))
+    function addWords(label, colour) {
+      const li = ul.appendChild(document.createElement('li'))
+      li.appendChild(document.createElement('span')).textContent = label
+      const il = li.appendChild(document.createElement('ul'))
+      il.classList.add('inline')
+      for (const word of data.words) {
+        if (word.colour === colour && !word.guessed) {
+          const ii = il.appendChild(document.createElement('li'))
+          ii.textContent = word.word
+          ii.classList.add(colourName(word.colour))
+        }
+      }
+    }
+    addWords('Friends (✓):', data.whoseTurn)
+    addWords('Foes (✗):', 1 - data.whoseTurn)
+    addWords('Neutral (–):', undefined)
+    addWords('Assassins (☠):', Assassin)
+    wordLists.appendChild(fragment)
+  }
   for (let i = 0; i < data.words.length; i++) {
     const word = data.words[i]
     const li = fragment.appendChild(document.createElement('li'))
