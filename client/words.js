@@ -260,6 +260,7 @@ socket.on('updateWords', data => {
   const isPlaying = data.guessing && isPlayer && teamNames[data.whoseTurn].includes(nameInput.value)
   if (isLeader) {
     wordLists.innerHTML = ''
+    const leaderTeam = teamNames.findIndex(team => team.includes(nameInput.value))
     const ul = fragment.appendChild(document.createElement('ul'))
     function addWords(label, colour) {
       const li = ul.appendChild(document.createElement('li'))
@@ -274,8 +275,8 @@ socket.on('updateWords', data => {
         }
       }
     }
-    addWords('Friends (✓):', data.whoseTurn)
-    addWords('Foes (✗):', 1 - data.whoseTurn)
+    addWords('Friends (✓):', leaderTeam)
+    addWords('Foes (✗):', 1 - leaderTeam)
     addWords('Neutral (–):', undefined)
     addWords('Assassins (☠):', Assassin)
     wordLists.appendChild(fragment)
