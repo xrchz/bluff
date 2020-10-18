@@ -75,6 +75,7 @@ socket.on('ensureLobby', () => {
     clueLog.innerHTML = ''
   }
   for (const index of [Blue, Red]) teamNames[index] = []
+  Headings.forEach(h => h.nextElementSibling.innerHTML = '')
   clueWord.value = ''
   setupDiv.hidden = true
 })
