@@ -23,6 +23,9 @@ console.log(`server started on https://xrchz.net:${port}`)
 const TotalWords = 25
 const TeamWords = 8
 const Assassins = 1
+const FirstGivingSeconds = 300
+const GivingSeconds = 180
+const GuessingSeconds = 240
 
 const wordList = fs.readFileSync('words.txt', 'utf8').split('\n')
 wordList.pop()
@@ -117,6 +120,59 @@ function updateWords(gameName, socketId) {
     whoseTurn: game.whoseTurn,
     winner: game.winner
   })
+}
+
+function formatSeconds(secs) {
+  if (secs > 60) {
+    const s = secs % 60
+    return `${(secs - s)/60}m${s}s`
+  }
+  else
+    return `${secs}s`
+}
+
+function startTimer(gameName) {
+  const game = games[gameName]
+  function callback() {
+    if (game.secondsLeft) {
+      io.in(gameName).emit('updateTimeLimit', `${formatSeconds(game.secondsLeft)} left`)
+      game.secondsLeft--
+      game.timeout = setTimeout(callback, 1000)
+    }
+    else {
+      io.in(gameName).emit('updateTimeLimit', '')
+      const clues = game.clues[game.whoseTurn]
+      if (game.giving) {
+        const clue = { text: `(timeout) (0)`, guesses: [] }
+        clues.push(clue)
+        io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
+        delete game.giving
+        game.guessesLeft = Infinity
+        game.secondsLeft = GuessingSeconds
+        game.timeout = setTimeout(callback, 0)
+      }
+      else if (!!game.guessesLeft) {
+        const clue = clues[clues.length - 1]
+        clue.guesses.push({ who: 'all', what: '(timeout)', classes: ['pass'] })
+        io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
+        game.whoseTurn = 1 - game.whoseTurn
+        delete game.guessesLeft
+        game.giving = true
+        game.secondsLeft = GivingSeconds
+        game.timeout = setTimeout(callback, 0)
+      }
+      updateTeams(gameName)
+      updateWords(gameName)
+      updateClue(gameName)
+    }
+  }
+  game.timeout = setTimeout(callback, 0)
+}
+
+function stopTimer(gameName) {
+  const game = games[gameName]
+  clearTimeout(game.timeout)
+  io.in(gameName).emit('updateTimeLimit', '')
 }
 
 io.on('connection', socket => {
@@ -339,6 +395,8 @@ io.on('connection', socket => {
         game.log = []
         io.in(gameName).emit('gameStarted')
         game.giving = true
+        game.secondsLeft = FirstGivingSeconds
+        startTimer(gameName)
         game.clues = [[], []]
         updateTeams(gameName)
         updateWords(gameName)
@@ -359,6 +417,7 @@ io.on('connection', socket => {
       const leader = game.teams[game.whoseTurn][0]
       if (leader && leader.socketId === socket.id) {
         if (Number.isInteger(data.n) && 0 <= data.n && data.n <= game.wordsLeft[game.whoseTurn] + 1) {
+          stopTimer(gameName)
           if (data.n > game.wordsLeft[game.whoseTurn]) data.n = Infinity
           const clue = { text: `${data.clue} (${data.n === Infinity ? '∞' : data.n.toString()})`,
                          guesses: [] }
@@ -366,6 +425,8 @@ io.on('connection', socket => {
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: game.clues[game.whoseTurn] })
           delete game.giving
           game.guessesLeft = data.n === 0 ? Infinity : data.n + 1
+          game.secondsLeft = GuessingSeconds
+          startTimer(gameName)
           updateTeams(gameName)
           updateWords(gameName)
           updateClue(gameName)
@@ -429,19 +490,24 @@ io.on('connection', socket => {
           }
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
           if (game.wordsLeft.includes(0)) {
+            stopTimer(gameName)
             game.winner = game.whoseTurn
             delete game.guessesLeft
             delete game.whoseTurn
           }
           else if (endTurn === 'assassin') {
+            stopTimer(gameName)
             game.winner = 1 - game.whoseTurn
             delete game.guessesLeft
             delete game.whoseTurn
           }
           else if (endTurn) {
+            stopTimer(gameName)
             game.whoseTurn = 1 - game.whoseTurn
             delete game.guessesLeft
             game.giving = true
+            game.secondsLeft = GivingSeconds
+            startTimer(gameName)
             updateClue(gameName)
           }
           updateTeams(gameName)

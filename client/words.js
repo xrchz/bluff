@@ -17,6 +17,7 @@ const clueWord = document.getElementById('clueWord')
 const clueNumber = document.getElementById('clueNumber')
 const clueSubmit = document.getElementById('clueSubmit')
 const passButton = document.getElementById('pass')
+const timeLimit = document.getElementById('timeLimit')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const joinBlueButton = document.getElementById('joinBlue')
@@ -66,6 +67,7 @@ socket.on('ensureLobby', () => {
   playArea.hidden = true
   wordLists.innerHTML = ''
   passButton.hidden = true
+  timeLimit.innerHTML = ''
   for (const teamList of TeamLists) {
     teamList.previousElementSibling.hidden = true
     teamList.innerHTML = ''
@@ -324,6 +326,9 @@ socket.on('updateClues', data => {
     clueLog.appendChild(fragment)
   }
 })
+
+socket.on('updateTimeLimit',
+  text => timeLimit.textContent = text)
 
 socket.on('errorMsg', msg => {
   errorMsg.innerHTML = msg
