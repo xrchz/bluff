@@ -68,7 +68,10 @@ socket.on('ensureLobby', () => {
     teamList.previousElementSibling.hidden = true
     teamList.innerHTML = ''
   }
-  for (const clueLog of ClueLogs) clueLog.innerHTML = ''
+  for (const clueLog of ClueLogs) {
+    clueLog.hidden = true
+    clueLog.innerHTML = ''
+  }
   for (const index of [Blue, Red]) teamNames[index] = []
   clueWord.value = ''
   setupDiv.hidden = true
@@ -201,6 +204,7 @@ socket.on('gameStarted', () => {
   startButton.hidden = true
   joinRedButton.hidden = true
   joinBlueButton.hidden = true
+  for (const clueLog of ClueLogs) clueLog.hidden = false
   for (const index of [Blue, Red]) {
     const teamList = TeamLists[index]
     for (const el of teamList.getElementsByTagName('input')) {
@@ -256,6 +260,8 @@ socket.on('updateWords', data => {
       el.onclick = () => socket.emit('guessRequest', i)
     if ((!isPlayer || word.guessed) && word.colour !== undefined)
       el.classList.add(colourName(word.colour))
+    if (word.guessed)
+      el.classList.add('guessed')
   }
   wordsList.appendChild(fragment)
   passButton.hidden = !isPlaying
@@ -273,10 +279,11 @@ socket.on('updateClues', data => {
       li.textContent = clue.text
       if (clue.guesses.length) {
         li.appendChild(document.createElement('h4')).textContent = 'Guesses'
-        const dl = li.appendChild(document.createElement('dl'))
+        const dl = li.appendChild(document.createElement('ul'))
         for (const guess of clue.guesses) {
-          dl.appendChild(document.createElement('dt')).textContent = guess.who
-          const dd = dl.appendChild(document.createElement('dd'))
+          const di = dl.appendChild(document.createElement('li'))
+          di.appendChild(document.createElement('span')).textContent = `${guess.who}: `
+          const dd = di.appendChild(document.createElement('span'))
           dd.textContent = guess.what
           guess.classes.forEach(c => dd.classList.add(c))
         }

@@ -80,10 +80,14 @@ ul.team > li > input[type=button] {
 }
 #words > li {
   text-transform: uppercase;
+  font-weight: bold;
   padding: 1em;
 }
-#words > li > a:hover {
+#words > li > a {
   text-decoration: underline;
+}
+#words .guessed {
+  text-decoration: line-through;
 }
 #setupArea {
   display: flex;
@@ -107,30 +111,35 @@ div.teamclues {
   align-items: flex-start;
   width: 100%;
 }
-div.clues {
-  width: 60%;
+div.players, div.clues {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+div.clues[hidden] {
+  display: none;
 }
 div.clues ul {
+  width: 100%;
   list-style-type: none;
   padding: 0;
 }
-div.clues ul li dl {
-  margin-left: 1em;
+div.clues > ul > li {
+  padding-bottom: 1em;
 }
 h3, h4 {
   padding: 0;
   margin: 0;
 }
-dt::after {
-  content: ":";
-  margin-right: 0.5em;
+h4 {
+  font-weight: normal;
+  font-style: italic;
 }
-dd, dt {
-  margin: 0;
+div.clues ul li ul {
+  margin-left: 0.5em;
+  list-style-type: none;
   padding: 0;
-}
-dt {
-  float: left;
 }
 #playArea {
   margin: auto;
@@ -177,5 +186,4 @@ label input[type=radio] {
 }
 .assassin {
   color: #cfc;
-  font-weight: bold;
 }
