@@ -128,6 +128,15 @@ div.clues ul {
 div.clues > ul > li {
   padding-bottom: 1em;
 }
+h2.winner::after {
+  content: ': winners!';
+}
+h2 {
+  margin-bottom: 0;
+}
+h2 + div {
+  margin-bottom: 1em;
+}
 h3, h4 {
   padding: 0;
   margin: 0;

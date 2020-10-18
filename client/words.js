@@ -158,8 +158,11 @@ socket.on('updateTeams', data => {
   for(const index of [Blue, Red]) {
     const colour = colourName(index)
     const teamList = TeamLists[index]
+    if (data.wordsLeft !== undefined)
+      Headings[index].nextElementSibling.innerHTML = `Words Left: ${data.wordsLeft[index]}`
     teamList.innerHTML = ''
     teamList.previousElementSibling.hidden = !data.teams[index].length
+    let first = true
     for (const player of data.teams[index]) {
       const li = fragment.appendChild(document.createElement('li'))
       const la = li.appendChild(document.createElement('label'))
@@ -176,7 +179,11 @@ socket.on('updateTeams', data => {
       if (player.leader) ra.checked = true
       const span = li.appendChild(document.createElement('span'))
       span.textContent = player.name
-      if (player.current) span.classList.add('current')
+      if (data.whoseTurn === index) {
+        if (!first !== !data.guessing)
+          span.classList.add('current')
+        first = false
+      }
       if (!player.socketId) span.classList.add('disconnected')
       if (!data.started && player.name === nameInput.value && !spectateInput.checked) {
         const bu = li.appendChild(document.createElement('input'))
@@ -189,10 +196,8 @@ socket.on('updateTeams', data => {
     }
     teamList.appendChild(fragment)
   }
-  if (data.guessing)
-    Headings[data.whoseTurn].classList.add('current')
-  else
-    Headings.forEach(x => x.classList.remove('current'))
+  if (data.winner !== undefined)
+    Headings[data.winner].classList.add('winner')
 })
 
 socket.on('showStart', show => {
@@ -258,7 +263,7 @@ socket.on('updateWords', data => {
     el.textContent = word.word
     if (isPlayable)
       el.onclick = () => socket.emit('guessRequest', i)
-    if ((!isPlayer || word.guessed) && word.colour !== undefined)
+    if (!isPlayer || word.guessed || data.winner !== undefined)
       el.classList.add(colourName(word.colour))
     if (word.guessed)
       el.classList.add('guessed')

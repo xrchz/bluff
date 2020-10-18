@@ -90,7 +90,9 @@ function updateTeams(gameName, socketId) {
     { teams: game.teams,
       started: game.started,
       guessing: !!game.guessesLeft,
-      whoseTurn: game.whoseTurn
+      whoseTurn: game.whoseTurn,
+      wordsLeft: game.wordsLeft,
+      winner: game.winner
     })
   if (!game.started)
     io.in(room).emit('showStart', canStart(game))
@@ -98,7 +100,7 @@ function updateTeams(gameName, socketId) {
 
 function updateClue(gameName, socketId) {
   const game = games[gameName]
-  const leaderId = game.teams[game.whoseTurn][0].socketId
+  const leaderId = game.winner === undefined && game.teams[game.whoseTurn][0].socketId
   if (!socketId || leaderId === socketId) {
     io.in(gameName).emit('showClue', false)
     if (game.giving)
@@ -112,7 +114,8 @@ function updateWords(gameName, socketId) {
   io.in(room).emit('updateWords', {
     words: game.words,
     guessing: !!game.guessesLeft,
-    whoseTurn: game.whoseTurn
+    whoseTurn: game.whoseTurn,
+    winner: game.winner
   })
 }
 
@@ -337,7 +340,6 @@ io.on('connection', socket => {
         io.in(gameName).emit('gameStarted')
         game.giving = true
         game.clues = [[], []]
-        game.teams[game.whoseTurn][0].current = true
         updateTeams(gameName)
         updateWords(gameName)
         updateClue(gameName)
@@ -355,7 +357,7 @@ io.on('connection', socket => {
   socket.on('clueRequest', data => inGame((gameName, game) => {
     if (game.giving) {
       const leader = game.teams[game.whoseTurn][0]
-      if (leader && leader.current && leader.socketId === socket.id) {
+      if (leader && leader.socketId === socket.id) {
         if (Number.isInteger(data.n) && 0 <= data.n && data.n <= game.wordsLeft[game.whoseTurn] + 1) {
           if (data.n > game.wordsLeft[game.whoseTurn]) data.n = Infinity
           const clue = { text: `${data.clue} (${data.n === Infinity ? '∞' : data.n.toString()})`,
@@ -363,7 +365,6 @@ io.on('connection', socket => {
           game.clues[game.whoseTurn].push(clue)
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: game.clues[game.whoseTurn] })
           delete game.giving
-          delete leader.current
           game.guessesLeft = data.n === 0 ? Infinity : data.n + 1
           updateTeams(gameName)
           updateWords(gameName)
@@ -428,20 +429,19 @@ io.on('connection', socket => {
           }
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
           if (game.wordsLeft.includes(0)) {
-            // TODO appendLog(gameName, `${teamName(game.whoseTurn)} wins!`)
+            game.winner = game.whoseTurn
             delete game.guessesLeft
-            game.ended = true
+            delete game.whoseTurn
           }
           else if (endTurn === 'assassin') {
-            // TODO appendLog(gameName, `${teamName(1 - game.whoseTurn)} wins!`)
+            game.winner = 1 - game.whoseTurn
             delete game.guessesLeft
-            game.ended = true
+            delete game.whoseTurn
           }
           else if (endTurn) {
             game.whoseTurn = 1 - game.whoseTurn
             delete game.guessesLeft
             game.giving = true
-            game.teams[game.whoseTurn][0].current = true
             updateClue(gameName)
           }
           updateTeams(gameName)
