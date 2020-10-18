@@ -1,7 +1,7 @@
 body {
   font-family: sans-serif;
   font-size: large;
-  background-color: #003;
+  background-color: #010;
   color: Lavender;
   margin-left: 2vw;
   width: 96vw;
@@ -18,8 +18,8 @@ input[type=text]:disabled {
   background-color: #382d7b;
 }
 input[type=button] {
-  background-color: RoyalBlue;
-  color: LightYellow;
+  background-color: Indigo;
+  color: Moccasin;
 }
 #game {
   width: 2em;
@@ -28,11 +28,11 @@ input[type=button] {
 .name {
   color: #b7abfe;
 }
-#spectators, .empty {
+#spectators {
   color: SlateGray
 }
 .disconnected {
-  color: Pink;
+  color: Violet;
 }
 #games {
   list-style-type: none;
@@ -185,14 +185,14 @@ label input[type=radio] {
   position: fixed;
 }
 .blue {
-  color: #ccf;
+  color: #aaf;
 }
 .red {
-  color: #fcc;
+  color: #faa;
 }
 .neutral {
-  color: #ccc;
+  color: #aaa;
 }
 .assassin {
-  color: #cfc;
+  color: #afa;
 }
