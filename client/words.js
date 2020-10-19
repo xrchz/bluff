@@ -124,7 +124,10 @@ socket.on('ensureLobby', () => {
     clueLog.innerHTML = ''
   }
   for (const index of [Blue, Red]) teamNames[index] = []
-  Headings.forEach(h => h.nextElementSibling.innerHTML = '')
+  Headings.forEach(h => {
+    h.nextElementSibling.innerHTML = ''
+    h.classList.remove('winner')
+  })
   clueWord.value = ''
   setupDiv.hidden = true
   settingsDiv.hidden = true
