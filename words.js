@@ -404,7 +404,7 @@ io.on('connection', socket => {
 
   socket.on('setAssassins', n => inGame((gameName, game) => {
     if (!game.started) {
-      if (game.players.find(player => player.socketId === socket.id) && Number.isInteger(n) && 0 <= n && n <= 2) {
+      if (game.players.find(player => player.socketId === socket.id) && Number.isInteger(n) && 0 <= n && n <= 3) {
         game.assassins = n
         socket.to(gameName).emit('updateAssassins', n)
       }
