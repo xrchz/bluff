@@ -195,7 +195,9 @@ io.on('connection', socket => {
       console.log(`new game ${gameName}`)
       game = { teams: [[], []],
                players: [],
-               spectators: [] }
+               spectators: [],
+               assassins: Assassins
+             }
       games[gameName] = game
     }
     else
@@ -217,6 +219,7 @@ io.on('connection', socket => {
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
+        socket.emit('updateAssassins', game.assassins)
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started) {
           socket.emit('updateUnseated', game.players)
@@ -247,6 +250,7 @@ io.on('connection', socket => {
           const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+          socket.emit('updateAssassins', game.assassins)
           socket.emit('updateSpectators', game.spectators)
           updateTeams(gameName)
           socket.emit('gameStarted')
@@ -279,6 +283,7 @@ io.on('connection', socket => {
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+        socket.emit('updateAssassins', game.assassins)
         socket.emit('updateSpectators', game.spectators)
         updateTeams(gameName)
         io.in(gameName).emit('updateUnseated', game.players)
@@ -381,6 +386,23 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('setAssassins', n => inGame((gameName, game) => {
+    if (!game.started) {
+      if (game.players.find(player => player.socketId === socket.id) && Number.isInteger(n) && 0 <= n && n <= 2) {
+        game.assassins = n
+        socket.to(gameName).emit('updateAssassins', n)
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} failed setting assassins to ${n}`)
+        socket.emit('errorMsg', 'Error: cannot set assassins: invalid number or player.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried setting assassins when game already started`)
+      socket.emit('errorMsg', 'Error: cannot set assassins after the game has started.')
+    }
+  }))
+
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
       if (canStart(game)) {
@@ -399,7 +421,7 @@ io.on('connection', socket => {
         colours[i++] = game.whoseTurn
         for (let j = 0; j < TeamWords; j++) colours[i++] = game.whoseTurn
         for (let j = 0; j < TeamWords; j++) colours[i++] = 1 - game.whoseTurn
-        for (let j = 0; j < Assassins; j++) colours[i++] = Assassin
+        for (let j = 0; j < game.assassins; j++) colours[i++] = Assassin
         shuffleInPlace(colours)
         game.words.forEach((x, i) => { if (colours[i] !== undefined) x.colour = colours[i] })
         game.wordsLeft = [TeamWords, TeamWords]

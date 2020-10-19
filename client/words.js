@@ -34,6 +34,8 @@ const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
 const setupDiv = document.getElementById('setupArea')
+const settingsDiv = document.getElementById('settings')
+const assassinsInput = document.getElementById('assassins')
 
 const fragment = document.createDocumentFragment()
 const Headings = [blueHeading, redHeading]
@@ -91,6 +93,8 @@ socket.on('ensureLobby', () => {
   Headings.forEach(h => h.nextElementSibling.innerHTML = '')
   clueWord.value = ''
   setupDiv.hidden = true
+  settingsDiv.hidden = true
+  settingsDiv.previousElementSibling.hidden = true
 })
 
 socket.on('updateGames', games => {
@@ -164,10 +168,24 @@ socket.on('joinedGame', data => {
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
+    assassinsInput.onchange = () => {
+      assassinsInput.nextElementSibling.textContent = assassinsInput.value
+      socket.emit('setAssassins', parseInt(assassinsInput.value))
+    }
+  }
+  else {
+    assassinsInput.disabled = true
   }
   joinButton.hidden = true
   setupDiv.hidden = false
+  settingsDiv.hidden = false
+  settingsDiv.previousElementSibling.hidden = false
   errorMsg.innerHTML = ''
+})
+
+socket.on('updateAssassins', n => {
+  assassinsInput.nextElementSibling.textContent = n
+  assassinsInput.value = n
 })
 
 socket.on('updateTeams', data => {
@@ -240,6 +258,7 @@ socket.on('gameStarted', () => {
     }
   }
   playArea.hidden = false
+  assassinsInput.disabled = true
   errorMsg.innerHTML = ''
 })
 
