@@ -98,6 +98,7 @@ socket.on('ensureLobby', () => {
   setupDiv.hidden = true
   settingsDiv.hidden = true
   settingsDiv.previousElementSibling.hidden = true
+  assassinsInput.disabled = false
 })
 
 socket.on('updateGames', games => {
@@ -171,10 +172,8 @@ socket.on('joinedGame', data => {
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
-    assassinsInput.onchange = () => {
-      assassinsInput.nextElementSibling.textContent = assassinsInput.value
+    assassinsInput.onchange = () =>
       socket.emit('setAssassins', assassinsInput.valueAsNumber)
-    }
   }
   else {
     assassinsInput.disabled = true
@@ -186,10 +185,7 @@ socket.on('joinedGame', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('updateAssassins', n => {
-  assassinsInput.nextElementSibling.textContent = n
-  assassinsInput.value = n
-})
+socket.on('updateAssassins', n => assassinsInput.value = n)
 
 socket.on('updateTeams', data => {
   for(const index of [Blue, Red]) {

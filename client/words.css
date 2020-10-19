@@ -218,13 +218,12 @@ label input[type=radio] {
 #settings[hidden] {
   display: none;
 }
-#assassins {
-  width: 3em;
+input[type=number] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  font-size: medium;
 }
-div.slider {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-around;
-  width: 10em;
+#assassins {
+  width: 2em;
+}
 }
