@@ -232,6 +232,8 @@ io.on('connection', socket => {
           updateClue(gameName, socket.id)
           socket.emit('updateClues', { team: Blue, clues: game.clues[Blue] })
           socket.emit('updateClues', { team: Red, clues: game.clues[Red] })
+          if (game.secondsLeft)
+            socket.emit('updateTimeLimit', `${formatSeconds(game.secondsLeft)} left`)
         }
       }
       else {
