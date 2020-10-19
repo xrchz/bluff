@@ -254,6 +254,12 @@ io.on('connection', socket => {
           updateClue(gameName, socket.id)
           socket.emit('updateClues', { team: Blue, clues: game.clues[Blue] })
           socket.emit('updateClues', { team: Red, clues: game.clues[Red] })
+          if (game.timeout)
+            socket.emit('showPause', { show: true, text: 'Pause' })
+          else if (game.secondsLeft) {
+            socket.emit('updateTimeLimit', `${formatSeconds(game.secondsLeft)} left`)
+            socket.emit('showPause', { show: true, text: 'Resume' })
+          }
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)
