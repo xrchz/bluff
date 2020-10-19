@@ -52,7 +52,10 @@ joinButton.onclick = () => {
   })
 }
 
-pauseButton.onclick = () => socket.emit('pauseRequest')
+pauseButton.onclick = () => {
+  socket.emit('pauseRequest')
+  errorMsg.innerHTML = ''
+}
 
 socket.on('showPause', data => {
   if (!spectateInput.checked) {
