@@ -173,7 +173,7 @@ socket.on('joinedGame', data => {
     spectateInput.hidden = true
     assassinsInput.onchange = () => {
       assassinsInput.nextElementSibling.textContent = assassinsInput.value
-      socket.emit('setAssassins', parseInt(assassinsInput.value))
+      socket.emit('setAssassins', assassinsInput.valueAsNumber)
     }
   }
   else {
@@ -314,7 +314,8 @@ socket.on('updateWords', data => {
     addWords('Friends (✓):', leaderTeam)
     addWords('Foes (✗):', 1 - leaderTeam)
     addWords('Neutral (–):', undefined)
-    addWords('Assassins (☠):', Assassin)
+    if (assassinsInput.valueAsNumber)
+      addWords('Assassins (☠):', Assassin)
     wordLists.appendChild(fragment)
   }
   for (let i = 0; i < data.words.length; i++) {
