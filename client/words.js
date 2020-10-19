@@ -20,6 +20,7 @@ const passButton = document.getElementById('pass')
 const timeLimit = document.getElementById('timeLimit')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
+const pauseButton = document.getElementById('pause')
 const joinBlueButton = document.getElementById('joinBlue')
 const joinRedButton = document.getElementById('joinRed')
 const blueHeading = document.getElementById('blueHeading')
@@ -49,6 +50,15 @@ joinButton.onclick = () => {
   })
 }
 
+pauseButton.onclick = () => socket.emit('pauseRequest')
+
+socket.on('showPause', data => {
+  if (!spectateInput.checked) {
+    pauseButton.hidden = !data.show
+    if (data.text) pauseButton.value = data.text
+  }
+})
+
 joinBlueButton.onclick = () => socket.emit('joinTeam', Blue)
 joinRedButton.onclick = () => socket.emit('joinTeam', Red)
 startButton.onclick = () => socket.emit('startGame')
@@ -58,6 +68,7 @@ socket.on('ensureLobby', () => {
   gameInput.disabled = false
   nameInput.disabled = false
   joinButton.hidden = false
+  pauseButton.hidden = true
   spectateInput.hidden = false
   spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false

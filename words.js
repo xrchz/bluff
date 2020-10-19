@@ -150,6 +150,7 @@ function startTimer(gameName) {
         game.guessesLeft = Infinity
         game.secondsLeft = GuessingSeconds
         game.timeout = setTimeout(callback, 0)
+        io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
       }
       else if (!!game.guessesLeft) {
         const clue = clues[clues.length - 1]
@@ -160,6 +161,7 @@ function startTimer(gameName) {
         game.giving = true
         game.secondsLeft = GivingSeconds
         game.timeout = setTimeout(callback, 0)
+        io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
       }
       updateTeams(gameName)
       updateWords(gameName)
@@ -167,12 +169,16 @@ function startTimer(gameName) {
     }
   }
   game.timeout = setTimeout(callback, 0)
+  io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
 }
 
 function stopTimer(gameName) {
   const game = games[gameName]
   clearTimeout(game.timeout)
+  delete game.timeout
+  delete game.secondsLeft
   io.in(gameName).emit('updateTimeLimit', '')
+  io.in(gameName).emit('showPause', { show: false })
 }
 
 io.on('connection', socket => {
@@ -527,6 +533,16 @@ io.on('connection', socket => {
       console.log(`${socket.playerName} attempted to give guess in ${gameName}`)
       socket.emit('errorMsg', `Error: it is not time to give guesses.`)
     }
+  }))
+
+  socket.on('pauseRequest', () => inGame((gameName, game) => {
+    if (game.timeout) {
+      clearTimeout(game.timeout)
+      delete game.timeout
+      io.in(gameName).emit('showPause', { show: true, text: 'Resume' })
+    }
+    else if (game.secondsLeft)
+      startTimer(gameName)
   }))
 
   socket.on('disconnecting', () => {
