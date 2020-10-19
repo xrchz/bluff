@@ -36,13 +36,44 @@ const unseated = document.getElementById('unseated')
 const setupDiv = document.getElementById('setupArea')
 const settingsDiv = document.getElementById('settings')
 const assassinsInput = document.getElementById('assassins')
+const firstGivingSeconds = document.getElementById('firstGivingSeconds')
+const givingSeconds = document.getElementById('givingSeconds')
+const guessingSeconds = document.getElementById('guessingSeconds')
 
 const fragment = document.createDocumentFragment()
 const Headings = [blueHeading, redHeading]
 const TeamLists = [blueTeamList, redTeamList]
 const ClueLogs = [blueClues, redClues]
+const TimeLimits = [firstGivingSeconds, givingSeconds, guessingSeconds]
+const TimeLimitDefaults = ['5m', '3m', '4m']
 const leaders = []
 const teamNames = [[], []]
+
+for (let i = 0; i < TimeLimits.length; i++) {
+  const input = TimeLimits[i]
+  input.classList.add('timelimit')
+  input.type = 'text'
+  input.pattern = '\\d+m\\d+s|\\d+m|\\d+s|∞'
+  input.value = TimeLimitDefaults[i]
+}
+
+function timeLimitOnChange(input) {
+  const regex = /(?:(?<m>\d+)m)?(?:(?<s>\d+)s)?/
+  const found = input.value.match(regex)
+  if (found.groups.m && found.groups.s) {
+    socket.emit('setLimit', { id: input.id, secs: parseInt(found.groups.m) * 60 + parseInt(found.groups.s) })
+  }
+  else if (found.groups.m) {
+    socket.emit('setLimit', { id: input.id, secs: parseInt(found.groups.m) * 60 })
+  }
+  else if (found.groups.s) {
+    socket.emit('setLimit', { id: input.id, secs: parseInt(found.groups.s) })
+  }
+  else {
+    input.value = '∞'
+    socket.emit('setLimit', { id: input.id, secs: false })
+  }
+}
 
 joinButton.onclick = () => {
   socket.emit('joinRequest', {
@@ -174,9 +205,12 @@ socket.on('joinedGame', data => {
     spectateInput.hidden = true
     assassinsInput.onchange = () =>
       socket.emit('setAssassins', assassinsInput.valueAsNumber)
+    TimeLimits.forEach(input =>
+      input.onchange = () => timeLimitOnChange(input))
   }
   else {
     assassinsInput.disabled = true
+    TimeLimits.forEach(input => input.disabled = true)
   }
   joinButton.hidden = true
   setupDiv.hidden = false
@@ -186,6 +220,9 @@ socket.on('joinedGame', data => {
 })
 
 socket.on('updateAssassins', n => assassinsInput.value = n)
+
+socket.on('updateLimit', data =>
+  document.getElementById(data.id).value = data.text)
 
 socket.on('updateTeams', data => {
   for(const index of [Blue, Red]) {

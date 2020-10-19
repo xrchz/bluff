@@ -123,9 +123,11 @@ function updateWords(gameName, socketId) {
 }
 
 function formatSeconds(secs) {
-  if (secs > 60) {
+  if (!secs)
+    return '∞'
+  else if (secs >= 60) {
     const s = secs % 60
-    return `${(secs - s)/60}m${s}s`
+    return `${(secs - s)/60}m${s ? `${s}s` : ''}`
   }
   else
     return `${secs}s`
@@ -148,7 +150,7 @@ function startTimer(gameName) {
         io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
         delete game.giving
         game.guessesLeft = Infinity
-        game.secondsLeft = GuessingSeconds
+        game.secondsLeft = game.limits.guessingSeconds
         game.timeout = setTimeout(callback, 0)
         io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
       }
@@ -159,7 +161,7 @@ function startTimer(gameName) {
         game.whoseTurn = 1 - game.whoseTurn
         delete game.guessesLeft
         game.giving = true
-        game.secondsLeft = GivingSeconds
+        game.secondsLeft = game.limits.givingSeconds
         game.timeout = setTimeout(callback, 0)
         io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
       }
@@ -181,6 +183,12 @@ function stopTimer(gameName) {
   io.in(gameName).emit('showPause', { show: false })
 }
 
+function updateSettings(game, room) {
+  io.in(room).emit('updateAssassins', game.assassins)
+  Object.entries(game.limits).forEach(p =>
+    io.in(room).emit('updateLimit', { id: p[0], text: formatSeconds(p[1]) }))
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -193,11 +201,17 @@ io.on('connection', socket => {
     if (!gameName) gameName = randomUnusedGameName()
     if (!(gameName in games)) {
       console.log(`new game ${gameName}`)
-      game = { teams: [[], []],
-               players: [],
-               spectators: [],
-               assassins: Assassins
-             }
+      game = {
+        teams: [[], []],
+        players: [],
+        spectators: [],
+        assassins: Assassins,
+        limits: {
+          firstGivingSeconds: FirstGivingSeconds,
+          givingSeconds: GivingSeconds,
+          guessingSeconds: GuessingSeconds
+        }
+      }
       games[gameName] = game
     }
     else
@@ -219,7 +233,7 @@ io.on('connection', socket => {
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
-        socket.emit('updateAssassins', game.assassins)
+        updateSettings(game, socket.id)
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started) {
           socket.emit('updateUnseated', game.players)
@@ -252,7 +266,7 @@ io.on('connection', socket => {
           const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-          socket.emit('updateAssassins', game.assassins)
+          updateSettings(game, socket.id)
           socket.emit('updateSpectators', game.spectators)
           updateTeams(gameName)
           socket.emit('gameStarted')
@@ -285,7 +299,7 @@ io.on('connection', socket => {
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-        socket.emit('updateAssassins', game.assassins)
+        updateSettings(game, socket.id)
         socket.emit('updateSpectators', game.spectators)
         updateTeams(gameName)
         io.in(gameName).emit('updateUnseated', game.players)
@@ -405,6 +419,20 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('setLimit', data => inGame((gameName, game) => {
+    if (game.players.find(player => player.socketId === socket.id) &&
+      Object.keys(game.limits).includes(data.id) &&
+      (data.secs === false || Number.isInteger(data.secs))) {
+      if (data.secs < 1) data.secs = false
+      game.limits[data.id] = data.secs
+      io.in(gameName).emit('updateLimit', { id: data.id, text: formatSeconds(data.secs) })
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} failed setting limit ${data.id} ${data.secs}`)
+      socket.emit('errorMsg', 'Error: cannot set time limit: invalid data.')
+    }
+  }))
+
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
       if (canStart(game)) {
@@ -431,8 +459,10 @@ io.on('connection', socket => {
         game.log = []
         io.in(gameName).emit('gameStarted')
         game.giving = true
-        game.secondsLeft = FirstGivingSeconds
-        startTimer(gameName)
+        if (game.limits.firstGivingSeconds) {
+          game.secondsLeft = game.limits.firstGivingSeconds
+          startTimer(gameName)
+        }
         game.clues = [[], []]
         updateTeams(gameName)
         updateWords(gameName)
@@ -461,8 +491,10 @@ io.on('connection', socket => {
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: game.clues[game.whoseTurn] })
           delete game.giving
           game.guessesLeft = data.n === 0 ? Infinity : data.n + 1
-          game.secondsLeft = GuessingSeconds
-          startTimer(gameName)
+          if (game.limits.guessingSeconds) {
+            game.secondsLeft = game.limits.guessingSeconds
+            startTimer(gameName)
+          }
           updateTeams(gameName)
           updateWords(gameName)
           updateClue(gameName)
@@ -542,8 +574,10 @@ io.on('connection', socket => {
             game.whoseTurn = 1 - game.whoseTurn
             delete game.guessesLeft
             game.giving = true
-            game.secondsLeft = GivingSeconds
-            startTimer(gameName)
+            if (game.limits.givingSeconds) {
+              game.secondsLeft = game.limits.givingSeconds
+              startTimer(gameName)
+            }
             updateClue(gameName)
           }
           updateTeams(gameName)

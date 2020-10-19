@@ -213,7 +213,10 @@ label input[type=radio] {
 }
 #settings {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  width: 75%;
+  margin: auto;
 }
 #settings[hidden] {
   display: none;
@@ -226,4 +229,7 @@ input[type=number] {
 #assassins {
   width: 2em;
 }
+input.timelimit {
+  width: 4em;
+  font-size: medium;
 }
