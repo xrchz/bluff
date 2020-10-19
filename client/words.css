@@ -58,6 +58,10 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
+ul.reversed {
+  display: flex;
+  flex-direction: column-reverse;
+}
 .current {
   background-color: NavajoWhite;
   color: #004;

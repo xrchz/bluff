@@ -319,6 +319,7 @@ socket.on('updateClues', data => {
   if (data.clues.length) {
     fragment.appendChild(document.createElement('h3')).textContent = 'Clues'
     const ul = fragment.appendChild(document.createElement('ul'))
+    ul.classList.add('reversed')
     for (const clue of data.clues) {
       const li = ul.appendChild(document.createElement('li'))
       li.textContent = clue.text
