@@ -68,7 +68,7 @@ ul.reversed {
 }
 .current.disconnected {
   background-color: NavajoWhite;
-  color: DarkRed;
+  color: DarkViolet;
 }
 ul.team {
   list-style-type: none;
@@ -148,7 +148,7 @@ h2 {
 h2 + div {
   margin-bottom: 1em;
 }
-div.players h3, h4 {
+h3, h4 {
   padding: 0;
   margin: 0;
 }
@@ -232,4 +232,8 @@ input[type=number] {
 input.timelimit {
   width: 4em;
   font-size: medium;
+}
+span.clue {
+  color: Moccasin;
+  font-weight: bold;
 }

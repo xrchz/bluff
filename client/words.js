@@ -386,7 +386,9 @@ socket.on('updateClues', data => {
     ul.classList.add('reversed')
     for (const clue of data.clues) {
       const li = ul.appendChild(document.createElement('li'))
-      li.textContent = clue.text
+      const sp = li.appendChild(document.createElement('span'))
+      sp.textContent = clue.text
+      sp.classList.add('clue')
       if (clue.guesses.length) {
         li.appendChild(document.createElement('h4')).textContent = 'Guesses'
         const dl = li.appendChild(document.createElement('ul'))
