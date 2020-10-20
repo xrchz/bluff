@@ -6,6 +6,11 @@ const colourName = i =>
   i === Blue ? 'blue' :
   i === Red ? 'red' :
   i === Assassin ? 'assassin' : 'neutral'
+const typeIcon = t =>
+  t === 'friend' ? '✓' :
+  t === 'foe' ? '✗' :
+  t === 'assassin' ? '☠' :
+  t === 'neutral' ? '–' : null
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const errorMsg = document.getElementById('errorMsg')
@@ -390,7 +395,10 @@ socket.on('updateClues', data => {
           di.appendChild(document.createElement('span')).textContent = `${guess.who}: `
           const dd = di.appendChild(document.createElement('span'))
           dd.textContent = guess.what
-          guess.classes.forEach(c => dd.classList.add(c))
+          const icon = typeIcon(guess.type)
+          if (icon) dd.textContent += ` (${icon})`
+          dd.classList.add(guess.type)
+          if (guess.colour !== undefined) dd.classList.add(colourName(guess.colour))
         }
       }
     }

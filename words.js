@@ -74,12 +74,7 @@ function updateGames(room) {
   io.in(room).emit('updateGames', data)
 }
 
-const Blue = 0
-const Red = 1
-const Assassin = 2
-const teamName = c => c === Blue ? 'Blue' : c === Red ? 'Red' : null
-const colourName = c => c === Blue ? 'blue' : c === Red ? 'red' : c === Assassin ? 'assassin' : 'neutral'
-const typeIcon = t => t === 'friend' ? '✓' : t === 'foe' ? '✗' : t === 'assassin' ? '☠' : '–'
+const Blue = 0, Red = 1, Assassin = 2
 
 const canStart = game =>
   game.teams[Blue].length >= 2 &&
@@ -88,7 +83,7 @@ const canStart = game =>
 
 function updateTeams(gameName, socketId) {
   const game = games[gameName]
-  const room = socketId ? socketId : gameName
+  const room = socketId || gameName
   io.in(room).emit('updateTeams',
     { teams: game.teams,
       started: game.started,
@@ -112,7 +107,7 @@ function updateClue(gameName, socketId) {
 }
 
 function updateWords(gameName, socketId) {
-  const room = socketId ? socketId : gameName
+  const room = socketId || gameName
   const game = games[gameName]
   io.in(room).emit('updateWords', {
     words: game.words,
@@ -156,7 +151,7 @@ function startTimer(gameName) {
       }
       else if (!!game.guessesLeft) {
         const clue = clues[clues.length - 1]
-        clue.guesses.push({ who: 'all', what: '(timeout)', classes: ['pass'] })
+        clue.guesses.push({ who: 'all', what: '(timeout)', type: 'pass' })
         io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
         game.whoseTurn = 1 - game.whoseTurn
         delete game.guessesLeft
@@ -525,7 +520,7 @@ io.on('connection', socket => {
             Number.isInteger(index) && 0 <= index && index < game.words.length && !game.words[index].guessed) {
           let endTurn
           if (index === false) {
-            clue.guesses.push({ who: player.name, what: 'pass', classes: ['pass'] })
+            clue.guesses.push({ who: player.name, what: 'pass', type: 'pass' })
             endTurn = true
           }
           else {
@@ -551,10 +546,8 @@ io.on('connection', socket => {
               type = 'neutral'
               endTurn = true
             }
-            const guess = { who: player.name, what: `${word.word} (${typeIcon(type)})`, classes: [type] }
-            const colourClass = colourName(word.colour)
-            if (colourClass) guess.classes.push(colourClass)
-            clue.guesses.push(guess)
+            clue.guesses.push(
+              { who: player.name, what: word.word, type: type, colour: word.colour })
           }
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
           if (game.wordsLeft.includes(0)) {
