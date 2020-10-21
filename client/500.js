@@ -454,7 +454,7 @@ socket.on('appendScore', data => {
   elem.appendChild(document.createElement('td')).textContent = data.score[1]
   elem.appendChild(document.createElement('td')).textContent = data.total[0]
   elem.appendChild(document.createElement('td')).textContent = data.total[1]
-  scoreTable.appendChild(fragment)
+  scoreTable.insertBefore(fragment, scoreTable.firstChild)
   errorMsg.innerHTML = ''
 })
 
