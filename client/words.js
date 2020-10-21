@@ -258,11 +258,16 @@ socket.on('updateTeams', data => {
       const span = li.appendChild(document.createElement('span'))
       span.textContent = player.name
       if (data.whoseTurn === index) {
-        if (!first !== !data.guessing)
+        if (!first !== !data.guessing) {
           span.classList.add('current')
+          span.textContent += ' (*)'
+        }
         first = false
       }
-      if (!player.socketId) span.classList.add('disconnected')
+      if (!player.socketId) {
+        span.classList.add('disconnected')
+        span.textContent += ' (d/c)'
+      }
       if (!data.started && player.name === nameInput.value && !spectateInput.checked) {
         const bu = li.appendChild(document.createElement('input'))
         bu.type = 'button'
