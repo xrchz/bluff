@@ -23,6 +23,7 @@ const clueNumber = document.getElementById('clueNumber')
 const clueSubmit = document.getElementById('clueSubmit')
 const passButton = document.getElementById('pass')
 const timeLimit = document.getElementById('timeLimit')
+const whoseTurn = document.getElementById('whoseTurn')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const pauseButton = document.getElementById('pause')
@@ -120,6 +121,7 @@ socket.on('ensureLobby', () => {
   wordLists.innerHTML = ''
   passButton.hidden = true
   timeLimit.innerHTML = ''
+  whoseTurn.innerHTML = ''
   for (const teamList of TeamLists) {
     teamList.previousElementSibling.hidden = true
     teamList.innerHTML = ''
@@ -257,10 +259,14 @@ socket.on('updateTeams', data => {
       if (player.leader) ra.checked = true
       const span = li.appendChild(document.createElement('span'))
       span.textContent = player.name
+      if (!first && data.guessing)
+        whoseTurn.textContent = `${colourName(index)} team`
       if (data.whoseTurn === index) {
         if (!first !== !data.guessing) {
           span.classList.add('current')
           span.textContent += ' (*)'
+          if (first)
+            whoseTurn.textContent = player.name
         }
         first = false
       }
@@ -279,8 +285,10 @@ socket.on('updateTeams', data => {
     }
     teamList.appendChild(fragment)
   }
-  if (data.winner !== undefined)
+  if (data.winner !== undefined) {
     Headings[data.winner].classList.add('winner')
+    whoseTurn.innerHTML = ''
+  }
 })
 
 socket.on('showStart', show => {

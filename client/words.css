@@ -237,3 +237,6 @@ span.clue {
   color: Moccasin;
   font-weight: bold;
 }
+#whoseTurn {
+  text-transform: capitalize;
+}
