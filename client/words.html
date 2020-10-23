@@ -8,10 +8,12 @@
   </head>
   <body>
     <p id=errorMsg></p>
-    <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
-    <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
-    <input id=join type=button value="Join" />
-    <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    <form class=inline>
+      <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+      <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+      <input id=join type=submit value="Join" />
+      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    </form>
     <input id=pause type=button value="Pause" hidden />
     <ul id=games hidden></ul>
     <div>
@@ -22,11 +24,11 @@
     <div id=playArea hidden>
       <div id=wordLists></div>
       <ul id=words></ul>
-      <div id=clueArea hidden>
+      <form id=clueArea hidden>
         <input id=clueWord type=text placeholder=clue autocomplete=off pattern="\w+" />
         <select id=clueNumber></select>
-        <input id=clueSubmit type=button value="Submit" />
-      </div>
+        <input id=clueSubmit type=submit value="Submit" />
+      </form>
       <input id=pass type=button value="Pass" hidden />
       <p><span id=whoseTurn></span> <span id=timeLimit></span></p>
     </div>

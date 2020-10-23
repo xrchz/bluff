@@ -17,7 +17,7 @@ input[type=text] {
 input[type=text]:disabled {
   background-color: #382d7b;
 }
-input[type=button] {
+input[type=button], input[type=submit] {
   background-color: Indigo;
   color: Moccasin;
 }
@@ -49,6 +49,9 @@ a:hover {
 }
 #wordLists > ul > li > ul {
   display: inline;
+}
+form.inline {
+  display:inline;
 }
 ul.inline {
   list-style-type: none;

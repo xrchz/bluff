@@ -81,12 +81,13 @@ function timeLimitOnChange(input) {
   }
 }
 
-joinButton.onclick = () => {
+joinButton.parentElement.onsubmit = () => {
   socket.emit('joinRequest', {
     gameName:  gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
     playerName: nameInput.value.replace(/\W/g, ''),
     spectate: spectateInput.checked
   })
+  return false
 }
 
 pauseButton.onclick = () => {
@@ -334,11 +335,12 @@ socket.on('showClue', wordsLeft => {
     clueArea.hidden = true
 })
 
-clueSubmit.onclick = () => {
+clueSubmit.parentElement.onsubmit = () => {
   socket.emit('clueRequest',
     { clue: clueWord.value,
       n: Array.from(clueNumber.children).findIndex(x => x.selected)
     })
+  return false
 }
 
 passButton.onclick = () => socket.emit('guessRequest', false)
