@@ -237,6 +237,14 @@ span.clue {
   color: Moccasin;
   font-weight: bold;
 }
+#clueArea {
+  display: flex;
+  width: 20em;
+  justify-content: space-around;
+}
+#clueArea[hidden] {
+  display: none;
+}
 #whoseTurn {
   text-transform: capitalize;
 }
