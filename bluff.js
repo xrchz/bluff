@@ -1,14 +1,10 @@
 'use strict'
 
 const express = require('express')
-const https = require('https')
+const http = require('http')
 const fs = require('fs')
-const options = {
-  key: fs.readFileSync('/etc/ssl/xrchz/key.pem'),
-  cert: fs.readFileSync('/etc/ssl/xrchz/cert.pem')
-};
 var app = express()
-var server = https.createServer(options, app)
+var server = http.createServer(app)
 var io = require('socket.io')(server)
 
 app.get('/', (req, res) => {
@@ -16,8 +12,11 @@ app.get('/', (req, res) => {
 })
 app.use(express.static(`${__dirname}/client`))
 
-server.listen(1909, "0.0.0.0")
-console.log('server started on https://xrchz.net:1909')
+const unix = '/run/games/bluff.socket'
+server.listen(unix)
+console.log(`server started on ${unix}`)
+server.on('listening', () => fs.chmodSync(unix, 0o777))
+process.on('SIGINT', () => { fs.unlinkSync(unix); process.exit() })
 
 var games = {}
 

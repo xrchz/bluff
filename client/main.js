@@ -1,5 +1,5 @@
 /* global io */
-var socket = io("https://xrchz.net:1909")
+var socket = io('https://xrchz.net', {path: '/games/bluff/socket.io'})
 
 const pileDiv = document.getElementById('pile')
 const handDiv = document.getElementById('hand')

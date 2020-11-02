@@ -1,14 +1,10 @@
 'use strict'
 
 const express = require('express')
-const https = require('https')
+const http = require('http')
 const fs = require('fs')
-const options = {
-  key: fs.readFileSync('/etc/ssl/xrchz/key.pem'),
-  cert: fs.readFileSync('/etc/ssl/xrchz/cert.pem')
-}
 var app = express()
-var server = https.createServer(options, app)
+var server = http.createServer(app)
 var io = require('socket.io')(server)
 
 app.get('/', (req, res) => {
@@ -16,9 +12,10 @@ app.get('/', (req, res) => {
 })
 app.use(express.static(`${__dirname}/client`))
 
-const port = 4500
-server.listen(port, "0.0.0.0")
-console.log(`server started on https://xrchz.net:${port}`)
+const unix = '/run/games/500.socket'
+server.listen(unix)
+console.log(`server started on ${unix}`)
+server.on('listening', () => fs.chmodSync(unix, 0o777))
 
 function shuffleInPlace(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -1145,5 +1142,5 @@ io.on('connection', socket => {
   socket.on('saveGames', saveGames)
 })
 
-process.on('SIGINT', () => { saveGames(); process.exit() })
+process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
 process.on('uncaughtExceptionMonitor', saveGames)
