@@ -1,5 +1,5 @@
 /* global io */
-var socket = io("https://xrchz.net:4321")
+var socket = io("https://xrchz.net", {path: '/games/words/socket.io'})
 
 const Blue = 0, Red = 1, Assassin = 2
 const colourName = i =>
