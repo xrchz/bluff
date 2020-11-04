@@ -14,6 +14,25 @@ const playArea = document.getElementById('playArea')
 const letterGrid = document.getElementById('letterGrid')
 const resultsArea = document.getElementById('resultsArea')
 
+const Colours = [
+'#e53935',
+'#d81b60',
+'#8e24aa',
+'#5e35b1',
+'#3949ab',
+'#1e88e5',
+'#039be5',
+'#00acc1',
+'#00897b',
+'#43a047',
+'#7cb342',
+'#c0ca33',
+'#fdd835',
+'#ffb300',
+'#fb8c00',
+'#f4511e',
+'white']
+
 const fragment = document.createDocumentFragment()
 
 joinButton.parentElement.onsubmit = () => {
@@ -135,7 +154,50 @@ socket.on('listWords', words => {
   const ul = fragment.appendChild(document.createElement('ul'))
   for (const wp of words) {
     const li = ul.appendChild(document.createElement('li'))
-    li.textContent = wp[0]
+    const a = li.appendChild(document.createElement('a'))
+    a.textContent = wp[0]
+    a.onclick = function () {
+      for (const c of letterGrid.children) {
+        c.style.background = ''
+        c.style.color = ''
+        /*
+        for (const x of ['patht', 'pathb', 'pathl', 'pathr', 'pathtl', 'pathtr', 'pathbl', 'pathbr', 'path'])
+          c.classList.remove(x)
+        */
+      }
+      if (a.showing) delete a.showing
+      else {
+        const path = wp[1].map(pos => {
+          const col = pos % 4
+          const row = (pos - col) / 4
+          return [row, col, pos]
+        })
+        a.showing = true
+        let i = 0, dir
+        while (i+1 < path.length) {
+          const here = path[i]
+          const next = path[i+1]
+          dir = ['to']
+          if (here[0] < next[0]) dir.push('bottom')
+          if (here[0] > next[0]) dir.push('top')
+          if (here[1] < next[1]) dir.push('right')
+          if (here[1] > next[1]) dir.push('left')
+          document.getElementById(`g${here[2]}`).style.color = 'black'
+          document.getElementById(`g${here[2]}`).style.backgroundImage = `linear-gradient(${dir.join(' ')}, ${Colours[i]}, ${Colours[i+1]})`
+          i++
+          /*
+          let dir = here[0] < next[0] ? 'b' : here[0] > next[0] ? 't' : ''
+          dir += here[1] < next[1] ? 'r' : here[1] > next[1] ? 'l' : ''
+          document.getElementById(`g${here[2]}`).classList.add(`path${dir}`)
+          */
+        }
+        document.getElementById(`g${path[i][2]}`).style.color = 'black'
+        document.getElementById(`g${path[i][2]}`).style.backgroundImage = `linear-gradient(${dir.join(' ')}, ${Colours[i]}, ${Colours[i+1]})`
+        /*
+        document.getElementById(`g${path[i][2]}`).classList.add('path')
+        */
+      }
+    }
   }
   resultsArea.appendChild(fragment)
 })
