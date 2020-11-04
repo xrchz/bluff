@@ -1,0 +1,118 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: MidnightBlue;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkGreen;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button], input[type=submit] {
+  background-color: Indigo;
+  color: Moccasin;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators {
+  color: SlateGray
+}
+.disconnected {
+  color: Violet;
+}
+#games {
+  list-style-type: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+form.inline {
+  display:inline;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkViolet;
+}
+#playArea {
+  margin: auto;
+  width: 96vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+}
+#playArea[hidden] {
+  display: none;
+}
+#letterGrid {
+  display: grid;
+  font-size: 32px;
+  grid-template-columns: repeat(4, 80px);
+}
+#letterGrid > div {
+  height: 80px;
+  line-height: 80px;
+  text-align: center;
+  text-transform: capitalize;
+  border-style: dashed;
+  border-color: white;
+  border-width: 1px;
+}
+#playForm {
+  margin-top: 2em;
+}
+#playWord {
+  text-transform: uppercase;
+  font-size: larger;
+  width: 240px;
+}
+li label span {
+  display: inline-block;
+  text-align: right;
+  font-size: smaller;
+  width: 3em;
+  padding-right: 0.5em;
+}
+#settingsHeading {
+  width: 100%;
+  text-align: center;
+}
+#settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 75%;
+  margin: auto;
+}
+#settings[hidden] {
+  display: none;
+}

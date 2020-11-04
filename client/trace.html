@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang=en>
+  <head>
+    <title>Tracewords</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel=stylesheet href="trace.css" type="text/css" />
+    <script src="socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <form class=inline>
+      <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+      <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+      <input id=join type=submit value="Join" />
+      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    </form>
+    <ul id=games hidden></ul>
+    <div>
+      <ul id=unseated class=inline></ul>
+      <input id=start type=button value="Start!" hidden />
+      <ul id=spectators class=inline></ul>
+    </div>
+    <div id=playArea hidden>
+      <div id=timeLimit></div>
+      <div id=letterGrid></div>
+      <form id=playForm>
+        <input id=playWord type=text autocomplete=off pattern="\w+" />
+        <input id=playSubmit type=submit value="Submit" />
+      </form>
+    </div>
+    <div id=resultsArea hidden>
+    </div>
+    <h3 id=settingsHeading hidden>Settings</h3>
+    <div id=settings hidden></div>
+    <script src="trace.js"></script>
+  </body>
+</html>
