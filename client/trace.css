@@ -1,3 +1,7 @@
+@font-face {
+  font-family: 'Digital-7 Mono';
+  src: url('Digital-7-Mono.css');
+}
 body {
   font-family: sans-serif;
   font-size: large;
@@ -72,6 +76,13 @@ ul.inline > li {
 }
 #playArea[hidden] {
   display: none;
+}
+#timeLimit {
+  font-size: 32px;
+  font-family: 'Digital-7 Mono', monospace;
+  letter-spacing: 0.2ex;
+  color: FireBrick;
+  margin-bottom: 1ex;
 }
 #letterGrid {
   display: grid;
