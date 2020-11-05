@@ -95,6 +95,16 @@ ul.inline > li {
   font-size: larger;
   width: 240px;
 }
+#resultsArea {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  width: 100%;
+  margin: auto;
+}
+#resultsArea[hidden] {
+  display: none;
+}
 li label span {
   display: inline-block;
   text-align: right;

@@ -46,6 +46,8 @@ i = 1, node = y, prev = y
 i = 2, node = w, prev = y
 */
 
+const wordRegexp = /^[a-z][a-z][a-z]+$/
+
 function findAllWords(grid) {
   const words = new Map()
   function addWords(path, prefix, node) {
@@ -208,8 +210,11 @@ io.on('connection', socket => {
           socket.emit('updateUnseated', game.players)
         }
         else {
-          socket.emit('gameStarted', game.grid)
-          // reconnection
+          socket.emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
+          game.players.forEach((player, index) =>
+            player.words.forEach(word =>
+              socket.emit('appendWord', { player: index, word: word })))
+          // reconnection for spectator
         }
       }
       else {
@@ -230,7 +235,10 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           // updateSettings(game, socket.id)
           socket.emit('updateSpectators', game.spectators)
-          socket.emit('gameStarted', game.grid)
+          socket.emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
+          game.players.forEach((player, index) =>
+            player.words.forEach(word =>
+              socket.emit('appendWord', { player: index, word: word })))
           // reconnection
         }
         else {
@@ -280,8 +288,8 @@ io.on('connection', socket => {
         game.started = true
         game.grid = randomGrid(hardDice)
         game.words = findAllWords(game.grid)
-        io.in(gameName).emit('gameStarted', game.grid)
-        io.in(gameName).emit('listWords', Array.from(game.words))
+        game.players.forEach(player => player.words = [])
+        io.in(gameName).emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
       }
       else {
         socket.emit('errorMsg', 'Error: not enough players to start.')
@@ -290,6 +298,36 @@ io.on('connection', socket => {
     else {
       console.log(`${socket.playerName} attempted to start ${gameName} again`)
       socket.emit('errorMsg', `Error: ${gameName} has already started.`)
+    }
+  }))
+
+  socket.on('wordRequest', word => inGame((gameName, game) => {
+    if (game.started) {
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      if (playerIndex !== -1) {
+        const player = game.players[playerIndex]
+        if (wordRegexp.test(word)) {
+          const index = player.words.findIndex(w => w === word)
+          if (index === -1) {
+            player.words.push(word)
+            // console.log(`${socket.playerName} at ${playerIndex} in ${gameName} submitted ${word}`)
+            io.in(gameName).emit('appendWord', { player: playerIndex, word: word })
+          }
+          // else animate the found word
+        }
+        else {
+          console.log(`${socket.playerName} submitted invalid word ${word} in ${gameName}`)
+          socket.emit('errorMsg', `Error: that is not a valid word.`)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} not found as player in ${gameName} when submitting word`)
+        socket.emit('errorMsg', `Error: could not find you as a player.`)
+      }
+    }
+    else {
+      console.log(`${socket.playerName} submitted a word to not started ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} has not started.`)
     }
   }))
 

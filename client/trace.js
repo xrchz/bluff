@@ -12,6 +12,9 @@ const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
 const playArea = document.getElementById('playArea')
 const letterGrid = document.getElementById('letterGrid')
+const playForm = document.getElementById('playForm')
+const playWord = document.getElementById('playWord')
+const playSubmit = document.getElementById('playSubmit')
 const resultsArea = document.getElementById('resultsArea')
 
 const Colours = [
@@ -41,6 +44,13 @@ joinButton.parentElement.onsubmit = () => {
     playerName: nameInput.value.replace(/\W/g, ''),
     spectate: spectateInput.checked
   })
+  return false
+}
+
+playSubmit.parentElement.onsubmit = () => {
+  socket.emit('wordRequest', playWord.value.toLowerCase())
+  playWord.value = ''
+  playWord.focus()
   return false
 }
 
@@ -136,16 +146,42 @@ socket.on('joinedGame', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('gameStarted', grid => {
+socket.on('gameStarted', data => {
   startButton.hidden = true
   let i = 0
-  while (i < grid.length) {
+  while (i < data.grid.length) {
     const div = fragment.appendChild(document.createElement('div'))
     div.id = `g${i}`
-    div.textContent = grid[i++]
+    div.textContent = data.grid[i++]
   }
   letterGrid.appendChild(fragment)
   playArea.hidden = false
+  resultsArea.hidden = false
+  for (const name of data.players) {
+    const div = fragment.appendChild(document.createElement('div'))
+    div.appendChild(document.createElement('h3')).textContent = name
+    div.appendChild(document.createElement('ul'))
+    if (!(spectateInput.checked || nameInput.value === name))
+      div.hidden = true
+  }
+  resultsArea.appendChild(fragment)
+  if (spectateInput.checked) {
+    playForm.hidden = true
+    playWord.disabled = true
+    playSubmit.disabled = true
+  }
+  else {
+    playForm.hidden = false
+    playWord.disabled = false
+    playSubmit.disabled = false
+    playWord.value = ''
+    playWord.focus()
+  }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('appendWord', data => {
+  resultsArea.children[data.player].firstElementChild.nextElementSibling.appendChild(document.createElement('li')).textContent = data.word
   errorMsg.innerHTML = ''
 })
 
@@ -200,6 +236,7 @@ socket.on('listWords', words => {
     }
   }
   resultsArea.appendChild(fragment)
+  errorMsg.innerHTML = ''
 })
 
 socket.on('errorMsg', msg => {
