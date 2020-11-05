@@ -366,6 +366,21 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('pauseRequest', () => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      if (game.timeout) {
+        clearTimeout(game.timeout)
+        delete game.timeout
+        io.in(gameName).emit('showPause', { show: true, text: 'Resume' })
+      }
+      else startTimer(gameName)
+    }
+    else {
+      console.log(`${socket.playerName} tried to pause ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} not active.`)
+    }
+  }))
+
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
     const gameName = socket.gameName

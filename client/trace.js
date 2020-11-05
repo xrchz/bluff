@@ -7,6 +7,7 @@ const errorMsg = document.getElementById('errorMsg')
 const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const startButton = document.getElementById('start')
+const pauseButton = document.getElementById('pause')
 const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
@@ -48,6 +49,18 @@ joinButton.parentElement.onsubmit = () => {
   return false
 }
 
+pauseButton.onclick = () => {
+  socket.emit('pauseRequest')
+  errorMsg.innerHTML = ''
+}
+
+socket.on('showPause', data => {
+  if (!spectateInput.checked) {
+    pauseButton.hidden = !data.show
+    if (data.text) pauseButton.value = data.text
+  }
+})
+
 playSubmit.parentElement.onsubmit = () => {
   socket.emit('wordRequest', playWord.value.toLowerCase())
   playWord.value = ''
@@ -62,6 +75,7 @@ socket.on('ensureLobby', () => {
   gameInput.disabled = false
   nameInput.disabled = false
   joinButton.hidden = false
+  pauseButton.hidden = true
   spectateInput.hidden = false
   spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false
