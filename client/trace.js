@@ -11,6 +11,7 @@ const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
 const playArea = document.getElementById('playArea')
+const timeLimit = document.getElementById('timeLimit')
 const letterGrid = document.getElementById('letterGrid')
 const playForm = document.getElementById('playForm')
 const playWord = document.getElementById('playWord')
@@ -179,6 +180,9 @@ socket.on('gameStarted', data => {
   }
   errorMsg.innerHTML = ''
 })
+
+socket.on('updateTimeLimit',
+  text => timeLimit.textContent = text)
 
 socket.on('appendWord', data => {
   resultsArea.children[data.player].firstElementChild.nextElementSibling.appendChild(document.createElement('li')).textContent = data.word

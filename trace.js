@@ -166,6 +166,33 @@ function updateGames(room) {
   io.in(room).emit('updateGames', data)
 }
 
+function formatSeconds(secs) {
+  const s = secs % 60
+  return `${(secs - s) / 60}:${s.toString().padStart(2, '0')}`
+}
+
+function startTimer(gameName) {
+  const game = games[gameName]
+  function callback() {
+    if (game.secondsLeft) {
+      io.in(gameName).emit('updateTimeLimit', formatSeconds(game.secondsLeft))
+      game.secondsLeft--
+      game.timeout = setTimeout(callback, 1000)
+    }
+    else {
+      io.in(gameName).emit('updateTimeLimit', '')
+      delete game.secondsLeft
+      delete game.timeout
+      game.ended = true
+      io.in(gameName).emit('showPause', { show: false })
+      // calculate scores
+      // send words with scores to all players
+    }
+  }
+  game.timeout = setTimeout(callback, 0)
+  io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -181,7 +208,7 @@ io.on('connection', socket => {
       game = {
         players: [],
         spectators: [],
-        timeLimit: 180
+        secondsLeft: 180
       }
       games[gameName] = game
     }
@@ -239,6 +266,12 @@ io.on('connection', socket => {
           game.players.forEach((player, index) =>
             player.words.forEach(word =>
               socket.emit('appendWord', { player: index, word: word })))
+          if (game.timeout)
+            socket.emit('showPause', { show: true, text: 'Pause' })
+          else if (game.secondsLeft) {
+            socket.emit('updateTimeLimit', formatSeconds(game.secondsLeft))
+            socket.emit('showPause', { show: true, text: 'Resume' })
+          }
           // reconnection
         }
         else {
@@ -290,6 +323,7 @@ io.on('connection', socket => {
         game.words = findAllWords(game.grid)
         game.players.forEach(player => player.words = [])
         io.in(gameName).emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
+        startTimer(gameName)
       }
       else {
         socket.emit('errorMsg', 'Error: not enough players to start.')
@@ -302,11 +336,12 @@ io.on('connection', socket => {
   }))
 
   socket.on('wordRequest', word => inGame((gameName, game) => {
-    if (game.started) {
+    if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       if (playerIndex !== -1) {
         const player = game.players[playerIndex]
         if (wordRegexp.test(word)) {
+          if (!game.timeout) startTimer(gameName)
           const index = player.words.findIndex(w => w === word)
           if (index === -1) {
             player.words.push(word)
@@ -326,8 +361,8 @@ io.on('connection', socket => {
       }
     }
     else {
-      console.log(`${socket.playerName} submitted a word to not started ${gameName}`)
-      socket.emit('errorMsg', `Error: ${gameName} has not started.`)
+      console.log(`${socket.playerName} submitted a word to not active ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} has not started or has finished.`)
     }
   }))
 
