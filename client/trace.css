@@ -116,12 +116,13 @@ ul.inline > li {
 #resultsArea[hidden] {
   display: none;
 }
-li label span {
-  display: inline-block;
-  text-align: right;
-  font-size: smaller;
-  width: 3em;
-  padding-right: 0.5em;
+#resultsArea > div > ul {
+  display: flex;
+  flex-direction: column-reverse;
+  list-style-type: none;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0;
 }
 #settingsHeading {
   width: 100%;
