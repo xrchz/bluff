@@ -46,6 +46,19 @@ i = 1, node = y, prev = y
 i = 2, node = w, prev = y
 */
 
+function lookupWord(word) {
+  let node = wordTrie;
+  for (const letter of word) {
+    node = node.sub[letter]
+    if (!node) return false
+  }
+  return !!node.end
+}
+/*
+console.log(`found: ${lookupWord('found')}`)
+console.log(`foun: ${lookupWord('foun')}`)
+*/
+
 const wordRegexp = /^[a-z][a-z][a-z]+$/
 
 function findAllWords(grid) {
@@ -76,6 +89,35 @@ function findAllWords(grid) {
     if (node) addWords([pos], letter, node)
   }
   return words
+}
+
+function findWord(grid, word) {
+  function find(path) {
+    if (path.length === word.length) return path
+    const pos = path[path.length - 1]
+    const col = pos % 4
+    const row = (pos - col) / 4
+    for (const coldelta of [-1, 0, 1]) {
+      for (const rowdelta of [-1, 0, 1]) {
+        if (coldelta === 0 && rowdelta === 0) continue
+        if (col + coldelta < 0 || col + coldelta >= 4) continue
+        if (row + rowdelta < 0 || row + rowdelta >= 4) continue
+        const newpos = (row + rowdelta) * 4 + col + coldelta
+        if (path.includes(newpos)) continue
+        if (grid[newpos] !== word[path.length]) continue
+        const newpath = Array.from(path)
+        newpath.push(newpos)
+        const result = find(newpath)
+        if (result) return result
+      }
+    }
+  }
+  for (let pos = 0; pos < 16; pos++) {
+    if (grid[pos] === word[0]) {
+      const result = find([pos])
+      if (result) return result
+    }
+  }
 }
 
 const hardDice = [
@@ -142,6 +184,49 @@ function randomGrid(origDice) {
   })
 }
 
+function calculateScores(game) {
+  game.players.forEach(player =>
+    player.wordSet = new Set(player.words))
+  for (const player of game.players) {
+    player.score = 0
+    player.wordData = player.words.map(word => {
+      let path = game.words.get(word)
+      if (path) {
+        const missedBy = game.players.reduce((n, player) => player.wordSet.has(word) ? n : n + 1, 0)
+        const points = (word.length - 2) * missedBy
+        player.score += points
+        return { word: word, path: path, points: points, missedBy: missedBy }
+      }
+      else {
+        let data = { word: word, points: 0 }
+        if (!lookupWord(word)) {
+          data.points -= game.notWordPenalty
+          data.notWord = true
+        }
+        path = findWord(game.grid, word)
+        if (!path) {
+          data.points -= game.invalidWordPenalty
+          data.invalidWord = true
+        }
+        else
+          data.path = path
+        player.score += data.points
+        return data
+      }
+    })
+  }
+  let score = 0
+  let wordData = Array.from(game.words.entries(), pair => {
+    const word = pair[0], path = pair[1]
+    const missedBy = game.players.reduce((n, player) => player.wordSet.has(word) ? n : n + 1, 0)
+    const points = (word.length - 2) * missedBy
+    score += points
+    return { word: word, path: path, points: points, missedBy: missedBy }
+  }).sort((x, y) => x.word < y.word ? -1 : 1)
+  game.scores = game.players.map(player => ({ name: player.name, words: player.wordData, score: player.score }))
+  game.scores.push({ name: 'God', words: wordData, score: score })
+}
+
 const games = {}
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
@@ -185,8 +270,8 @@ function startTimer(gameName) {
       delete game.timeout
       game.ended = true
       io.in(gameName).emit('showPause', { show: false })
-      // calculate scores
-      // send words with scores to all players
+      calculateScores(game)
+      io.in(gameName).emit('showScores', game.scores)
     }
   }
   game.timeout = setTimeout(callback, 0)
@@ -208,7 +293,9 @@ io.on('connection', socket => {
       game = {
         players: [],
         spectators: [],
-        secondsLeft: 180
+        secondsLeft: 18,
+        notWordPenalty: 1,
+        invalidWordPenalty: 2
       }
       games[gameName] = game
     }
@@ -241,7 +328,8 @@ io.on('connection', socket => {
               player.words.forEach(word =>
                 socket.emit('appendWord', { player: index, word: word })))
           }
-          // reconnection for spectator
+          else
+            socket.emit('showScores', game.scores)
         }
       }
       else {
@@ -275,7 +363,8 @@ io.on('connection', socket => {
               socket.emit('showPause', { show: true, text: 'Resume' })
             }
           }
-          // reconnection
+          else
+            socket.emit('showScores', game.scores)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)

@@ -182,7 +182,8 @@ socket.on('gameStarted', data => {
   for (const name of data.players) {
     const div = fragment.appendChild(document.createElement('div'))
     div.appendChild(document.createElement('h3')).textContent = name
-    div.appendChild(document.createElement('ul'))
+    const ul = div.appendChild(document.createElement('ul'))
+    ul.classList.add('reversed')
     if (!(spectateInput.checked || nameInput.value === name))
       div.hidden = true
   }
@@ -210,53 +211,53 @@ socket.on('appendWord', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('listWords', words => {
+socket.on('showScores', scores => {
   resultsArea.hidden = false
-  const ul = fragment.appendChild(document.createElement('ul'))
-  for (const wp of words) {
-    const li = ul.appendChild(document.createElement('li'))
-    const a = li.appendChild(document.createElement('a'))
-    a.textContent = wp[0]
-    a.onclick = function () {
-      for (const c of letterGrid.children) {
-        c.style.background = ''
-        c.style.color = ''
-        /*
-        for (const x of ['patht', 'pathb', 'pathl', 'pathr', 'pathtl', 'pathtr', 'pathbl', 'pathbr', 'path'])
-          c.classList.remove(x)
-        */
-      }
-      if (a.showing) delete a.showing
-      else {
-        const path = wp[1].map(pos => {
-          const col = pos % 4
-          const row = (pos - col) / 4
-          return [row, col, pos]
-        })
-        a.showing = true
-        let i = 0, dir
-        while (i+1 < path.length) {
-          const here = path[i]
-          const next = path[i+1]
-          dir = ['to']
-          if (here[0] < next[0]) dir.push('bottom')
-          if (here[0] > next[0]) dir.push('top')
-          if (here[1] < next[1]) dir.push('right')
-          if (here[1] > next[1]) dir.push('left')
-          document.getElementById(`g${here[2]}`).style.color = 'black'
-          document.getElementById(`g${here[2]}`).style.backgroundImage = `linear-gradient(${dir.join(' ')}, ${Colours[i]}, ${Colours[i+1]})`
-          i++
-          /*
-          let dir = here[0] < next[0] ? 'b' : here[0] > next[0] ? 't' : ''
-          dir += here[1] < next[1] ? 'r' : here[1] > next[1] ? 'l' : ''
-          document.getElementById(`g${here[2]}`).classList.add(`path${dir}`)
-          */
+  resultsArea.innerHTML = ''
+  for (const result of scores) {
+    const div = fragment.appendChild(document.createElement('div'))
+    div.appendChild(document.createElement('h3')).textContent = result.name
+    div.appendChild(document.createElement('div')).textContent = `Total: ${result.score}`
+    const ul = div.appendChild(document.createElement('ul'))
+    for (const data of result.words) {
+      const li = ul.appendChild(document.createElement('li'))
+      const a = li.appendChild(document.createElement(data.path ? 'a' : 'span'))
+      const ann = []
+      if (data.missedBy !== undefined) ann.push(`missed by ${data.missedBy}`)
+      if (data.invalidWord) ann.push('invalid')
+      if (data.notWord) ann.push('nonword')
+      a.textContent = `${data.word} (${data.points}) (${ann.join(', ')})`
+      if (data.path) {
+        a.onclick = function () {
+          for (const c of letterGrid.children) {
+            c.style.background = ''
+            c.style.color = ''
+          }
+          if (a.showing) delete a.showing
+          else {
+            const path = data.path.map(pos => {
+              const col = pos % 4
+              const row = (pos - col) / 4
+              return [row, col, pos]
+            })
+            a.showing = true
+            let i = 0, dir
+            while (i+1 < path.length) {
+              const here = path[i]
+              const next = path[i+1]
+              dir = ['to']
+              if (here[0] < next[0]) dir.push('bottom')
+              if (here[0] > next[0]) dir.push('top')
+              if (here[1] < next[1]) dir.push('right')
+              if (here[1] > next[1]) dir.push('left')
+              document.getElementById(`g${here[2]}`).style.color = 'black'
+              document.getElementById(`g${here[2]}`).style.backgroundImage = `linear-gradient(${dir.join(' ')}, ${Colours[i]}, ${Colours[i+1]})`
+              i++
+            }
+            document.getElementById(`g${path[i][2]}`).style.color = 'black'
+            document.getElementById(`g${path[i][2]}`).style.backgroundImage = `linear-gradient(${dir.join(' ')}, ${Colours[i]}, ${Colours[i+1]})`
+          }
         }
-        document.getElementById(`g${path[i][2]}`).style.color = 'black'
-        document.getElementById(`g${path[i][2]}`).style.backgroundImage = `linear-gradient(${dir.join(' ')}, ${Colours[i]}, ${Colours[i+1]})`
-        /*
-        document.getElementById(`g${path[i][2]}`).classList.add('path')
-        */
       }
     }
   }

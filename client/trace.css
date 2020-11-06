@@ -110,11 +110,14 @@ ul.inline > li {
 }
 #resultsArea > div > ul {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   list-style-type: none;
   justify-content: space-around;
   align-items: center;
   padding: 0;
+}
+#resultsArea > div > ul.reversed {
+  flex-direction: column-reverse;
 }
 #settingsHeading {
   width: 100%;
