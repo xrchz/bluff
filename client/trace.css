@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Digital-7 Mono';
-  src: url('Digital-7-Mono.css');
+  src: url('Digital-7-Mono.ttf') format('truetype');
 }
 body {
   font-family: sans-serif;
@@ -70,7 +70,7 @@ ul.inline > li {
   display: none;
 }
 #timeLimit {
-  font-size: 32px;
+  font-size: 36px;
   font-family: 'Digital-7 Mono', monospace;
   letter-spacing: 0.2ex;
   color: FireBrick;
