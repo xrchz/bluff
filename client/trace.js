@@ -10,7 +10,7 @@ const startButton = document.getElementById('start')
 const pauseButton = document.getElementById('pause')
 const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
-const unseated = document.getElementById('unseated')
+const playersDiv = document.getElementById('players')
 const playArea = document.getElementById('playArea')
 const timeLimit = document.getElementById('timeLimit')
 const letterGrid = document.getElementById('letterGrid')
@@ -79,7 +79,7 @@ socket.on('ensureLobby', () => {
   spectateInput.hidden = false
   spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false
-  unseated.innerHTML = ''
+  playersDiv.innerHTML = ''
   startButton.hidden = true
   spectatorsDiv.innerHTML = ''
   playArea.hidden = true
@@ -120,13 +120,20 @@ socket.on('updateGames', games => {
   gamesList.hidden = !games.length
 })
 
-socket.on('updateUnseated', players => {
-  unseated.innerHTML = ''
+socket.on('updatePlayers', players => {
+  playersDiv.innerHTML = ''
   let elem
+  elem = document.createElement('li')
+  elem.textContent = 'Players:'
+  playersDiv.appendChild(elem)
   for (player of players) {
     elem = document.createElement('li')
     elem.textContent = player.name
-    unseated.appendChild(elem)
+    if (!player.socketId) {
+      elem.classList.add('disconnected')
+      elem.textContent += ' (d/c)'
+    }
+    playersDiv.appendChild(elem)
   }
   errorMsg.innerHTML = ''
 })

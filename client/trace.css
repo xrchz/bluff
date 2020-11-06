@@ -58,14 +58,6 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
-.current {
-  background-color: NavajoWhite;
-  color: #004;
-}
-.current.disconnected {
-  background-color: NavajoWhite;
-  color: DarkViolet;
-}
 #playArea {
   margin: auto;
   width: 96vw;

@@ -233,14 +233,14 @@ io.on('connection', socket => {
           { gameName: gameName, playerName: socket.playerName, spectating: true })
         // updateSettings(game, socket.id)
         io.in(gameName).emit('updateSpectators', game.spectators)
-        if (!game.started) {
-          socket.emit('updateUnseated', game.players)
-        }
-        else {
+        socket.emit('updatePlayers', game.players)
+        if (game.started) {
           socket.emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
-          game.players.forEach((player, index) =>
-            player.words.forEach(word =>
-              socket.emit('appendWord', { player: index, word: word })))
+          if (!game.ended) {
+            game.players.forEach((player, index) =>
+              player.words.forEach(word =>
+                socket.emit('appendWord', { player: index, word: word })))
+          }
           // reconnection for spectator
         }
       }
@@ -262,15 +262,18 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           // updateSettings(game, socket.id)
           socket.emit('updateSpectators', game.spectators)
+          io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
-          game.players.forEach((player, index) =>
-            player.words.forEach(word =>
-              socket.emit('appendWord', { player: index, word: word })))
-          if (game.timeout)
-            socket.emit('showPause', { show: true, text: 'Pause' })
-          else if (game.secondsLeft) {
-            socket.emit('updateTimeLimit', formatSeconds(game.secondsLeft))
-            socket.emit('showPause', { show: true, text: 'Resume' })
+          if (!game.ended) {
+            game.players.forEach((player, index) =>
+              player.words.forEach(word =>
+                socket.emit('appendWord', { player: index, word: word })))
+            if (game.timeout)
+              socket.emit('showPause', { show: true, text: 'Pause' })
+            else if (game.secondsLeft) {
+              socket.emit('updateTimeLimit', formatSeconds(game.secondsLeft))
+              socket.emit('showPause', { show: true, text: 'Resume' })
+            }
           }
           // reconnection
         }
@@ -294,7 +297,7 @@ io.on('connection', socket => {
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
         // updateSettings(game, socket.id)
         socket.emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateUnseated', game.players)
+        io.in(gameName).emit('updatePlayers', game.players)
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
@@ -391,7 +394,7 @@ io.on('connection', socket => {
         game.players = game.players.filter(notThisPlayer)
         game.spectators = game.spectators.filter(notThisPlayer)
         io.in(gameName).emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateUnseated', game.players)
+        io.in(gameName).emit('updatePlayers', game.players)
         if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)
           delete games[gameName]
@@ -405,6 +408,7 @@ io.on('connection', socket => {
         }
         else {
           game.players.find(player => player.socketId === socket.id).socketId = null
+          io.in(gameName).emit('updatePlayers', game.players)
         }
       }
       updateGames()
