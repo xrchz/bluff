@@ -319,6 +319,7 @@ io.on('connection', socket => {
         socket.gameName = gameName
         socket.leave('lobby'); socket.emit('updateGames', [])
         socket.join(gameName)
+        socket.join(`${gameName}spectators`)
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
@@ -326,7 +327,8 @@ io.on('connection', socket => {
         io.in(gameName).emit('updateSpectators', game.spectators)
         socket.emit('updatePlayers', game.players)
         if (game.started) {
-          socket.emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
+          socket.emit('gameStarted', game.grid)
+          socket.emit('setupLists', game.players.map(player => player.name))
           if (!game.ended) {
             game.players.forEach((player, index) =>
               player.words.forEach(word =>
@@ -355,11 +357,9 @@ io.on('connection', socket => {
           // updateSettings(game, socket.id)
           socket.emit('updateSpectators', game.spectators)
           io.in(gameName).emit('updatePlayers', game.players)
-          socket.emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
+          socket.emit('gameStarted', game.grid)
           if (!game.ended) {
-            game.players.forEach((player, index) =>
-              player.words.forEach(word =>
-                socket.emit('appendWord', { player: index, word: word })))
+            player.words.forEach(word => socket.emit('appendWord', { word: word }))
             if (game.timeout)
               socket.emit('showPause', { show: true, text: 'Pause' })
             else if (game.secondsLeft) {
@@ -418,7 +418,8 @@ io.on('connection', socket => {
         game.grid = randomGrid(hardDice)
         game.words = findAllWords(game.grid)
         game.players.forEach(player => player.words = [])
-        io.in(gameName).emit('gameStarted', { grid: game.grid, players: game.players.map(player => player.name) })
+        io.in(gameName).emit('gameStarted', game.grid)
+        io.in(`${gameName}spectators`).emit('setupLists', game.players.map(player => player.name))
         startTimer(gameName)
       }
       else {
@@ -442,7 +443,8 @@ io.on('connection', socket => {
           if (index === -1) {
             player.words.push(word)
             // console.log(`${socket.playerName} at ${playerIndex} in ${gameName} submitted ${word}`)
-            io.in(gameName).emit('appendWord', { player: playerIndex, word: word })
+            socket.emit('appendWord', { word: word })
+            io.in(`${gameName}spectators`).emit('appendWord', { player: playerIndex, word: word })
           }
           // else animate the found word
         }

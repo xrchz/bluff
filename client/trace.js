@@ -168,32 +168,24 @@ socket.on('joinedGame', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('gameStarted', data => {
+socket.on('gameStarted', grid => {
   startButton.hidden = true
   let i = 0
-  while (i < data.grid.length) {
+  while (i < grid.length) {
     const div = fragment.appendChild(document.createElement('div'))
     div.id = `g${i}`
-    div.textContent = data.grid[i++]
+    div.textContent = grid[i++]
   }
   letterGrid.appendChild(fragment)
   playArea.hidden = false
   resultsArea.hidden = false
-  for (const name of data.players) {
-    const div = fragment.appendChild(document.createElement('div'))
-    div.appendChild(document.createElement('h3')).textContent = name
-    const ul = div.appendChild(document.createElement('ul'))
-    ul.classList.add('reversed')
-    if (!(spectateInput.checked || nameInput.value === name))
-      div.hidden = true
-  }
-  resultsArea.appendChild(fragment)
   if (spectateInput.checked) {
     playForm.hidden = true
     playWord.disabled = true
     playSubmit.disabled = true
   }
   else {
+    resultsArea.appendChild(document.createElement('div')).appendChild(document.createElement('ul')).classList.add('reversed')
     playForm.hidden = false
     playWord.disabled = false
     playSubmit.disabled = false
@@ -203,11 +195,25 @@ socket.on('gameStarted', data => {
   errorMsg.innerHTML = ''
 })
 
+socket.on('setupLists', names => {
+  for (const name of names) {
+    const div = fragment.appendChild(document.createElement('div'))
+    div.appendChild(document.createElement('h3')).textContent = name
+    const ul = div.appendChild(document.createElement('ul'))
+    ul.classList.add('reversed')
+  }
+  resultsArea.appendChild(fragment)
+  errorMsg.innerHTML = ''
+})
+
 socket.on('updateTimeLimit',
   text => timeLimit.textContent = text)
 
 socket.on('appendWord', data => {
-  resultsArea.children[data.player].firstElementChild.nextElementSibling.appendChild(document.createElement('li')).textContent = data.word
+  const ul = spectateInput.checked ?
+    resultsArea.children[data.player].firstElementChild.nextElementSibling :
+    resultsArea.firstElementChild.firstElementChild
+  ul.appendChild(document.createElement('li')).textContent = data.word
   errorMsg.innerHTML = ''
 })
 
