@@ -212,6 +212,9 @@ socket.on('appendWord', data => {
 })
 
 socket.on('showScores', scores => {
+  playForm.hidden = true
+  playWord.disabled = true
+  playSubmit.disabled = true
   resultsArea.hidden = false
   resultsArea.innerHTML = ''
   for (const result of scores) {
