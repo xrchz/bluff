@@ -92,8 +92,8 @@ function findAllWords(grid) {
 }
 
 function findWord(grid, word) {
-  function find(path) {
-    if (path.length === word.length) return path
+  function find(path, index) {
+    if (index === word.length) return path
     const pos = path[path.length - 1]
     const col = pos % 4
     const row = (pos - col) / 4
@@ -104,17 +104,21 @@ function findWord(grid, word) {
         if (row + rowdelta < 0 || row + rowdelta >= 4) continue
         const newpos = (row + rowdelta) * 4 + col + coldelta
         if (path.includes(newpos)) continue
-        if (grid[newpos] !== word[path.length]) continue
-        const newpath = Array.from(path)
-        newpath.push(newpos)
-        const result = find(newpath)
-        if (result) return result
+        const letter = grid[newpos]
+        const newindex = index + letter.length
+        if (word.substring(index, newindex) === letter) {
+          const newpath = Array.from(path)
+          newpath.push(newpos)
+          const result = find(newpath, newindex)
+          if (result) return result
+        }
       }
     }
   }
   for (let pos = 0; pos < 16; pos++) {
-    if (grid[pos] === word[0]) {
-      const result = find([pos])
+    const letter = grid[pos]
+    if (word.substring(0, letter.length) === letter) {
+      const result = find([pos], letter.length)
       if (result) return result
     }
   }
