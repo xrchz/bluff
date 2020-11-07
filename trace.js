@@ -282,6 +282,10 @@ function startTimer(gameName) {
   io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
 }
 
+function updateSettings(game, room) {
+  io.in(room).emit('updateTimeSetting', formatSeconds(game.timeLimit))
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -297,7 +301,7 @@ io.on('connection', socket => {
       game = {
         players: [],
         spectators: [],
-        secondsLeft: 18,
+        timeLimit: 180,
         notWordPenalty: 1,
         invalidWordPenalty: 2
       }
@@ -323,7 +327,7 @@ io.on('connection', socket => {
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
-        // updateSettings(game, socket.id)
+        updateSettings(game, socket.id)
         io.in(gameName).emit('updateSpectators', game.spectators)
         socket.emit('updatePlayers', game.players)
         if (game.started) {
@@ -354,7 +358,7 @@ io.on('connection', socket => {
           const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-          // updateSettings(game, socket.id)
+          updateSettings(game, socket.id)
           socket.emit('updateSpectators', game.spectators)
           io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('gameStarted', game.grid)
@@ -388,7 +392,7 @@ io.on('connection', socket => {
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-        // updateSettings(game, socket.id)
+        updateSettings(game, socket.id)
         socket.emit('updateSpectators', game.spectators)
         io.in(gameName).emit('updatePlayers', game.players)
       }
@@ -410,6 +414,23 @@ io.on('connection', socket => {
     }
   }
 
+  socket.on('setTimeSetting', n => inGame((gameName, game) => {
+    if (!game.started) {
+      if (game.players.find(player => player.socketId === socket.id) && Number.isInteger(n) && 0 < n) {
+        game.timeLimit = n
+        io.in(gameName).emit('updateTimeSetting', formatSeconds(game.timeLimit))
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} failed setting time limit to ${n}`)
+        socket.emit('errorMsg', 'Error: cannot set time limit: invalid number or player.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried setting time limit when game already started`)
+      socket.emit('errorMsg', 'Error: cannot set time limit after the game has started.')
+    }
+  }))
+
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
       if (game.players.length) {
@@ -420,6 +441,7 @@ io.on('connection', socket => {
         game.players.forEach(player => player.words = [])
         io.in(gameName).emit('gameStarted', game.grid)
         io.in(`${gameName}spectators`).emit('setupLists', game.players.map(player => player.name))
+        game.secondsLeft = game.timeLimit
         startTimer(gameName)
       }
       else {

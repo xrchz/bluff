@@ -18,6 +18,8 @@ const playForm = document.getElementById('playForm')
 const playWord = document.getElementById('playWord')
 const playSubmit = document.getElementById('playSubmit')
 const resultsArea = document.getElementById('resultsArea')
+const settingsDiv = document.getElementById('settings')
+const timeSetting = document.getElementById('timeSetting')
 
 const Colours = [
 '#e53935',
@@ -61,6 +63,19 @@ socket.on('showPause', data => {
   }
 })
 
+timeSetting.onchange = function () {
+  if (timeSetting.checkValidity()) {
+    const regex = /(?<m>\d*):(?<s>\d\d)/
+    const found = timeSetting.value.match(regex)
+    const mins = found.groups.m.length ? parseInt(found.groups.m) : 0
+    socket.emit('setTimeSetting', mins * 60 + parseInt(found.groups.s))
+  }
+}
+
+socket.on('updateTimeSetting', s => {
+  timeSetting.value = s
+})
+
 playSubmit.parentElement.onsubmit = () => {
   socket.emit('wordRequest', playWord.value.toLowerCase())
   playWord.value = ''
@@ -86,6 +101,8 @@ socket.on('ensureLobby', () => {
   letterGrid.innerHTML = ''
   resultsArea.innerHTML = ''
   resultsArea.hidden = true
+  settingsDiv.hidden = true
+  settingsDiv.previousElementSibling.hidden = true
 })
 
 socket.on('updateGames', games => {
@@ -158,13 +175,18 @@ socket.on('joinedGame', data => {
   gameInput.disabled = true
   nameInput.disabled = true
   spectateInput.disabled = true
+  settingsDiv.hidden = false
+  settingsDiv.previousElementSibling.hidden = false
+  joinButton.hidden = true
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
-  }
-  joinButton.hidden = true
-  if (!spectateInput.checked)
+    timeSetting.disabled = false
     startButton.hidden = false
+  }
+  else {
+    timeSetting.disabled = true
+  }
   errorMsg.innerHTML = ''
 })
 
@@ -179,6 +201,7 @@ socket.on('gameStarted', grid => {
   letterGrid.appendChild(fragment)
   playArea.hidden = false
   resultsArea.hidden = false
+  timeSetting.disabled = true
   if (spectateInput.checked) {
     playForm.hidden = true
     playWord.disabled = true

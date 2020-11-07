@@ -126,7 +126,7 @@ ul.inline > li {
 #settings {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
   width: 75%;
   margin: auto;
 }
