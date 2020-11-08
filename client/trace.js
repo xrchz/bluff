@@ -12,6 +12,9 @@ const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const playersDiv = document.getElementById('players')
 const playArea = document.getElementById('playArea')
+const rotateDiv = document.getElementById('rotate')
+const rotateClockwise = document.getElementById('rotateClockwise')
+const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 const timeLimit = document.getElementById('timeLimit')
 const letterGrid = document.getElementById('letterGrid')
 const playForm = document.getElementById('playForm')
@@ -62,6 +65,23 @@ socket.on('showPause', data => {
     if (data.text) pauseButton.value = data.text
   }
 })
+
+const clockwiseIndices = []
+const anticlockwiseIndices = []
+for (let i = 3; i >= 0; i--) {
+  for (let j = 0; j < 4; j++) {
+    anticlockwiseIndices.push(i + 4 * j)
+    clockwiseIndices.push((3 - i) + 4 * (3 - j))
+  }
+}
+
+rotateClockwise.onclick = () => {
+  letterGrid.replaceChildren(...clockwiseIndices.map(i => letterGrid.children[i]))
+}
+
+rotateAnticlockwise.onclick = () => {
+  letterGrid.replaceChildren(...anticlockwiseIndices.map(i => letterGrid.children[i]))
+}
 
 timeSetting.onchange = function () {
   if (timeSetting.checkValidity()) {

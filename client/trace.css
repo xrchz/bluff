@@ -90,6 +90,20 @@ ul.inline > li {
   border-color: white;
   border-width: 1px;
 }
+#rotate[hidden] {
+  display: none;
+}
+#rotate {
+  margin: auto;
+  width: 340px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: x-large;
+}
+#rotate a:hover {
+  cursor: pointer;
+}
 #playForm {
   margin-top: 2em;
 }
