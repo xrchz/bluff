@@ -309,6 +309,7 @@ socket.on('showScores', scores => {
     div.appendChild(document.createElement('h3')).textContent = result.name
     div.appendChild(document.createElement('div')).textContent = `Total: ${result.score}`
     const ul = div.appendChild(document.createElement('ul'))
+    const showing = []
     for (const data of result.words) {
       const li = ul.appendChild(document.createElement('li'))
       const a = li.appendChild(document.createElement(data.path ? 'a' : 'span'))
@@ -324,14 +325,15 @@ socket.on('showScores', scores => {
             c.style.background = ''
             c.style.color = ''
           }
-          if (a.showing) delete a.showing
+          if (showing[0] === a) showing.pop()
           else {
+            showing.pop()
+            showing.push(a)
             const path = data.path.map(pos => {
               const col = pos % 4
               const row = (pos - col) / 4
               return [row, col, pos]
             })
-            a.showing = true
             let i = 0, dir
             while (i+1 < path.length) {
               const here = path[i]
