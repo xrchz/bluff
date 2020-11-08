@@ -105,9 +105,6 @@ ul.inline > li {
   align-items: center;
   font-size: x-large;
 }
-#rotate a:hover {
-  cursor: pointer;
-}
 #playForm {
   margin-top: 2em;
 }
@@ -136,6 +133,12 @@ ul.inline > li {
 }
 #resultsArea > div > ul.reversed {
   flex-direction: column-reverse;
+}
+#resultsArea a.remove:hover {
+  text-decoration: line-through;
+}
+#resultsArea a.showPath:hover {
+  text-decoration: underline;
 }
 #settingsHeading {
   width: 100%;

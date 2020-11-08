@@ -507,6 +507,34 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('undoRequest', word => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      if (playerIndex !== -1) {
+        const player = game.players[playerIndex]
+        const index = player.words.findIndex(w => w === word)
+        if (index > -1) {
+          if (!game.timeout) startTimer(gameName)
+          player.words.splice(index, 1)
+          socket.emit('scratchWord', { index: index })
+          io.in(`${gameName}spectators`).emit('scratchWord', { player: playerIndex, index: index })
+        }
+        else {
+          console.log(`${socket.playerName} tried scratching ${word}`)
+          socket.emit('errorMsg', `Error: that word is not on your list.`)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} not found as player in ${gameName} when scratching a word`)
+        socket.emit('errorMsg', `Error: could not find you as a player.`)
+      }
+    }
+    else {
+      console.log(`${socket.playerName} tried undoing in not active ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} has not started or has finished.`)
+    }
+  }))
+
   socket.on('pauseRequest', () => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       if (game.timeout) {

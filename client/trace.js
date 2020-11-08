@@ -278,7 +278,23 @@ socket.on('appendWord', data => {
   const ul = spectateInput.checked ?
     resultsArea.children[data.player].firstElementChild.nextElementSibling :
     resultsArea.firstElementChild.firstElementChild
-  ul.appendChild(document.createElement('li')).textContent = data.word
+  const li = ul.appendChild(document.createElement('li'))
+  if (spectateInput.checked)
+    li.textContent = data.word
+  else {
+    const a = li.appendChild(document.createElement('a'))
+    a.classList.add('remove')
+    a.textContent = data.word
+    a.onclick = () => socket.emit('undoRequest', data.word)
+  }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('scratchWord', data => {
+  const ul = spectateInput.checked ?
+    resultsArea.children[data.player].firstElementChild.nextElementSibling :
+    resultsArea.firstElementChild.firstElementChild
+  ul.removeChild(ul.children[data.index])
   errorMsg.innerHTML = ''
 })
 
@@ -302,6 +318,7 @@ socket.on('showScores', scores => {
       if (data.notWord) ann.push('nonword')
       a.textContent = `${data.word} (${data.points}) (${ann.join(', ')})`
       if (data.path) {
+        a.classList.add('showPath')
         a.onclick = function () {
           for (const c of letterGrid.children) {
             c.style.background = ''
