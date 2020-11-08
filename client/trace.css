@@ -145,12 +145,15 @@ ul.inline > li {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  width: 75%;
+  max-width: 680px;
   margin: auto;
 }
 #settings[hidden] {
   display: none;
 }
-#timeSetting {
+#settings input {
+  width: 2em;
+}
+input#timeSetting {
   width: 4em;
 }

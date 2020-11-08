@@ -284,6 +284,8 @@ function startTimer(gameName) {
 
 function updateSettings(game, room) {
   io.in(room).emit('updateTimeSetting', formatSeconds(game.timeLimit))
+  io.in(room).emit('updatePenalty', { id: 'notWordPenalty', n: game.notWordPenalty })
+  io.in(room).emit('updatePenalty', { id: 'invalidWordPenalty', n: game.invalidWordPenalty })
 }
 
 io.on('connection', socket => {
@@ -428,6 +430,25 @@ io.on('connection', socket => {
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried setting time limit when game already started`)
       socket.emit('errorMsg', 'Error: cannot set time limit after the game has started.')
+    }
+  }))
+
+  socket.on('setPenalty', data => inGame((gameName, game) => {
+    if (!game.started) {
+      if (game.players.find(player => player.socketId === socket.id) &&
+          Number.isInteger(data.n) && 0 <= data.n &&
+          typeof(data.id) === 'string' && data.id.endsWith('Penalty') && game[data.id] !== undefined) {
+        game[data.id] = data.n
+        io.in(gameName).emit('updatePenalty', data)
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} failed setting ${data.id} to ${data.n}`)
+        socket.emit('errorMsg', 'Error: cannot set penalty: invalid settings or player.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried setting ${data.id} when game already started`)
+      socket.emit('errorMsg', 'Error: cannot set penalty after the game has started.')
     }
   }))
 

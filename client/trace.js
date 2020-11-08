@@ -23,6 +23,8 @@ const playSubmit = document.getElementById('playSubmit')
 const resultsArea = document.getElementById('resultsArea')
 const settingsDiv = document.getElementById('settings')
 const timeSetting = document.getElementById('timeSetting')
+const notWordPenalty = document.getElementById('notWordPenalty')
+const invalidWordPenalty = document.getElementById('invalidWordPenalty')
 
 const Colours = [
 '#e53935',
@@ -96,8 +98,21 @@ timeSetting.onchange = function () {
   }
 }
 
+const penaltySettingOnchange = function (input) {
+  return function () {
+    if (input.checkValidity())
+      socket.emit('setPenalty', { id: input.id, n: parseInt(input.value) })
+  }
+}
+notWordPenalty.onchange = penaltySettingOnchange(notWordPenalty)
+invalidWordPenalty.onchange = penaltySettingOnchange(invalidWordPenalty)
+
 socket.on('updateTimeSetting', s => {
   timeSetting.value = s
+})
+
+socket.on('updatePenalty', data => {
+  document.getElementById(data.id).value = data.n
 })
 
 playSubmit.parentElement.onsubmit = () => {
@@ -205,11 +220,13 @@ socket.on('joinedGame', data => {
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
-    timeSetting.disabled = false
     startButton.hidden = false
+    for (const label of settingsDiv.children)
+      label.firstElementChild.disabled = false
   }
   else {
-    timeSetting.disabled = true
+    for (const label of settingsDiv.children)
+      label.firstElementChild.disabled = true
   }
   errorMsg.innerHTML = ''
 })
@@ -225,7 +242,8 @@ socket.on('gameStarted', grid => {
   letterGrid.appendChild(fragment)
   playArea.hidden = false
   resultsArea.hidden = false
-  timeSetting.disabled = true
+  for (const label of settingsDiv.children)
+    label.firstElementChild.disabled = true
   if (spectateInput.checked) {
     playForm.hidden = true
     playWord.disabled = true
