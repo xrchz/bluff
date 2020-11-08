@@ -90,6 +90,10 @@ ul.inline > li {
   border-color: white;
   border-width: 1px;
 }
+#letterGrid.obscured > div, #letterGrid.obscured > div::selection {
+  color: rgba(255,255,255,0);
+  text-shadow: 0 0 20px rgba(255,255,255,0.5);
+}
 #rotate[hidden] {
   display: none;
 }

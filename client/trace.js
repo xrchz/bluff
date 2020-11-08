@@ -63,6 +63,10 @@ socket.on('showPause', data => {
   if (!spectateInput.checked) {
     pauseButton.hidden = !data.show
     if (data.text) pauseButton.value = data.text
+    if (data.text === 'Resume')
+      letterGrid.classList.add('obscured')
+    else
+      letterGrid.classList.remove('obscured')
   }
 })
 
