@@ -67,8 +67,10 @@ socket.on('showPause', data => {
     if (data.text) pauseButton.value = data.text
     if (data.text === 'Resume')
       letterGrid.classList.add('obscured')
-    else
+    else {
       letterGrid.classList.remove('obscured')
+      if (!playWord.disabled) playWord.focus()
+    }
   }
 })
 
@@ -83,10 +85,12 @@ for (let i = 3; i >= 0; i--) {
 
 rotateClockwise.onclick = () => {
   letterGrid.replaceChildren(...clockwiseIndices.map(i => letterGrid.children[i]))
+  if (!playWord.disabled) playWord.focus()
 }
 
 rotateAnticlockwise.onclick = () => {
   letterGrid.replaceChildren(...anticlockwiseIndices.map(i => letterGrid.children[i]))
+  if (!playWord.disabled) playWord.focus()
 }
 
 timeSetting.onchange = function () {
@@ -295,6 +299,7 @@ socket.on('scratchWord', data => {
     resultsArea.children[data.player].firstElementChild.nextElementSibling :
     resultsArea.firstElementChild.firstElementChild
   ul.removeChild(ul.children[data.index])
+  if (!playWord.disabled) playWord.focus()
   errorMsg.innerHTML = ''
 })
 
