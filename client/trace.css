@@ -151,3 +151,6 @@ ul.inline > li {
 #settings[hidden] {
   display: none;
 }
+#timeSetting {
+  width: 4em;
+}
