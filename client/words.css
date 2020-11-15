@@ -36,6 +36,11 @@ input[type=button], input[type=submit] {
 }
 #games {
   list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
 }
 #games > li > ul {
   display: inline;
