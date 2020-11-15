@@ -102,6 +102,9 @@ ol > li {
   font-weight: bold;
   letter-spacing: 2px;
 }
+li.clue {
+  background-color: #00a;
+}
 #playtable td {
   font-weight: bold;
 }
