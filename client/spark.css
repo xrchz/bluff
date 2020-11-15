@@ -1,0 +1,133 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: #004;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button] {
+  background-color: RoyalBlue;
+  color: LightYellow;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+}
+#log {
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  margin: auto;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators, .empty {
+  color: SlateGray
+}
+.disconnected {
+  color: Pink;
+}
+#games {
+  list-style-type: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+#info {
+  display: flex;
+  justify-content: space-around;
+}
+#info[hidden] {
+  display: none;
+}
+#playtable {
+  margin: auto;
+  width: 100%;
+}
+#players {
+  display: flex;
+  justify-content: space-around;
+}
+ol {
+  list-style-type: lower-roman;
+  margin: 0;
+}
+ol > li > input {
+  margin-left: 1em;
+}
+ol > li > a:hover {
+  text-decoration: underline;
+}
+ol > li {
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+#playtable td {
+  font-weight: bold;
+}
+#players > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#players > div > input {
+  margin-top: 1em;
+}
+#players[hidden] {
+  display: none;
+}
+.red {
+  color: LightPink;
+}
+.yellow {
+  color: Moccasin;
+}
+.green {
+  color: PaleGreen;
+}
+.blue {
+  color: PowderBlue;
+}
+.white {
+  color: MistyRose;
+}
