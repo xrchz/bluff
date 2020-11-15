@@ -134,6 +134,7 @@ socket.on('gameStarted', () => {
   infoDiv.hidden = false
   playtable.hidden = false
   playersDiv.hidden = false
+  unseated.innerHTML = ''
   errorMsg.innerHTML = ''
 })
 
