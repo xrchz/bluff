@@ -31,12 +31,11 @@ input[type=button] {
   overflow-y: scroll;
   list-style-type: none;
   padding-left: 0;
-}
-#log {
   background-color: Black;
   color: White;
   border-style: solid;
   border-color: OldLace;
+  max-width: 40em;
   margin: auto;
 }
 .name {
@@ -76,6 +75,9 @@ ul.inline > li {
 #info {
   display: flex;
   justify-content: space-around;
+  font-weight: bold;
+  max-width: 40em;
+  margin: auto;
 }
 #info[hidden] {
   display: none;
@@ -83,6 +85,22 @@ ul.inline > li {
 #playtable {
   margin: auto;
   width: 100%;
+  max-width: 40em;
+}
+#playtable > thead th:nth-child(1) {
+  width: 30%;
+}
+#playtable > thead th:nth-child(2) {
+  width: 35%;
+}
+#playtable > thead th:nth-child(3) {
+  width: 35%;
+}
+#playtable th {
+  text-align: left;
+}
+#playtable th.right, #playtable td.right {
+  text-align: right;
 }
 #players {
   display: flex;
