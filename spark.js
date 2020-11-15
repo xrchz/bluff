@@ -81,6 +81,11 @@ const colourCls = c =>
 
 const slotOrd = ['1st', '2nd', '3rd', '4th', '5th']
 
+const cardSpan = c => {
+  const cls = colourCls(c.colour)
+  return `<span class=${cls}>${cls[0].toUpperCase()}${c.number}</span>`
+}
+
 function appendLog(gameName, entry) {
   const game = games[gameName]
   game.log.push(entry)
@@ -90,7 +95,7 @@ function appendLog(gameName, entry) {
 const stateKeys = {
   game: [
     'players', 'started', 'whoseTurn', 'deck',
-    'clues', 'played', 'dropped', 'ended'
+    'clues', 'lives', 'played', 'dropped', 'ended'
   ],
   deck: true, played: true, dropped: true,
   players: [ 'current', 'hand', 'finalised' ], hand: true
@@ -133,7 +138,8 @@ function updateTable(gameName, roomName) {
   if (!roomName) roomName = gameName
   const data = {
     played: game.played, dropped: game.dropped,
-    cards: game.deck.length, clues: game.clues }
+    cards: game.deck.length, clues: game.clues, lives: game.lives }
+  io.in(roomName).emit('updatePlayers', { players: game.players, clues: game.clues })
   io.in(roomName).emit('updateTable', data)
 }
 
@@ -188,7 +194,6 @@ io.on('connection', socket => {
         }
         else {
           socket.emit('gameStarted')
-          socket.emit('updatePlayers', game.players)
           updateTable(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
         }
@@ -211,7 +216,6 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          io.in(gameName).emit('updatePlayers', game.players)
           updateTable(gameName)
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
@@ -285,15 +289,16 @@ io.on('connection', socket => {
         shuffleInPlace(game.deck)
         game.clues = 8
         game.lives = 3
-        game.played = [0, 0, 0, 0, 0]
+        game.played = [0, 0, 0, 0, 0, 0]
         game.dropped = []
         for (let c = Red; c <= White; c++) {
-          game.dropped[c] = [0, 0, 0, 0, 0]
+          game.dropped[c] = [0, 0, 0, 0, 0, 0]
         }
         game.players.forEach(player => player.hand = [])
         for (let i = 0; i < 5; i++)
           game.players.forEach(player =>
             player.hand.push(game.deck.pop()))
+        game.players[game.whoseTurn].current = true
         io.in(gameName).emit('gameStarted')
         updateTable(gameName)
         appendLog(gameName, 'The game begins!')
@@ -320,21 +325,27 @@ io.on('connection', socket => {
             const card = current.hand.splice(data.index, 1)[0]
             if (!game.deck.length)
               current.finalised = true
-            let verb
+            let verb, gain = false
             if (!data.drop && game.played[card.colour] + 1 === card.number) {
               game.played[card.colour]++
               verb = 'plays'
+              if (game.played[card.colour] === 5)
+                gain = true
             }
             else {
               game.dropped[card.colour][card.number]++
-              if (data.drop)
+              if (data.drop) {
                 verb = 'drops'
+                if (game.clues < 8)
+                  gain = true
+              }
               else {
                 verb = 'fumbles'
                 game.lives--
               }
             }
-            appendLog(gameName, `${current.name} ${verb} their ${slotOrd(data.index)} card: ${cardSpan(card)}.`)
+            if (gain) game.clues++
+            appendLog(gameName, `${current.name} ${verb} their ${slotOrd[data.index]} card ${cardSpan(card)}${gain ? ' and gains a clue' : ''}.`)
             if (game.deck.length)
               current.hand.push(game.deck.pop())
             const dead = !game.lives
@@ -378,8 +389,9 @@ io.on('connection', socket => {
       const current = game.players[game.whoseTurn]
       if (current) {
         if (current.name === socket.playerName && current.current) {
-          if (game.clues && Number.isInteger(data.index) && 0 <= data.index && data.index < game.players.length && data.index !== game.whoseTurn &&
-          (data.colour || data.number) && !(data.colour && data.number)) {
+          if (game.clues && Number.isInteger(data.index) && 0 <= data.index &&
+              data.index < game.players.length && data.index !== game.whoseTurn &&
+              (data.colour || data.number) && !(data.colour && data.number)) {
             appendUndo(gameName)
             delete current.current
             game.clues--
@@ -392,17 +404,15 @@ io.on('connection', socket => {
                 card.numberClue = true
               }
             })
-            const clue = data.colour ? colourCls(clue) : data.number
+            const clue = data.colour ? colourCls(data.colour) : data.number
             appendLog(gameName, `${current.name} clues ${other.name}'s ${clue} cards.`)
-            if (game.deck.length)
-              current.hand.push(game.deck.pop())
             game.whoseTurn++
             if (game.whoseTurn === game.players.length) game.whoseTurn = 0
             game.players[game.whoseTurn].current = true
             updateTable(gameName)
           }
           else {
-            console.log(`error: ${socket.playerName} in ${gameName} tried clueing with bad data`)
+            console.log(`error: ${socket.playerName} in ${gameName} tried clueing with bad data: ${data.index} ${data.colour} ${data.number}`)
             socket.emit('errorMsg', `Error: clue is invalid.`)
           }
         }
@@ -445,7 +455,7 @@ io.on('connection', socket => {
         }
         else {
           game.players.find(player => player.socketId === socket.id).socketId = null
-          io.in(gameName).emit('updatePlayers', game.players)
+          io.in(gameName).emit('updatePlayers', { players: game.players, clues: game.clues })
         }
       }
       updateGames()

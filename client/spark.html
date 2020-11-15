@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang=en>
+  <head>
+    <title>Spark</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel=stylesheet href="spark.css" type="text/css" />
+    <script src="socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+    <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+    <input id=join type=button value="Join" />
+    <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    <input id=undo type=button value="Undo" hidden />
+    <ul id=games hidden></ul>
+    <div>
+      <ul id=unseated class=inline></ul>
+      <input id=start type=button value="Start!" hidden />
+      <ul id=spectators class=inline></ul>
+    </div>
+    <ul id=log hidden></ul>
+    <div id=info hidden></div>
+    <table id=playtable hidden>
+      <thead>
+        <tr>
+          <th>Colour</th>
+          <th>Played</th>
+          <th>Dropped/Missed</th>
+        </tr>
+      </thead>
+      <tbody id=playbody>
+        <tr class=red><th>red</th><td></td><td></td></tr>
+        <tr class=yellow><th>yellow</th><td></td><td></td></tr>
+        <tr class=green><th>green</th><td></td><td></td></tr>
+        <tr class=blue><th>blue</th><td></td><td></td></tr>
+        <tr class=white><th>white</th><td></td><td></td></tr>
+      </tbody>
+    </table>
+    <div id=players></div>
+    <script src="spark.js"></script>
+  </body>
+</html>
