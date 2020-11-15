@@ -143,6 +143,24 @@ function updateTable(gameName, roomName) {
   io.in(roomName).emit('updateTable', data)
 }
 
+function nextTurn(gameName) {
+  const game = games[gameName]
+  const dead = !game.lives
+  const drawn = game.players.every(player => player.finalised)
+  const finished = game.played.every(count => count === 5)
+  if (dead || drawn || finished) {
+    game.ended = true
+    const score = game.played.reduce((total, count) => total + count)
+    appendLog(gameName, `The game ends${dead ? ' in defeat' : finished ? ' in victory' : ''} with a score of ${score}.`)
+  }
+  else {
+    game.whoseTurn++
+    if (game.whoseTurn === game.players.length) game.whoseTurn = 0
+    game.players[game.whoseTurn].current = true
+  }
+  updateTable(gameName)
+}
+
 function updateGames(room) {
   if (!room) room = 'lobby'
   const data = []
@@ -348,20 +366,7 @@ io.on('connection', socket => {
             appendLog(gameName, `${current.name} ${verb} their ${slotOrd[data.index]} card ${cardSpan(card)}${gain ? ' and gains a clue' : ''}.`)
             if (game.deck.length)
               current.hand.push(game.deck.pop())
-            const dead = !game.lives
-            const drawn = game.players.every(player => player.finalised)
-            const finished = game.played.every(count => count === 5)
-            if (dead || drawn || finished) {
-              game.ended = true
-              const score = dead ? 0 : game.played.reduce((total, count) => total + count)
-              appendLog(gameName, `The game ends${dead ? ' in death' : finished ? ' in victory' : ''} with a score of ${score}.`)
-            }
-            else {
-              game.whoseTurn++
-              if (game.whoseTurn === game.players.length) game.whoseTurn = 0
-              game.players[game.whoseTurn].current = true
-            }
-            updateTable(gameName)
+            nextTurn(gameName)
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried playing with bad index ${data.index}`)
@@ -395,6 +400,8 @@ io.on('connection', socket => {
             appendUndo(gameName)
             delete current.current
             game.clues--
+            if (!game.deck.length)
+              current.finalised = true
             const other = game.players[data.index]
             other.hand.forEach(card => {
               if (data.colour && card.colour === data.colour) {
@@ -406,10 +413,7 @@ io.on('connection', socket => {
             })
             const clue = data.colour ? colourCls(data.colour) : data.number
             appendLog(gameName, `${current.name} clues ${other.name}'s ${clue} cards.`)
-            game.whoseTurn++
-            if (game.whoseTurn === game.players.length) game.whoseTurn = 0
-            game.players[game.whoseTurn].current = true
-            updateTable(gameName)
+            nextTurn(gameName)
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} tried clueing with bad data: ${data.index} ${data.colour} ${data.number}`)
