@@ -159,6 +159,7 @@ socket.on('updatePlayers', data => {
     const clueButton = current ? div.appendChild(document.createElement('input')) : {}
     clueButton.type = 'button'
     clueButton.hidden = true
+    if (current) clueButton.classList.add('clue')
     for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
       const card = player.hand[cardIndex]
       const cls = colourCls[card.colour]
@@ -191,10 +192,13 @@ socket.on('updatePlayers', data => {
         function makeOnclick(key) {
           return function () {
             const value = `Clue ${values[key]}`
-            for (const ch of ol.children) ch.classList.remove('clue')
+            for (const liClue of playersDiv.querySelectorAll('li.clue'))
+              liClue.classList.remove('clue')
             if (!clueButton.hidden && clueButton.value === value)
               clueButton.hidden = true
             else {
+              for (const inputClue of playersDiv.querySelectorAll('input.clue'))
+                inputClue.hidden = true
               clueButton.hidden = false
               clueButton.value = value
               const data = { index: playerIndex }
