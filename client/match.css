@@ -1,0 +1,132 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: Black;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button], input[type=submit] {
+  background-color: Indigo;
+  color: Moccasin;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators {
+  color: SlateGray
+}
+.disconnected {
+  color: Violet;
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+form.inline {
+  display:inline;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+#playArea {
+  display: grid;
+  margin: auto;
+  width: min-content;
+  grid-template-columns: repeat(3, 1fr);
+  border: solid DarkGreen 4px;
+}
+#playArea[hidden] {
+  display: none;
+}
+div.card {
+  width: 200px;
+  height: 150px;
+  border-style: solid;
+  border-width: 4px;
+  border-color: DarkGreen;
+  font-size: 60px;
+  text-align: center;
+  line-height: 150px;
+}
+div.card.selected {
+  border-color: red;
+  border-style: dashed;
+}
+div.card > a {
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+}
+div.blank.cyan {
+  color: PowderBlue;
+  background-image:
+    repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
+    repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
+}
+div.blank.magenta {
+  color: LightPink;
+  background-image:
+    repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
+    repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
+}
+div.blank.yellow {
+  color: Gold;
+  background-image:
+    repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
+    repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
+}
+div.solid.cyan {
+  color: #004;
+  background-color: PowderBlue;
+}
+div.solid.magenta {
+  color: #004;
+  background-color: LightPink;
+}
+div.solid.yellow {
+  color: #004;
+  background-color: Gold;
+}
+div.mixed.cyan {
+  color: #004;
+  background-image: repeating-radial-gradient(PaleGreen 0px, PowderBlue 30px, PaleGreen 32px);
+}
+div.mixed.magenta {
+  color: #004;
+  background-image: repeating-radial-gradient(PaleGreen 0px, LightPink 30px, PaleGreen 32px);
+}
+div.mixed.yellow {
+  color: #004;
+  background-image: repeating-radial-gradient(PaleGreen 0px, Gold 30px, PaleGreen 32px);
+}
