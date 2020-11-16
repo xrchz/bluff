@@ -62,6 +62,20 @@ ul.inline > li {
 #players > li:nth-child(1) {
   padding-left: 0;
 }
+#showMatch {
+  border: solid DarkGreen 4px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+#showMatch[hidden] {
+  display: none;
+}
+#players a {
+  margin-left: 0.5em;
+}
+a.showing {
+  background-color: #777;
+}
 #infoArea {
   margin: auto;
   width: 100%;

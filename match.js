@@ -185,7 +185,12 @@ io.on('connection', socket => {
         shuffleInPlace(game.deck);
         game.grid = [];
         for (let i = 0; i < 12; i++) game.grid.push(game.deck.pop())
-        game.players.forEach(player => player.sets = [])
+        game.players.forEach(player => {
+          player.matches = []
+          player.mismatches = 0
+          player.claims = 0
+          player.misclaims = 0
+        })
         io.in(gameName).emit('gameStarted')
         io.in(gameName).emit('updateGrid', game.grid)
         io.in(gameName).emit('updatePlayers', game.players)
@@ -216,7 +221,7 @@ io.on('connection', socket => {
             socket.emit('infoMsg', `${s.charAt(0).toUpperCase()}${s.slice(1)} must be all the same or all different.`)
           }
           else {
-            player.sets.push(cards)
+            player.matches.push(cards)
             if (game.deck.length >= 3)
               selected.forEach(i => game.grid[i] = game.deck.pop())
             io.in(gameName).emit('updateGrid', game.grid)

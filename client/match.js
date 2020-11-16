@@ -15,6 +15,7 @@ const playArea = document.getElementById('playArea')
 const infoArea = document.getElementById('infoArea')
 const cardsLeftDiv = document.getElementById('cardsLeft')
 const gridDiv = document.getElementById('grid')
+const showMatch = document.getElementById('showMatch')
 
 const fragment = document.createDocumentFragment()
 
@@ -100,17 +101,37 @@ socket.on('updateGames', games => {
 socket.on('updatePlayers', players => {
   playersDiv.innerHTML = ''
   for (player of players) {
-    const elem = document.createElement('li')
-    elem.textContent = player.name
-    if (player.sets !== undefined) {
-      elem.textContent += ` (${player.sets.length})`
-    }
+    const li = fragment.appendChild(document.createElement('li'))
+    li.textContent = player.name
     if (!player.socketId) {
-      elem.classList.add('disconnected')
-      elem.textContent += ' (d/c)'
+      li.classList.add('disconnected')
+      li.textContent += ' (d/c)'
     }
-    playersDiv.appendChild(elem)
+    if (player.matches !== undefined) {
+      for (const match of player.matches) {
+        const a = li.appendChild(document.createElement('a'))
+        a.textContent = '🂠'
+        a.onclick = function () {
+          const wasShowing = a.classList.contains('showing')
+          li.querySelectorAll('a.showing').forEach(a => a.classList.remove('showing'))
+          showMatch.hidden = true
+          if (!wasShowing) {
+            a.classList.add('showing')
+            showMatch.innerHTML = ''
+            for (const card of match) {
+              const div = showMatch.appendChild(document.createElement('div'))
+              div.classList.add('card')
+              div.classList.add(card.style)
+              div.classList.add(card.colour)
+              div.textContent = card.symbol.repeat(card.number)
+            }
+            showMatch.hidden = false
+          }
+        }
+      }
+    }
   }
+  playersDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
   infoMsg.innerHTML = ''
 })
