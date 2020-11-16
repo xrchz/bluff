@@ -13,6 +13,7 @@ const spectatorsDiv = document.getElementById('spectators')
 const playersDiv = document.getElementById('players')
 const playArea = document.getElementById('playArea')
 const infoArea = document.getElementById('infoArea')
+const cardsLeftDiv = document.getElementById('cardsLeft')
 const gridDiv = document.getElementById('grid')
 
 const fragment = document.createDocumentFragment()
@@ -182,6 +183,10 @@ socket.on('updateGrid', grid => {
   gridDiv.appendChild(fragment)
   infoMsg.innerHTML = ''
   errorMsg.innerHTML = ''
+})
+
+socket.on('updateCardsLeft', n => {
+  cardsLeftDiv.innerHTML = `${n} cards left`
 })
 
 socket.on('infoMsg', msg => {
