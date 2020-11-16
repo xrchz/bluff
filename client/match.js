@@ -12,6 +12,8 @@ const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const playersDiv = document.getElementById('players')
 const playArea = document.getElementById('playArea')
+const infoArea = document.getElementById('infoArea')
+const gridDiv = document.getElementById('grid')
 
 const fragment = document.createDocumentFragment()
 
@@ -46,6 +48,7 @@ startButton.onclick = () => socket.emit('startGame')
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
+  infoMsg.innerHTML = ''
   gameInput.disabled = false
   nameInput.disabled = false
   joinButton.hidden = false
@@ -55,8 +58,9 @@ socket.on('ensureLobby', () => {
   spectateInput.disabled = false
   playersDiv.innerHTML = ''
   startButton.hidden = true
-  playArea.innerHTML = ''
+  gridDiv.innerHTML = ''
   playArea.hidden = true
+  infoArea.hidden = true
   spectatorsDiv.innerHTML = ''
 })
 
@@ -94,12 +98,8 @@ socket.on('updateGames', games => {
 
 socket.on('updatePlayers', players => {
   playersDiv.innerHTML = ''
-  let elem
-  elem = document.createElement('li')
-  elem.textContent = 'Players:'
-  playersDiv.appendChild(elem)
   for (player of players) {
-    elem = document.createElement('li')
+    const elem = document.createElement('li')
     elem.textContent = player.name
     if (player.sets !== undefined) {
       elem.textContent += ` (${player.sets.length})`
@@ -111,6 +111,7 @@ socket.on('updatePlayers', players => {
     playersDiv.appendChild(elem)
   }
   errorMsg.innerHTML = ''
+  infoMsg.innerHTML = ''
 })
 
 socket.on('updateSpectators', spectators => {
@@ -141,6 +142,7 @@ socket.on('joinedGame', data => {
     spectateInput.hidden = true
     startButton.hidden = false
   }
+  infoArea.hidden = false
   errorMsg.innerHTML = ''
 })
 
@@ -151,18 +153,19 @@ socket.on('gameStarted', () => {
 })
 
 socket.on('updateGrid', grid => {
-  playArea.innerHTML = ''
+  gridDiv.innerHTML = ''
   const selected = []
   for (let i = 0; i < grid.length; i++) {
     const card = grid[i]
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add('card')
-    div.classList.add(card.styler)
+    div.classList.add(card.style)
     div.classList.add(card.colour)
     const a = div.appendChild(document.createElement(spectateInput.checked ? 'span' : 'a'))
     a.textContent = card.symbol.repeat(card.number)
     if (!spectateInput.checked) {
       a.onclick = function () {
+        infoMsg.innerHTML = ''
         if (div.classList.contains('selected')) {
           selected.splice(selected.findIndex(j => j === i), 1)
           div.classList.remove('selected')
@@ -176,7 +179,13 @@ socket.on('updateGrid', grid => {
       }
     }
   }
-  playArea.appendChild(fragment)
+  gridDiv.appendChild(fragment)
+  infoMsg.innerHTML = ''
+  errorMsg.innerHTML = ''
+})
+
+socket.on('infoMsg', msg => {
+  infoMsg.innerHTML = msg
 })
 
 socket.on('errorMsg', msg => {

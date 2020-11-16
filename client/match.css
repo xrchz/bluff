@@ -59,15 +59,29 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
-#playArea {
+#infoArea {
+  margin: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+#infoArea[hidden] {
+  display: none;
+}
+#playArea > input {
+  display: block;
+  margin: auto;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+#grid {
   display: grid;
   margin: auto;
   width: min-content;
   grid-template-columns: repeat(3, 1fr);
   border: solid DarkGreen 4px;
-}
-#playArea[hidden] {
-  display: none;
 }
 div.card {
   width: 200px;

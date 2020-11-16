@@ -53,7 +53,7 @@ function updateGames(room) {
 
 const symbols =  ['♭', '♮', '♯']
 const colours = ['cyan', 'magenta', 'yellow']
-const stylers = ['blank', 'mixed', 'solid']
+const styles = ['blank', 'mixed', 'solid']
 
 function makeDeck() {
   const deck = []
@@ -64,7 +64,7 @@ function makeDeck() {
           deck.push(
             {symbol: symbols[s],
              colour: colours[c],
-             styler: stylers[y],
+             style: styles[y],
              number: n+1})
   return deck
 }
@@ -208,36 +208,20 @@ io.on('connection', socket => {
         if (Array.isArray(selected) && selected.length === 3 &&
             selected.every(i => Number.isInteger(i) && 0 <= i && i < 12)) {
           const cards = selected.map(i => game.grid[i])
-          const colours = new Set(cards.map(card => card.colour))
-          const symbols = new Set(cards.map(card => card.symbol))
-          const numbers = new Set(cards.map(card => card.number))
-          const stylers = new Set(cards.map(card => card.styler))
-          if (colours.size === 1 || colours.size === 3) {
-            if (symbols.size === 1 || symbols.size === 3) {
-              if (numbers.size === 1 || numbers.size === 3) {
-                if (stylers.size === 1 || stylers.size === 3) {
-                  player.sets.push(cards)
-                  if (game.deck.length >= 3) {
-                    selected.forEach(i => game.grid[i] = game.deck.pop())
-                    io.in(gameName).emit('updateGrid', game.grid)
-                    io.in(gameName).emit('updatePlayers', game.players)
-                    io.in(gameName).emit('updateCardsLeft', game.deck.length)
-                  }
-                }
-                else {
-                  socket.emit('errorMsg', `Styles must be all the same or all different.`)
-                }
-              }
-              else {
-                socket.emit('errorMsg', `Numbers must be all the same or all different.`)
-              }
-            }
-            else {
-              socket.emit('errorMsg', `Symbols must be all the same or all different.`)
-            }
+          const problems = (['colour', 'number', 'symbol', 'style']).filter(key =>
+            (new Set(cards.map(card => card[key]))).size === 2)
+          if (problems.length) {
+            const s = problems.slice(0, -1).join(', ') +
+              (problems.length > 1 ? ' and ' : '') + problems.slice(-1)[0]
+            socket.emit('infoMsg', `${s.charAt(0).toUpperCase()}${s.slice(1)} must be all the same or all different.`)
           }
           else {
-            socket.emit('errorMsg', `Colours must be all the same or all different.`)
+            player.sets.push(cards)
+            if (game.deck.length >= 3)
+              selected.forEach(i => game.grid[i] = game.deck.pop())
+            io.in(gameName).emit('updateGrid', game.grid)
+            io.in(gameName).emit('updatePlayers', game.players)
+            io.in(gameName).emit('updateCardsLeft', game.deck.length)
           }
         }
         else {
