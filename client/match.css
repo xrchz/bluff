@@ -59,8 +59,9 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
-#players > li:nth-child(1) {
-  padding-left: 0;
+#players {
+  list-style-type: none;
+  padding: 0;
 }
 #showMatch {
   border: solid DarkGreen 4px;
@@ -74,7 +75,7 @@ ul.inline > li {
   margin-left: 0.5em;
 }
 a.showing {
-  background-color: #777;
+  color: #044;
 }
 #infoArea {
   margin: auto;
