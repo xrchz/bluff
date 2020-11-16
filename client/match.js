@@ -196,6 +196,7 @@ socket.on('updateGrid', grid => {
     const card = grid[i]
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add('card')
+    if (!card) continue
     div.classList.add(card.style)
     div.classList.add(card.colour)
     const a = div.appendChild(document.createElement(spectateInput.checked ? 'span' : 'a'))
