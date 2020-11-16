@@ -88,45 +88,24 @@ div.card > a {
   height: 100%;
   display: inline-block;
 }
-div.blank.cyan {
-  color: PowderBlue;
-  background-image:
-    repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
-    repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
+div.cyan {
+  color: SkyBlue;
 }
-div.blank.magenta {
-  color: LightPink;
-  background-image:
-    repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
-    repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
+div.magenta {
+  color: HotPink;
 }
-div.blank.yellow {
+div.yellow {
   color: Gold;
+}
+div.blank {
   background-image:
     repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
     repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
 }
-div.solid.cyan {
-  color: #004;
-  background-color: PowderBlue;
+div.solid {
+  background-color: #022;
 }
-div.solid.magenta {
-  color: #004;
-  background-color: LightPink;
-}
-div.solid.yellow {
-  color: #004;
-  background-color: Gold;
-}
-div.mixed.cyan {
-  color: #004;
-  background-image: repeating-radial-gradient(PaleGreen 0px, PowderBlue 30px, PaleGreen 32px);
-}
-div.mixed.magenta {
-  color: #004;
-  background-image: repeating-radial-gradient(PaleGreen 0px, LightPink 30px, PaleGreen 32px);
-}
-div.mixed.yellow {
-  color: #004;
-  background-image: repeating-radial-gradient(PaleGreen 0px, Gold 30px, PaleGreen 32px);
+div.mixed {
+  background-image:
+    repeating-radial-gradient(#040 0px, #004 10px, #040 20px);
 }
