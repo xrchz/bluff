@@ -59,6 +59,9 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
+#players > li:nth-child(1) {
+  padding-left: 0;
+}
 #infoArea {
   margin: auto;
   width: 100%;
