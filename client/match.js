@@ -12,6 +12,7 @@ const spectateInput = document.getElementById('spectate')
 const spectatorsDiv = document.getElementById('spectators')
 const playersDiv = document.getElementById('players')
 const playArea = document.getElementById('playArea')
+const noMatchesButton = document.getElementById('noMatches')
 const infoArea = document.getElementById('infoArea')
 const cardsLeftDiv = document.getElementById('cardsLeft')
 const gridDiv = document.getElementById('grid')
@@ -62,6 +63,8 @@ socket.on('ensureLobby', () => {
   startButton.hidden = true
   gridDiv.innerHTML = ''
   playArea.hidden = true
+  noMatchesButton.hidden = true
+  cardsLeftDiv.innerHTML = ''
   infoArea.hidden = true
   spectatorsDiv.innerHTML = ''
 })
@@ -107,13 +110,19 @@ socket.on('updatePlayers', players => {
       li.classList.add('disconnected')
       li.textContent += ' (d/c)'
     }
+    if (player.mismatches)
+      li.textContent += ` ${player.mismatches}✘`
+    if (player.misclaims)
+      li.textContent += ` ${player.misclaims}✗`
+    if (player.claims)
+      li.textContent += ` ${player.claims}✓`
     if (player.matches !== undefined) {
       for (const match of player.matches) {
         const a = li.appendChild(document.createElement('a'))
         a.textContent = '🂠'
         a.onclick = function () {
           const wasShowing = a.classList.contains('showing')
-          li.querySelectorAll('a.showing').forEach(a => a.classList.remove('showing'))
+          playersDiv.querySelectorAll('a.showing').forEach(a => a.classList.remove('showing'))
           showMatch.hidden = true
           if (!wasShowing) {
             a.classList.add('showing')
@@ -171,8 +180,14 @@ socket.on('joinedGame', data => {
 socket.on('gameStarted', () => {
   startButton.hidden = true
   playArea.hidden = false
+  if (!spectateInput.checked)
+    noMatchesButton.hidden = false
   errorMsg.innerHTML = ''
 })
+
+noMatchesButton.onclick = function () {
+  socket.emit('claimRequest')
+}
 
 socket.on('updateGrid', grid => {
   gridDiv.innerHTML = ''

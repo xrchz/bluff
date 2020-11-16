@@ -69,6 +69,19 @@ function makeDeck() {
   return deck
 }
 
+const findProblems = cards =>
+  (['colour', 'number', 'symbol', 'style']).filter(key =>
+    (new Set(cards.map(card => card[key]))).size === 2)
+
+function checkForMatch(grid) {
+  for (let i = 0; i < grid.length; i++)
+    for (let j = 0; j < i; j++)
+      for (let k = 0; k < j; k++)
+        if (!findProblems([grid[i], grid[j], grid[k]]).length)
+          return true
+  return false
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -213,17 +226,21 @@ io.on('connection', socket => {
         if (Array.isArray(selected) && selected.length === 3 &&
             selected.every(i => Number.isInteger(i) && 0 <= i && i < 12)) {
           const cards = selected.map(i => game.grid[i])
-          const problems = (['colour', 'number', 'symbol', 'style']).filter(key =>
-            (new Set(cards.map(card => card[key]))).size === 2)
+          const problems = findProblems(cards).map(s => `s${s}`)
           if (problems.length) {
+            player.mismatches++
             const s = problems.slice(0, -1).join(', ') +
               (problems.length > 1 ? ' and ' : '') + problems.slice(-1)[0]
-            socket.emit('infoMsg', `${s.charAt(0).toUpperCase()}${s.slice(1)} must be all the same or all different.`)
+            io.in(gameName).emit('updatePlayers', game.players)
+            socket.emit('infoMsg', `${s.charAt(0).toUpperCase()}${s.slice(1)} must all match or all differ.`)
           }
           else {
             player.matches.push(cards)
             if (game.deck.length >= 3)
               selected.forEach(i => game.grid[i] = game.deck.pop())
+            else
+              selected.forEach(i => delete game.grid[i])
+            delete game.matchExists
             io.in(gameName).emit('updateGrid', game.grid)
             io.in(gameName).emit('updatePlayers', game.players)
             io.in(gameName).emit('updateCardsLeft', game.deck.length)
@@ -241,6 +258,42 @@ io.on('connection', socket => {
     }
     else {
       console.log(`${socket.playerName} selecting in not active ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} has not started or has finished.`)
+    }
+  }))
+
+  socket.on('claimRequest', () => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      const player = game.players.find(player => player.socketId === socket.id)
+      if (player) {
+        if (game.matchExists === undefined)
+          game.matchExists = checkForMatch(game.grid)
+        if (game.matchExists) {
+          player.misclaims++
+          io.in(gameName).emit('updatePlayers', game.players)
+          socket.emit('infoMsg', `A match is present.`)
+        }
+        else {
+          while (game.grid.length) {
+            const card = game.grid.pop()
+            if (card) game.deck.push(card)
+          }
+          shuffleInPlace(game.deck)
+          for (let i = 0; i < 12 && game.deck.length; i++)
+            game.grid.push(game.deck.pop())
+          delete game.matchExists
+          player.claims++
+          io.in(gameName).emit('updatePlayers', game.players)
+          io.in(gameName).emit('updateGrid', game.grid)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} not found as player in ${gameName} when claiming`)
+        socket.emit('errorMsg', `Error: could not find you as a player.`)
+      }
+    }
+    else {
+      console.log(`${socket.playerName} claiming in not active ${gameName}`)
       socket.emit('errorMsg', `Error: ${gameName} has not started or has finished.`)
     }
   }))
