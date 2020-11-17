@@ -229,7 +229,6 @@ socket.on('updateCardsLeft', n => {
 socket.on('gameOver', () => {
   gridDiv.querySelectorAll('a').forEach(a => {
     a.parentElement.textContent = a.textContent
-    a.parentElement.removeChild(a)
   })
   noMatchesButton.hidden = true
   infoMsg.innerHTML = 'Game over.'
