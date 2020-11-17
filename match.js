@@ -75,10 +75,13 @@ const findProblems = cards =>
 
 function checkForMatch(grid) {
   for (let i = 0; i < grid.length; i++)
-    for (let j = 0; j < i; j++)
-      for (let k = 0; k < j; k++)
-        if (!findProblems([grid[i], grid[j], grid[k]]).length)
-          return true
+    if (grid[i])
+      for (let j = 0; j < i; j++)
+        if (grid[j])
+          for (let k = 0; k < j; k++)
+            if (grid[k])
+              if (!findProblems([grid[i], grid[j], grid[k]]).length)
+                return true
   return false
 }
 
@@ -125,6 +128,8 @@ io.on('connection', socket => {
           socket.emit('updateGrid', game.grid)
           socket.emit('updateCardsLeft', game.deck.length)
         }
+        if (game.ended)
+          socket.emit('gameOver')
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate spectator`)
@@ -148,6 +153,7 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updateGrid', game.grid)
           socket.emit('updateCardsLeft', game.deck.length)
+          if (game.ended) socket.emit('gameOver')
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)
@@ -224,7 +230,7 @@ io.on('connection', socket => {
       const player = game.players.find(player => player.socketId === socket.id)
       if (player) {
         if (Array.isArray(selected) && selected.length === 3 &&
-            selected.every(i => Number.isInteger(i) && 0 <= i && i < 12)) {
+            selected.every(i => Number.isInteger(i) && 0 <= i && i < 12 && game.grid[i])) {
           const cards = selected.map(i => game.grid[i])
           const problems = findProblems(cards).map(s => `s${s}`)
           if (problems.length) {
@@ -273,7 +279,7 @@ io.on('connection', socket => {
           io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('infoMsg', `A match is present.`)
         }
-        else {
+        else if (game.deck.length) {
           while (game.grid.length) {
             const card = game.grid.pop()
             if (card) game.deck.push(card)
@@ -285,6 +291,12 @@ io.on('connection', socket => {
           player.claims++
           io.in(gameName).emit('updatePlayers', game.players)
           io.in(gameName).emit('updateGrid', game.grid)
+        }
+        else {
+          game.ended = true
+          player.claims++
+          io.in(gameName).emit('updatePlayers', game.players)
+          io.in(gameName).emit('gameOver')
         }
       }
       else {
