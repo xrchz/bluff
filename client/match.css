@@ -94,6 +94,9 @@ a.showing {
   margin-top: 1em;
   margin-bottom: 1em;
 }
+#playArea > input[hidden] {
+  display: none;
+}
 #grid {
   display: grid;
   margin: auto;
