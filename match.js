@@ -232,7 +232,7 @@ io.on('connection', socket => {
         if (Array.isArray(selected) && selected.length === 3 &&
             selected.every(i => Number.isInteger(i) && 0 <= i && i < 12 && game.grid[i])) {
           const cards = selected.map(i => game.grid[i])
-          const problems = findProblems(cards).map(s => `s${s}`)
+          const problems = findProblems(cards).map(s => `${s}s`)
           if (problems.length) {
             player.mismatches++
             const s = problems.slice(0, -1).join(', ') +
