@@ -51,21 +51,14 @@ function updateGames(room) {
   io.in(room).emit('updateGames', data)
 }
 
-const symbols =  ['♭', '♮', '♯']
-const colours = ['cyan', 'magenta', 'yellow']
-const styles = ['blank', 'mixed', 'solid']
-
 function makeDeck() {
   const deck = []
-  for (let s = 0; s < 3; s++)
-    for (let c = 0; c < 3; c++)
-      for (let y = 0; y < 3; y++)
-        for (let n = 0; n < 3; n++)
+  for (let s = 1; s <= 3; s++)
+    for (let c = 1; c <= 3; c++)
+      for (let y = 1; y <= 3; y++)
+        for (let n = 1; n <= 3; n++)
           deck.push(
-            {symbol: symbols[s],
-             colour: colours[c],
-             style: styles[y],
-             number: n+1})
+            {symbol: s, colour: c, style: y, number: n})
   return deck
 }
 

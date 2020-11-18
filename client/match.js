@@ -18,6 +18,8 @@ const cardsLeftDiv = document.getElementById('cardsLeft')
 const gridDiv = document.getElementById('grid')
 const showMatch = document.getElementById('showMatch')
 
+const symbols =  [null, '♭', '♮', '♯']
+
 const fragment = document.createDocumentFragment()
 
 joinButton.parentElement.onsubmit = () => {
@@ -130,9 +132,9 @@ socket.on('updatePlayers', players => {
             for (const card of match) {
               const div = showMatch.appendChild(document.createElement('div'))
               div.classList.add('card')
-              div.classList.add(card.style)
-              div.classList.add(card.colour)
-              div.textContent = card.symbol.repeat(card.number)
+              div.classList.add(`style${card.style}`)
+              div.classList.add(`colour${card.colour}`)
+              div.textContent = symbols[card.symbol].repeat(card.number)
             }
             showMatch.hidden = false
           }
@@ -197,10 +199,10 @@ socket.on('updateGrid', grid => {
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add('card')
     if (!card) continue
-    div.classList.add(card.style)
-    div.classList.add(card.colour)
+    div.classList.add(`style${card.style}`)
+    div.classList.add(`colour${card.colour}`)
     const a = div.appendChild(document.createElement(spectateInput.checked ? 'span' : 'a'))
-    a.textContent = card.symbol.repeat(card.number)
+    a.textContent = symbols[card.symbol].repeat(card.number)
     if (!spectateInput.checked) {
       a.onclick = function () {
         infoMsg.innerHTML = ''

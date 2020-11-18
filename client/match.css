@@ -123,26 +123,26 @@ div.card > a {
   height: 100%;
   display: inline-block;
 }
-div.cyan {
+div.colour1 {
   color: SkyBlue;
 }
-div.magenta {
+div.colour2 {
   color: HotPink;
 }
-div.yellow {
+div.colour3 {
   color: Gold;
 }
-div.blank {
+div.style1 {
   background-color: #004;
   background-image:
     linear-gradient(to right, #0402 0%, #0402 45%, #040a 50%, #040a 95%, #0402 100%),
     linear-gradient(to bottom, #0402 0%, #0402 45%, #040a 50%, #040a 95%, #0402 100%);
   background-size: 20px 20px;
 }
-div.solid {
+div.style2 {
   background-color: #022;
 }
-div.mixed {
+div.style3 {
   background-image:
     repeating-radial-gradient(#040 0px, #004 10px, #040 20px);
 }
