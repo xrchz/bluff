@@ -27,7 +27,20 @@ function shuffleInPlace(array) {
   }
 }
 
-const games = {}
+const saveFile = 'match.json'
+
+const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
+
+function saveGames() {
+  let toSave = {}
+  for (const [gameName, game] of Object.entries(games))
+    if (game.started) toSave[gameName] = game
+  fs.writeFileSync(saveFile,
+    JSON.stringify(
+      toSave,
+      (k, v) => k === 'socketId' ? null :
+                k === 'spectators' ? [] : v))
+}
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
@@ -350,4 +363,9 @@ io.on('connection', socket => {
       updateGames()
     }
   })
+
+  socket.on('saveGames', saveGames)
 })
+
+process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
+process.on('uncaughtExceptionMonitor', saveGames)
