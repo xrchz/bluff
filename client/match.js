@@ -119,6 +119,7 @@ socket.on('updatePlayers', players => {
     if (player.claims)
       li.textContent += ` ${player.claims}✓`
     if (player.matches !== undefined) {
+      if (player.matches.length) li.textContent += ` ${player.matches.length}✔`
       for (const match of player.matches) {
         const a = li.appendChild(document.createElement('a'))
         a.textContent = '🂠'
