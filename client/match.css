@@ -133,9 +133,11 @@ div.yellow {
   color: Gold;
 }
 div.blank {
+  background-color: #004;
   background-image:
-    repeating-linear-gradient(to right, #0048 0px, #0408 10px, #0048 20px),
-    repeating-linear-gradient(to bottom, #0048 0px, #0408 10px, #0048 20px);
+    linear-gradient(to right, #0402 0%, #0402 45%, #040a 50%, #040a 95%, #0402 100%),
+    linear-gradient(to bottom, #0402 0%, #0402 45%, #040a 50%, #040a 95%, #0402 100%);
+  background-size: 20px 20px;
 }
 div.solid {
   background-color: #022;
