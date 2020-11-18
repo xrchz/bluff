@@ -285,24 +285,24 @@ io.on('connection', socket => {
           io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('infoMsg', `A match is present.`)
         }
-        else if (game.deck.length) {
-          while (game.grid.length) {
-            const card = game.grid.pop()
-            if (card) game.deck.push(card)
-          }
-          shuffleInPlace(game.deck)
-          for (let i = 0; i < 12 && game.deck.length; i++)
-            game.grid.push(game.deck.pop())
-          delete game.matchExists
-          player.claims++
-          io.in(gameName).emit('updatePlayers', game.players)
-          io.in(gameName).emit('updateGrid', game.grid)
-        }
         else {
-          game.ended = true
           player.claims++
           io.in(gameName).emit('updatePlayers', game.players)
-          io.in(gameName).emit('gameOver')
+          delete game.matchExists
+          const grid = game.grid.filter(card => card)
+          if (grid.length + game.deck.length > 20 ||
+              checkForMatch(grid.concat(game.deck))) {
+            while (grid.length) game.deck.push(grid.pop())
+            shuffleInPlace(game.deck)
+            game.grid.length = 0
+            for (let i = 0; i < 12 && game.deck.length; i++)
+              game.grid.push(game.deck.pop())
+            io.in(gameName).emit('updateGrid', game.grid)
+          }
+          else {
+            game.ended = true
+            io.in(gameName).emit('gameOver')
+          }
         }
       }
       else {
