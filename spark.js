@@ -139,7 +139,7 @@ function updateTable(gameName, roomName) {
   const data = {
     played: game.played, dropped: game.dropped,
     cards: game.deck.length, clues: game.clues, lives: game.lives }
-  io.in(roomName).emit('updatePlayers', { players: game.players, clues: game.clues })
+  io.in(roomName).emit('updatePlayers', { players: game.players, clues: game.clues, ended: game.ended })
   io.in(roomName).emit('updateTable', data)
 }
 
@@ -459,7 +459,7 @@ io.on('connection', socket => {
         }
         else {
           game.players.find(player => player.socketId === socket.id).socketId = null
-          io.in(gameName).emit('updatePlayers', { players: game.players, clues: game.clues })
+          io.in(gameName).emit('updatePlayers', { players: game.players, clues: game.clues, ended: game.ended })
         }
       }
       updateGames()

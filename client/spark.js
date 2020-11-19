@@ -212,7 +212,7 @@ socket.on('updatePlayers', data => {
         coloura.onclick = makeOnclick('colour')
         numbera.onclick = makeOnclick('number')
       }
-      else if (player.name === nameInput.value) {
+      else if (player.name === nameInput.value && !data.ended) {
         if (card.colourClue) li.classList.add(cls)
         li.textContent = `${hiddenColour}${hiddenNumber}`
       }
