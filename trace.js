@@ -16,7 +16,6 @@ const unix = '/run/games/trace.socket'
 server.listen(unix)
 console.log(`server started on ${unix}`)
 server.on('listening', () => fs.chmodSync(unix, 0o777))
-process.on('SIGINT', () => { fs.unlinkSync(unix); process.exit() })
 
 const wordTrie = { sub: {} }
 for (const word of fs.readFileSync('trace.txt', 'utf8').split('\n')) {
@@ -231,7 +230,23 @@ function calculateScores(game) {
   game.scores.push({ name: 'God', words: wordData, score: score })
 }
 
-const games = {}
+const saveFile = 'trace.json'
+
+const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
+
+function saveGames() {
+  let toSave = {}
+  for (const [gameName, game] of Object.entries(games))
+    if (game.started) toSave[gameName] = game
+  fs.writeFileSync(saveFile,
+    JSON.stringify(
+      toSave,
+      (k, v) => k === 'socketId' ? null :
+                k === 'spectators' ? [] : v))
+}
+
+process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
+process.on('uncaughtExceptionMonitor', saveGames)
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
@@ -580,4 +595,11 @@ io.on('connection', socket => {
       updateGames()
     }
   })
+
+  socket.on('deleteGame', gameName => {
+    delete games[gameName]
+    updateGames()
+  })
+
+  socket.on('saveGames', saveGames)
 })
