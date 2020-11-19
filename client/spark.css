@@ -157,3 +157,6 @@ li.clue {
 .white {
   color: MistyRose;
 }
+.negated {
+  text-decoration: overline;
+}

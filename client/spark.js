@@ -174,6 +174,20 @@ socket.on('updatePlayers', data => {
         span.textContent = `${hiddenColour}${hiddenNumber}`
         if (card.colourClue) span.classList.add(cls)
         if (parens) li.appendChild(document.createElement('span')).textContent = ')'
+        if (card.colourNegClue || card.numberNegClue) {
+          li.appendChild(document.createElement('span')).textContent = ' ('
+          if (card.colourNegClue) {
+            const neg = li.appendChild(document.createElement('span'))
+            neg.classList.add('negated')
+            neg.textContent = card.colourNegClue.map(c => colourCls[c][0].toUpperCase()).join('')
+          }
+          if (card.numberNegClue) {
+            const neg = li.appendChild(document.createElement('span'))
+            neg.classList.add('negated')
+            neg.textContent = card.numberNegClue.join('')
+          }
+          li.appendChild(document.createElement('span')).textContent = ')'
+        }
       }
       if (current && player.name === nameInput.value) {
         addHidden()

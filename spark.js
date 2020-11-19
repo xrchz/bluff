@@ -403,14 +403,22 @@ io.on('connection', socket => {
             if (!game.deck.length)
               current.finalised = true
             const other = game.players[data.index]
-            other.hand.forEach(card => {
-              if (data.colour && card.colour === data.colour) {
-                card.colourClue = true
+            const processClue = key => function (card) {
+              if (data[key]) {
+                const negClue = `${key}NegClue`
+                if (card[key] === data[key]) {
+                  card[`${key}Clue`] = true
+                  delete card[negClue]
+                }
+                else if (!card[`${key}Clue`]) {
+                  if (!card[negClue]) card[negClue] = []
+                  if (!card[negClue].includes(data[key]))
+                    card[negClue].push(data[key])
+                }
               }
-              if (data.number && card.number === data.number) {
-                card.numberClue = true
-              }
-            })
+            }
+            other.hand.forEach(processClue('colour'))
+            other.hand.forEach(processClue('number'))
             const clue = data.colour ? colourCls(data.colour) : data.number
             appendLog(gameName, `${current.name} clues ${other.name}'s ${clue} cards.`)
             nextTurn(gameName)
