@@ -168,9 +168,15 @@ socket.on('updatePlayers', data => {
       const hiddenColour = card.colourClue ? colour : '?'
       const hiddenNumber = card.numberClue ? number : '?'
       const li = ol.appendChild(document.createElement('li'))
+      function addHidden(parens) {
+        if (parens) li.appendChild(document.createElement('span')).textContent = ' ('
+        const span = li.appendChild(document.createElement('span'))
+        span.textContent = `${hiddenColour}${hiddenNumber}`
+        if (card.colourClue) span.classList.add(cls)
+        if (parens) li.appendChild(document.createElement('span')).textContent = ')'
+      }
       if (current && player.name === nameInput.value) {
-        if (card.colourClue) li.classList.add(cls)
-        li.textContent = `${hiddenColour}${hiddenNumber}`
+        addHidden()
         const playButton = li.appendChild(document.createElement('input'))
         const dropButton = li.appendChild(document.createElement('input'))
         playButton.type = 'button'
@@ -182,13 +188,14 @@ socket.on('updatePlayers', data => {
       }
       else if (current && data.clues) {
         li.card = card
-        li.classList.add(cls)
         const coloura = li.appendChild(document.createElement('a'))
         const numbera = li.appendChild(document.createElement('a'))
         const values = { colour: colour, number: number }
         coloura.textContent = colour
         numbera.textContent = number
-        li.appendChild(document.createElement('span')).textContent = ` (${hiddenColour}${hiddenNumber})`
+        coloura.classList.add(cls)
+        numbera.classList.add(cls)
+        addHidden(true)
         function makeOnclick(key) {
           return function () {
             const value = `Clue ${values[key]}`
@@ -213,12 +220,13 @@ socket.on('updatePlayers', data => {
         numbera.onclick = makeOnclick('number')
       }
       else if (player.name === nameInput.value && !data.ended) {
-        if (card.colourClue) li.classList.add(cls)
-        li.textContent = `${hiddenColour}${hiddenNumber}`
+        addHidden()
       }
       else {
-        li.classList.add(cls)
-        li.textContent = `${colour}${number} (${hiddenColour}${hiddenNumber})`
+        const span = li.appendChild(document.createElement('span'))
+        span.textContent = `${colour}${number}`
+        span.classList.add(cls)
+        addHidden(true)
       }
     }
   }
