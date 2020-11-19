@@ -32,18 +32,6 @@ for (const word of fs.readFileSync('trace.txt', 'utf8').split('\n')) {
   }
   node.end = true
 }
-/*
-x
-x.sub['a'] = y
-y.sub['q'] = z
-z.sub['u'] = w
-w.sub['a'] = v
-v.end
-want: y.sub['qu'] = v
-i = 0, node = x
-i = 1, node = y, prev = y
-i = 2, node = w, prev = y
-*/
 
 function lookupWord(word) {
   let node = wordTrie;
@@ -53,10 +41,6 @@ function lookupWord(word) {
   }
   return !!node.end
 }
-/*
-console.log(`found: ${lookupWord('found')}`)
-console.log(`foun: ${lookupWord('foun')}`)
-*/
 
 const wordRegexp = /^[a-z][a-z][a-z]+$/
 
@@ -143,40 +127,6 @@ function shuffleInPlace(array) {
     array[j] = t
   }
 }
-
-/*
-const letterFreqs = []
-for (let i = 0; i <= 26; i++) letterFreqs[i] = 0
-for (const word of wordList) {
-  for (let i = 0; i < word.length; i++) {
-    if (word[i] === 'q' && i+1 < word.length && word[i+1] === 'u') {
-      letterFreqs[26]++
-      i++
-    }
-    else
-      letterFreqs[word.charCodeAt(i) - 97]++
-  }
-}
-console.log(letterFreqs)
-const logBase = 1 / Math.log(360)
-for (let i = 0; i <= 26; i++) letterFreqs[i] = logBase * Math.log(letterFreqs[i])
-console.log(letterFreqs)
-const logFreqTotal = letterFreqs.reduce((t, n) => t + n)
-console.log(logFreqTotal)
-
-function randomGridLetter() {
-  const r = Math.random() * logFreqTotal
-  let t = 0
-  for (let i = 0; i <= 26; i++) {
-    t += letterFreqs[i]
-    if (t >= r) {
-      return i < 26 ? String.fromCharCode(i + 97) : 'qu'
-    }
-  }
-}
-for (let i = 0; i < 16; i++)
-  console.log(randomGridLetter())
-*/
 
 function randomGrid(origDice) {
   const dice = Array.from(origDice)
