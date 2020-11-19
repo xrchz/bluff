@@ -16,7 +16,6 @@ const unix = '/run/games/match.socket'
 server.listen(unix)
 console.log(`server started on ${unix}`)
 server.on('listening', () => fs.chmodSync(unix, 0o777))
-process.on('SIGINT', () => { fs.unlinkSync(unix); process.exit() })
 
 function shuffleInPlace(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -41,6 +40,9 @@ function saveGames() {
       (k, v) => k === 'socketId' ? null :
                 k === 'spectators' ? [] : v))
 }
+
+process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
+process.on('uncaughtExceptionMonitor', saveGames)
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
@@ -366,6 +368,3 @@ io.on('connection', socket => {
 
   socket.on('saveGames', saveGames)
 })
-
-process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
-process.on('uncaughtExceptionMonitor', saveGames)
