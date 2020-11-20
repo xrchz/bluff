@@ -48,6 +48,9 @@ input[type=button], input[type=submit] {
 a:hover {
   cursor: pointer;
 }
+.obscured > div > a:hover {
+  cursor: default;
+}
 form.inline {
   display:inline;
 }
@@ -104,6 +107,14 @@ a.showing {
   grid-template-columns: repeat(3, 1fr);
   border: solid DarkGreen 4px;
 }
+#log {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+#log > li[hidden] {
+  display: none;
+}
 div.card {
   width: 200px;
   height: 150px;
@@ -145,4 +156,9 @@ div.style2 {
 div.style3 {
   background-image:
     repeating-radial-gradient(#040 0px, #004 10px, #040 20px);
+}
+.obscured > div {
+  color: SlateGrey;
+  background-color: SlateGrey;
+  background-image: none;
 }

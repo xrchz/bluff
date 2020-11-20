@@ -93,6 +93,23 @@ function checkForMatch(grid) {
   return false
 }
 
+function startTimer(gameName) {
+  const game = games[gameName]
+  function callback () {
+    io.in(gameName).emit('updateTimer', game.secondsElapsed)
+    game.secondsElapsed++
+    game.timeout = setTimeout(callback, 1000)
+  }
+  game.timeout = setTimeout(callback, 0)
+  io.in(gameName).emit('showPause', 'Pause')
+}
+
+function appendLog(gameName, entry) {
+  const game = games[gameName]
+  game.log.push(entry)
+  io.in(gameName).emit('appendLog', entry)
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -135,6 +152,7 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updateGrid', game.grid)
           socket.emit('updateCardsLeft', game.deck.length)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
         }
         if (game.ended)
           socket.emit('gameOver')
@@ -161,7 +179,9 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updateGrid', game.grid)
           socket.emit('updateCardsLeft', game.deck.length)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.ended) socket.emit('gameOver')
+          else socket.emit('showPause', game.timeout ? 'Pause' : 'Resume')
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)
@@ -208,9 +228,10 @@ io.on('connection', socket => {
       if (game.players.length) {
         console.log(`starting ${gameName}`)
         game.started = true
-        game.deck = makeDeck();
-        shuffleInPlace(game.deck);
-        game.grid = [];
+        game.deck = makeDeck()
+        shuffleInPlace(game.deck)
+        game.grid = []
+        game.log = []
         for (let i = 0; i < 12; i++) game.grid.push(game.deck.pop())
         game.players.forEach(player => {
           player.matches = []
@@ -219,6 +240,9 @@ io.on('connection', socket => {
           player.misclaims = 0
         })
         io.in(gameName).emit('gameStarted')
+        appendLog(gameName, { desc: 'The game begins', grid: Array.from(game.grid) })
+        game.secondsElapsed = 0
+        startTimer(gameName)
         io.in(gameName).emit('updateGrid', game.grid)
         io.in(gameName).emit('updatePlayers', game.players)
         io.in(gameName).emit('updateCardsLeft', game.deck.length)
@@ -234,14 +258,18 @@ io.on('connection', socket => {
   }))
 
   socket.on('matchRequest', selected => inGame((gameName, game) => {
-    if (game.started && !game.ended) {
+    if (game.started && !game.ended && game.timeout) {
       const player = game.players.find(player => player.socketId === socket.id)
       if (player) {
         if (Array.isArray(selected) && selected.length === 3 &&
             selected.every(i => Number.isInteger(i) && 0 <= i && i < 12 && game.grid[i])) {
+          clearTimeout(game.timeout)
+          delete game.timeout
+          const entry = { grid: Array.from(game.grid), selected: selected, elapsed: game.secondsElapsed }
           const cards = selected.map(i => game.grid[i])
           const problems = findProblems(cards).map(s => `${s}s`)
           if (problems.length) {
+            entry.desc = `${player.name} selects a mismatch`
             player.mismatches++
             const s = problems.slice(0, -1).join(', ') +
               (problems.length > 1 ? ' and ' : '') + problems.slice(-1)[0]
@@ -249,6 +277,7 @@ io.on('connection', socket => {
             socket.emit('infoMsg', `${s.charAt(0).toUpperCase()}${s.slice(1)} must all match or all differ.`)
           }
           else {
+            entry.desc = `${player.name} selects a match`
             player.matches.push(cards)
             if (game.deck.length >= 3)
               selected.forEach(i => game.grid[i] = game.deck.pop())
@@ -259,6 +288,9 @@ io.on('connection', socket => {
             io.in(gameName).emit('updatePlayers', game.players)
             io.in(gameName).emit('updateCardsLeft', game.deck.length)
           }
+          appendLog(gameName, entry)
+          game.secondsElapsed = 0
+          startTimer(gameName)
         }
         else {
           console.log(`${socket.playerName} submitted invalid selection`)
@@ -277,18 +309,27 @@ io.on('connection', socket => {
   }))
 
   socket.on('claimRequest', () => inGame((gameName, game) => {
-    if (game.started && !game.ended) {
+    if (game.started && !game.ended && game.timeout) {
       const player = game.players.find(player => player.socketId === socket.id)
       if (player) {
+        clearTimeout(game.timeout)
+        delete game.timeout
+        const entry = { grid: Array.from(game.grid), elapsed: game.secondsElapsed }
+        game.secondsElapsed = 0
         if (game.matchExists === undefined)
           game.matchExists = checkForMatch(game.grid)
         if (game.matchExists) {
+          entry.desc = `${player.name} misclaims no matches`
           player.misclaims++
+          appendLog(gameName, entry)
           io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('infoMsg', `A match is present.`)
+          startTimer(gameName)
         }
         else {
+          entry.desc = `${player.name} claims no matches`
           player.claims++
+          appendLog(gameName, entry)
           io.in(gameName).emit('updatePlayers', game.players)
           delete game.matchExists
           const grid = game.grid.filter(card => card)
@@ -300,6 +341,7 @@ io.on('connection', socket => {
             for (let i = 0; i < 12 && game.deck.length; i++)
               game.grid.push(game.deck.pop())
             io.in(gameName).emit('updateGrid', game.grid)
+            startTimer(gameName)
           }
           else {
             game.ended = true
@@ -320,14 +362,13 @@ io.on('connection', socket => {
 
   socket.on('pauseRequest', () => inGame((gameName, game) => {
     if (game.started && !game.ended) {
-      if (!game.paused) {
-        game.paused = true
-        io.in(gameName).emit('showPause', { show: true, text: 'Resume' })
+      if (game.timeout) {
+        clearTimeout(game.timeout)
+        delete game.timeout
+        io.in(gameName).emit('showPause', 'Resume')
       }
-      else {
-        delete game.paused
-        io.in(gameName).emit('showPause', { show: true, text: 'Pause' })
-      }
+      else
+        startTimer(gameName)
     }
     else {
       console.log(`${socket.playerName} tried to pause ${gameName}`)
@@ -360,10 +401,20 @@ io.on('connection', socket => {
         else {
           game.players.find(player => player.socketId === socket.id).socketId = null
           io.in(gameName).emit('updatePlayers', game.players)
+          if (game.timeout && game.players.every(player => !player.socketId)) {
+            console.log(`pausing ${gameName} since all players are disconnected`)
+            clearTimeout(game.timeout)
+            delete game.timeout
+          }
         }
       }
       updateGames()
     }
+  })
+
+  socket.on('deleteGame', gameName => {
+    delete games[gameName]
+    updateGames()
   })
 
   socket.on('saveGames', saveGames)
