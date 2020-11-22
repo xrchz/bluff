@@ -47,12 +47,16 @@ const Colours = [
 
 const fragment = document.createDocumentFragment()
 
-joinButton.parentElement.onsubmit = () => {
-  socket.emit('joinRequest', {
+function joinState() {
+  return {
     gameName:  gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
     playerName: nameInput.value.replace(/\W/g, ''),
     spectate: spectateInput.checked
-  })
+  }
+}
+
+joinButton.parentElement.onsubmit = () => {
+  socket.emit('joinRequest', joinState())
   return false
 }
 
@@ -158,7 +162,15 @@ socket.on('ensureLobby', () => {
   resultsArea.hidden = true
   settingsDiv.hidden = true
   settingsDiv.previousElementSibling.hidden = true
+  history.replaceState('lobby', 'lobby')
 })
+
+window.onpopstate = function (e) {
+  if (e.state === 'lobby')
+    location.reload()
+  else if (e.state)
+    socket.emit('joinRequest', e.state)
+}
 
 socket.on('updateGames', games => {
   gamesList.innerHTML = ''
@@ -274,6 +286,8 @@ socket.on('gameStarted', grid => {
     playWord.focus()
   }
   errorMsg.innerHTML = ''
+  if (history.state === 'lobby')
+    history.pushState(joinState(), gameInput.value)
 })
 
 socket.on('setupLists', names => {
