@@ -162,12 +162,14 @@ socket.on('ensureLobby', () => {
   resultsArea.hidden = true
   settingsDiv.hidden = true
   settingsDiv.previousElementSibling.hidden = true
-  history.replaceState('lobby', 'lobby')
+  history.replaceState('lobby', 'Lobby')
 })
 
 window.onpopstate = function (e) {
-  if (e.state === 'lobby')
-    location.reload()
+  if (e.state === 'lobby') {
+    socket.close()
+    socket.open()
+  }
   else if (e.state)
     socket.emit('joinRequest', e.state)
 }
@@ -287,7 +289,7 @@ socket.on('gameStarted', grid => {
   }
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
-    history.pushState(joinState(), gameInput.value)
+    history.pushState(joinState(), `Game ${gameInput.value}`)
 })
 
 socket.on('setupLists', names => {
