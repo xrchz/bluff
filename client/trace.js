@@ -47,16 +47,12 @@ const Colours = [
 
 const fragment = document.createDocumentFragment()
 
-function joinState() {
-  return {
+joinButton.parentElement.onsubmit = () => {
+  socket.emit('joinRequest', {
     gameName:  gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
     playerName: nameInput.value.replace(/\W/g, ''),
     spectate: spectateInput.checked
-  }
-}
-
-joinButton.parentElement.onsubmit = () => {
-  socket.emit('joinRequest', joinState())
+  })
   return false
 }
 
@@ -240,7 +236,7 @@ socket.on('updateSpectators', spectators => {
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
   nameInput.value = data.playerName
-  spectateInput.checked = data.spectating
+  spectateInput.checked = data.spectate
   gameInput.disabled = true
   nameInput.disabled = true
   spectateInput.disabled = true
@@ -259,6 +255,8 @@ socket.on('joinedGame', data => {
       label.firstElementChild.disabled = true
   }
   errorMsg.innerHTML = ''
+  if (history.state === 'lobby')
+    history.pushState(data, `Game ${data.gameName}`)
 })
 
 socket.on('gameStarted', grid => {
@@ -288,8 +286,6 @@ socket.on('gameStarted', grid => {
     playWord.focus()
   }
   errorMsg.innerHTML = ''
-  if (history.state === 'lobby')
-    history.pushState(joinState(), `Game ${gameInput.value}`)
 })
 
 socket.on('setupLists', names => {

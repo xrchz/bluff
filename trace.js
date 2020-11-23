@@ -293,7 +293,7 @@ io.on('connection', socket => {
         socket.join(`${gameName}spectators`)
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
-          { gameName: gameName, playerName: socket.playerName, spectating: true })
+          { gameName: gameName, playerName: socket.playerName, spectate: true })
         updateSettings(game, socket.id)
         io.in(gameName).emit('updateSpectators', game.spectators)
         socket.emit('updatePlayers', game.players)
