@@ -96,9 +96,9 @@ rotateAnticlockwise.onclick = () => {
 playWord.oninput = () => {
   if (playWord.value.length) {
     const lastLetter = playWord.value.slice(-1)
-    if ('LRP'.includes(lastLetter)) {
-      (lastLetter === 'R' ? rotateClockwise :
-       lastLetter === 'L' ? rotateAnticlockwise :
+    if ('[]='.includes(lastLetter)) {
+      (lastLetter === ']' ? rotateClockwise :
+       lastLetter === '[' ? rotateAnticlockwise :
        pauseButton).onclick()
       playWord.value = playWord.value.slice(0, -1)
     }
