@@ -135,7 +135,17 @@ socket.on('ensureLobby', () => {
   jokerDiv.hidden = true
   rotateDiv.hidden = true
   scoreTable.hidden = true
+  history.replaceState('lobby', 'Lobby')
 })
+
+window.onpopstate = function (e) {
+  if (e.state === 'lobby') {
+    socket.close()
+    socket.open()
+  }
+  else if (e.state)
+    socket.emit('joinRequest', e.state)
+}
 
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
@@ -151,6 +161,8 @@ socket.on('joinedGame', data => {
   joinButton.hidden = true
   rotateDiv.hidden = false
   errorMsg.innerHTML = ''
+  if (history.state === 'lobby')
+    history.pushState(data, `Game ${data.gameName}`)
 })
 
 socket.on('updateSeats', seats => {
