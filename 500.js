@@ -274,6 +274,7 @@ function startRound(gameName) {
   appendLog(gameName, `${game.players[game.dealer].name} deals.`)
   deal(game)
   game.bidding = true
+  delete game.lastBidder
   game.whoseTurn = clockwise(game.dealer)
   game.players[game.whoseTurn].current = true
   game.players[game.whoseTurn].validBids = validBids()
