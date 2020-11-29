@@ -120,6 +120,7 @@ socket.on('ensureLobby', () => {
   gameInput.disabled = false
   nameInput.disabled = false
   joinButton.hidden = false
+  spectateInput.previousElementSibling.hidden = false
   spectateInput.hidden = false
   spectateInput.disabled = false
   undoButton.hidden = true
