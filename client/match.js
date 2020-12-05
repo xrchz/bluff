@@ -99,6 +99,7 @@ socket.on('ensureLobby', () => {
   playArea.hidden = true
   noMatchesButton.hidden = true
   cardsLeftDiv.innerHTML = ''
+  nowButton.parentElement.hidden = true
   infoArea.hidden = true
   spectatorsDiv.innerHTML = ''
   while (log.firstElementChild !== timeElapsed) log.removeChild(log.firstElementChild)
@@ -231,6 +232,7 @@ socket.on('gameStarted', () => {
   if (!spectateInput.checked)
     noMatchesButton.hidden = false
   nowButton.checked = true
+  nowButton.parentElement.hidden = false
   errorMsg.innerHTML = ''
 })
 
