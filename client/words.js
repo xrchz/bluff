@@ -141,7 +141,18 @@ socket.on('ensureLobby', () => {
   settingsDiv.hidden = true
   settingsDiv.previousElementSibling.hidden = true
   assassinsInput.disabled = false
+  history.replaceState('lobby', 'Lobby')
 })
+
+
+window.onpopstate = function (e) {
+  if (e.state === 'lobby') {
+    socket.close()
+    socket.open()
+  }
+  else if (e.state)
+    socket.emit('joinRequest', e.state)
+}
 
 socket.on('updateGames', games => {
   gamesList.innerHTML = ''
@@ -228,6 +239,8 @@ socket.on('joinedGame', data => {
   settingsDiv.hidden = false
   settingsDiv.previousElementSibling.hidden = false
   errorMsg.innerHTML = ''
+  if (history.state === 'lobby')
+    history.pushState(data, `Game ${data.gameName}`)
 })
 
 socket.on('updateAssassins', n => assassinsInput.value = n)

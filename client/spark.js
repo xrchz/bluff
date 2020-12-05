@@ -53,7 +53,18 @@ socket.on('ensureLobby', () => {
   playtable.hidden = true
   playersDiv.innerHTML = ''
   playersDiv.hidden = true
+  history.replaceState('lobby', 'Lobby')
 })
+
+
+window.onpopstate = function (e) {
+  if (e.state === 'lobby') {
+    socket.close()
+    socket.open()
+  }
+  else if (e.state)
+    socket.emit('joinRequest', e.state)
+}
 
 socket.on('updateGames', games => {
   gamesList.innerHTML = ''
@@ -126,6 +137,8 @@ socket.on('joinedGame', data => {
   }
   joinButton.hidden = true
   errorMsg.innerHTML = ''
+  if (history.state === 'lobby')
+    history.pushState(data, `Game ${data.gameName}`)
 })
 
 socket.on('gameStarted', () => {
