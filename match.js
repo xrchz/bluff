@@ -399,8 +399,11 @@ io.on('connection', socket => {
           io.in(gameName).emit('updateSpectators', game.spectators)
         }
         else {
-          game.players.find(player => player.socketId === socket.id).socketId = null
-          io.in(gameName).emit('updatePlayers', game.players)
+          const player = game.players.find(player => player.socketId === socket.id)
+          if (player) {
+            player.socketId = null
+            io.in(gameName).emit('updatePlayers', game.players)
+          }
           if (game.timeout && game.players.every(player => !player.socketId)) {
             console.log(`pausing ${gameName} since all players are disconnected`)
             clearTimeout(game.timeout)

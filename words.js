@@ -627,7 +627,8 @@ io.on('connection', socket => {
           io.in(gameName).emit('updateSpectators', game.spectators)
         }
         else {
-          game.players.find(player => player.socketId === socket.id).socketId = null
+          const player = game.players.find(player => player.socketId === socket.id)
+          if (player) player.socketId = null
         }
       }
       if (gameName in games) updateTeams(gameName)
