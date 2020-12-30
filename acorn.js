@@ -156,7 +156,11 @@ function updateGrid(gameName, roomName) {
 function updateBids(gameName, roomName) {
   const game = games[gameName]
   if (!roomName) roomName = gameName
-  io.in(roomName).emit('updateBids', { players: game.players, bidding: game.bidding, whoseTurn: game.whoseTurn })
+  io.in(roomName).emit('updateBids',
+    { players: game.players,
+      bidding: game.bidding,
+      whoseTurn: game.whoseTurn,
+      acorns: game.acorns })
 }
 
 io.on('connection', socket => {
@@ -176,7 +180,8 @@ io.on('connection', socket => {
                size: 15,
                acorns: 25,
                stamina: 10,
-               minReward: 0, maxReward: 3 }
+               minReward: 1,
+               maxReward: 3 }
       games[gameName] = game
     }
     else
@@ -384,15 +389,16 @@ io.on('connection', socket => {
               game.bidding = true
               game.whoseTurn++
               if (game.whoseTurn === game.players.length) game.whoseTurn = 0
-              updateBids(gameName)
             }
             else {
               game.ended = true
+              delete game.whoseTurn
               let maxAcorns = 0
               game.players.forEach(player => { if (player.acorns > maxAcorns) maxAcorns = player.acorns })
               const victors = game.players.filter(player => player.acorns === maxAcorns).map(player => player.name)
               appendLog(gameName, `The game ends with ${victors.length > 1 ? `tied victors: ${victors.join(', ')}.` : `${victors[0]} victorious!`}`)
             }
+            updateBids(gameName)
             updateGrid(gameName)
           }
           else {

@@ -147,6 +147,7 @@ socket.on('gameStarted', () => {
 
 socket.on('updateBids', data => {
   unseated.innerHTML = ''
+  fragment.appendChild(document.createElement('span')).textContent = `${data.acorns} acorn${data.acorns !== 1 ? 's' : ''} left`
   for (player of data.players) {
     const li = fragment.appendChild(document.createElement('li'))
     li.textContent = `${player.name} [${player.stamina}⚡, ${player.acorns}🌰]`
@@ -163,6 +164,10 @@ socket.on('updateBids', data => {
   }
   unseated.appendChild(fragment)
 
+  let index = 0
+  const prevSelect = document.getElementById('select')
+  if (prevSelect)
+    index = Array.from(prevSelect.children).findIndex(x => x.selected)
   bidsDiv.innerHTML = ''
   if (data.bidding) {
     const toBid = data.players.filter(player => player.bid === undefined)
@@ -170,23 +175,28 @@ socket.on('updateBids', data => {
     if (!spectateInput.checked && current) {
       const form = fragment.appendChild(document.createElement('form'))
       const select = form.appendChild(document.createElement('select'))
+      select.id = 'select'
       const submit = form.appendChild(document.createElement('input'))
       submit.type = 'submit'
       submit.value = 'Bid'
       for (let i = 0; i <= current.stamina; i++)
         select.appendChild(document.createElement('option')).textContent = i.toString()
-      select.firstElementChild.selected = true
+      if (index > current.stamina) index = 0
+      select.children[index].selected = true
       form.onsubmit = () => {
         socket.emit('bidRequest', Array.from(select.children).findIndex(x => x.selected))
         return false
       }
       if (!current.stamina) form.onsubmit()
     }
+    /*
     fragment.appendChild(document.createElement('span')).textContent = 'Waiting for bids from: '
     const ul = fragment.appendChild(document.createElement('ul'))
     ul.classList.add('inline')
+    ul.style.display = 'inline'
     for (const player of toBid)
       ul.appendChild(document.createElement('li')).textContent = player.name
+    */
   }
   bidsDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
