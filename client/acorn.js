@@ -149,12 +149,12 @@ socket.on('updateBids', data => {
   unseated.innerHTML = ''
   for (player of data.players) {
     const li = fragment.appendChild(document.createElement('li'))
-    li.textContent = `${player.name} [${player.stamina}]`
+    li.textContent = `${player.name} [${player.stamina}⚡, ${player.acorns}🌰]`
     if (player.current) {
       li.textContent += ' (*)'
       li.classList.add('current')
     }
-    if (player.disconnected) {
+    if (!player.socketId) {
       li.textContent += ' (d/c)'
       li.classList.add('disconnected')
     }
@@ -180,6 +180,7 @@ socket.on('updateBids', data => {
         socket.emit('bidRequest', Array.from(select.children).findIndex(x => x.selected))
         return false
       }
+      if (!current.stamina) form.onsubmit()
     }
     fragment.appendChild(document.createElement('span')).textContent = 'Waiting for bids from: '
     const ul = fragment.appendChild(document.createElement('ul'))
@@ -211,6 +212,8 @@ socket.on('updateGrid', data => {
           div.style.color = DugColours[cell.dug - 1]
         }
       }
+      if (cell.dug !== undefined)
+        div.classList.add('dug')
     }
   gridDiv.appendChild(fragment)
   gridDiv.style.gridTemplateColumns = `repeat(${data.grid.length}, 2em)`

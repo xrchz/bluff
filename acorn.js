@@ -105,7 +105,7 @@ function appendLog(gameName, entry) {
 
 const stateKeys = {
   game: [
-    'players', 'started', 'whoseTurn',
+    'players', 'started', 'whoseTurn', 'acorns',
     'bidding', 'digging', 'grid', 'ended'
   ],
   grid: true,
@@ -390,8 +390,8 @@ io.on('connection', socket => {
               game.ended = true
               let maxAcorns = 0
               game.players.forEach(player => { if (player.acorns > maxAcorns) maxAcorns = player.acorns })
-              const victors = game.players.filter(player => player.acorns === maxAcorns).map(player => player.name).join(', ')
-              appendLog(gameName, `The game ends with ${victors.length > 1 ? `tied victors: ${victors}.` : `${victors} victorious!`}`)
+              const victors = game.players.filter(player => player.acorns === maxAcorns).map(player => player.name)
+              appendLog(gameName, `The game ends with ${victors.length > 1 ? `tied victors: ${victors.join(', ')}.` : `${victors[0]} victorious!`}`)
             }
             updateGrid(gameName)
           }
