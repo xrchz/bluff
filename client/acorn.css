@@ -1,0 +1,95 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: #040;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button] {
+  background-color: RoyalBlue;
+  color: LightYellow;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  max-width: 40em;
+  margin: auto;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators, .empty {
+  color: SlateGray
+}
+.disconnected {
+  color: Pink;
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+.rotator {
+  text-decoration: underline;
+}
+#grid {
+  display: grid;
+  font-size: 24px;
+  background-color: DarkGreen;
+}
+#grid > div {
+  width: 2em;
+  height: 2em;
+}
+#grid > div > input {
+  width: 2em;
+  height: 2em;
+}

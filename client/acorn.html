@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang=en>
+  <head>
+    <title>Acorn</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel="icon" href="acorn.png" type="image/png" />
+    <link rel=stylesheet href="acorn.css" type="text/css" />
+    <script src="socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+    <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+    <input id=join type=button value="Join" />
+    <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    <input id=undo type=button value="Undo" hidden />
+    <ul id=games hidden></ul>
+    <div>
+      <ul id=unseated class=inline></ul>
+      <input id=start type=button value="Start!" hidden />
+      <ul id=spectators class=inline></ul>
+    </div>
+    <ul id=log hidden></ul>
+    <div id=bids hidden></div>
+    <div id=grid hidden></div>
+    <script src="acorn.js"></script>
+  </body>
+</html>

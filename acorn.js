@@ -136,7 +136,7 @@ function updateGrid(gameName, roomName) {
 function updateBids(gameName, roomName) {
   const game = games[gameName]
   if (!roomName) roomName = gameName
-  io.in(roomName).emit('updateBids', { players: game.players, bidding: game.bidding })
+  io.in(roomName).emit('updateBids', { players: game.players, bidding: game.bidding, whoseTurn: game.whoseTurn })
 }
 
 io.on('connection', socket => {
@@ -420,7 +420,7 @@ io.on('connection', socket => {
           const player = game.players.find(player => player.socketId === socket.id)
           if (player) {
             player.socketId = null
-            io.in(gameName).emit('updateBids', { players: game.players, bidding: game.bidding })
+            updateBids(gameName)
           }
         }
       }
