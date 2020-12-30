@@ -72,11 +72,29 @@ function makeGrid(size, acorns) {
   shuffleInPlace(cells)
   const grid = []
   for (let i = 0; i < size; i++) {
-    grid[i].push([])
+    const row = []
     for (let j = 0; j < size; j++)
-      grid[i][j] = cells.pop()
+      row.push(cells.pop())
+    grid.push(row)
   }
   return grid
+}
+
+function floodFill(grid, i, j) {
+  const a = [[i, j]]
+  while (a.length) {
+    const c = a.pop()
+    const cell = grid[c[0]][c[1]]
+    let t = 0, n = []
+    for (let i = c[0] - 1; i <= c[0] + 1; i++)
+      for (let j = c[1] - 1; j <= c[1] + 1; j++)
+        if (0 <= i && i < grid.length && 0 <= j && j < grid.length) {
+          if (grid[i][j].acorn) t++
+          else if (grid[i][j].dug === undefined) n.push([i, j])
+        }
+    cell.dug = t
+    if (!t) Array.prototype.push.apply(a, n)
+  }
 }
 
 function appendLog(gameName, entry) {
@@ -129,8 +147,10 @@ function appendUndo(gameName) {
 function updateGrid(gameName, roomName) {
   const game = games[gameName]
   if (!roomName) roomName = gameName
+  const data = { grid: game.grid }
   const current = game.players.find(player => player.current)
-  io.in(roomName).emit('updateGrid', { grid: game.grid, current: current })
+  if (current) data.current = current.name
+  io.in(roomName).emit('updateGrid', data)
 }
 
 function updateBids(gameName, roomName) {
@@ -302,9 +322,10 @@ io.on('connection', socket => {
         if (Number.isInteger(bid) && 0 <= bid && bid <= player.stamina) {
           appendUndo(gameName)
           player.bid = bid
+          appendLog(gameName, `${player.name} bids.`)
           if (game.players.every(player => player.bid !== undefined)) {
             delete game.bidding
-            let winner = player
+            let winner = game.players[game.whoseTurn]
             for (let i = 1; i < game.players.length; i++) {
               const candidate = game.players[(game.whoseTurn + i) % game.players.length]
               if (candidate.bid > winner.bid)
@@ -347,9 +368,9 @@ io.on('connection', socket => {
             delete game.digging
             delete current.current
             const cell = game.grid[data.i][data.j]
-            cell.dug = true
             let what = 'nothing'
             if (cell.acorn) {
+              cell.dug = true
               const reward = game.minReward + Math.floor(Math.random() * (game.maxReward - game.minReward))
               what = `an acorn providing ${reward} stamina`
               current.stamina += reward
@@ -368,7 +389,7 @@ io.on('connection', socket => {
             else {
               game.ended = true
               let maxAcorns = 0
-              game.players.forEach(player => if (player.acorns > maxAcorns) maxAcorns = player.acorns)
+              game.players.forEach(player => { if (player.acorns > maxAcorns) maxAcorns = player.acorns })
               const victors = game.players.filter(player => player.acorns === maxAcorns).map(player => player.name).join(', ')
               appendLog(gameName, `The game ends with ${victors.length > 1 ? `tied victors: ${victors}.` : `${victors} victorious!`}`)
             }

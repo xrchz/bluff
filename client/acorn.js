@@ -46,6 +46,10 @@ socket.on('ensureLobby', () => {
   spectatorsDiv.innerHTML = ''
   log.innerHTML = ''
   log.hidden = true
+  bidsDiv.innerHTML = ''
+  bidsDiv.hidden = true
+  gridDiv.innerHTML = ''
+  gridDiv.hidden = true
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -135,6 +139,8 @@ socket.on('joinedGame', data => {
 socket.on('gameStarted', () => {
   startButton.hidden = true
   log.hidden = false
+  bidsDiv.hidden = false
+  gridDiv.hidden = false
   unseated.innerHTML = ''
   errorMsg.innerHTML = ''
 })
@@ -143,7 +149,7 @@ socket.on('updateBids', data => {
   unseated.innerHTML = ''
   for (player of data.players) {
     const li = fragment.appendChild(document.createElement('li'))
-    li.textContent = player.name
+    li.textContent = `${player.name} [${player.stamina}]`
     if (player.current) {
       li.textContent += ' (*)'
       li.classList.add('current')
@@ -159,10 +165,26 @@ socket.on('updateBids', data => {
 
   bidsDiv.innerHTML = ''
   if (data.bidding) {
+    const toBid = data.players.filter(player => player.bid === undefined)
+    const current = toBid.find(player => player.name === nameInput.value)
+    if (!spectateInput.checked && current) {
+      const form = fragment.appendChild(document.createElement('form'))
+      const select = form.appendChild(document.createElement('select'))
+      const submit = form.appendChild(document.createElement('input'))
+      submit.type = 'submit'
+      submit.value = 'Bid'
+      for (let i = 0; i <= current.stamina; i++)
+        select.appendChild(document.createElement('option')).textContent = i.toString()
+      select.firstElementChild.selected = true
+      form.onsubmit = () => {
+        socket.emit('bidRequest', Array.from(select.children).findIndex(x => x.selected))
+        return false
+      }
+    }
     fragment.appendChild(document.createElement('span')).textContent = 'Waiting for bids from: '
     const ul = fragment.appendChild(document.createElement('ul'))
     ul.classList.add('inline')
-    for (const player of data.players.filter(player => !player.bid))
+    for (const player of toBid)
       ul.appendChild(document.createElement('li')).textContent = player.name
   }
   bidsDiv.appendChild(fragment)
