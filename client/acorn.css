@@ -21,6 +21,10 @@ input[type=button], input[type=submit] {
   background-color: RoyalBlue;
   color: LightYellow;
 }
+input[type=submit]:disabled {
+  background-color: DarkBlue;
+  color: SlateBlue;
+}
 #game {
   width: 2em;
   text-transform: uppercase;

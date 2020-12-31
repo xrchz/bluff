@@ -15,6 +15,10 @@ const spectatorsDiv = document.getElementById('spectators')
 const unseated = document.getElementById('unseated')
 const bidsDiv = document.getElementById('bids')
 const gridDiv = document.getElementById('grid')
+const bidSelect = document.getElementById('select')
+const autobid = document.getElementById('autobid')
+const bidButton = bidSelect.nextElementSibling
+const bidForm = bidSelect.parentElement
 
 const DugColours = ['black', 'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
 
@@ -46,7 +50,6 @@ socket.on('ensureLobby', () => {
   spectatorsDiv.innerHTML = ''
   log.innerHTML = ''
   log.hidden = true
-  bidsDiv.innerHTML = ''
   bidsDiv.hidden = true
   gridDiv.innerHTML = ''
   gridDiv.hidden = true
@@ -139,11 +142,19 @@ socket.on('joinedGame', data => {
 socket.on('gameStarted', () => {
   startButton.hidden = true
   log.hidden = false
-  bidsDiv.hidden = false
   gridDiv.hidden = false
+  if (!spectateInput.checked) bidsDiv.hidden = false
   unseated.innerHTML = ''
   errorMsg.innerHTML = ''
 })
+
+const bidSelected = () => Array.from(bidSelect.children).findIndex(x => x.selected)
+
+bidForm.onsubmit = () => {
+  if (!bidButton.disabled)
+    socket.emit('bidRequest', bidSelected())
+  return false
+}
 
 socket.on('updateBids', data => {
   unseated.innerHTML = ''
@@ -159,46 +170,25 @@ socket.on('updateBids', data => {
       li.textContent += ' (d/c)'
       li.classList.add('disconnected')
     }
-    if (player.name === data.players[data.whoseTurn].name)
+    if (data.whoseTurn !== undefined &&
+        player.name === data.players[data.whoseTurn].name)
       li.classList.add('rotator')
   }
   unseated.appendChild(fragment)
 
-  let index = 0
-  const prevSelect = document.getElementById('select')
-  if (prevSelect)
-    index = Array.from(prevSelect.children).findIndex(x => x.selected)
-  bidsDiv.innerHTML = ''
-  if (data.bidding) {
-    const toBid = data.players.filter(player => player.bid === undefined)
-    const current = toBid.find(player => player.name === nameInput.value)
-    if (!spectateInput.checked && current) {
-      const form = fragment.appendChild(document.createElement('form'))
-      const select = form.appendChild(document.createElement('select'))
-      select.id = 'select'
-      const submit = form.appendChild(document.createElement('input'))
-      submit.type = 'submit'
-      submit.value = 'Bid'
-      for (let i = 0; i <= current.stamina; i++)
-        select.appendChild(document.createElement('option')).textContent = i.toString()
-      if (index > current.stamina) index = 0
-      select.children[index].selected = true
-      form.onsubmit = () => {
-        socket.emit('bidRequest', Array.from(select.children).findIndex(x => x.selected))
-        return false
-      }
-      if (!current.stamina) form.onsubmit()
+  bidButton.disabled = true
+  const current = data.players.find(player => player.name === nameInput.value)
+  if (!spectateInput.checked && current) {
+    while (current.stamina + 1 < bidSelect.children.length)
+      bidSelect.removeChild(bidSelect.lastElementChild)
+    while (bidSelect.children.length <= current.stamina)
+      bidSelect.appendChild(document.createElement('option')).textContent =
+        (bidSelect.children.length - 1).toString()
+    if (data.bidding && current.bid === undefined) {
+      bidButton.disabled = false
+      if (autobid.checked) setTimeout(bidForm.onsubmit, 500)
     }
-    /*
-    fragment.appendChild(document.createElement('span')).textContent = 'Waiting for bids from: '
-    const ul = fragment.appendChild(document.createElement('ul'))
-    ul.classList.add('inline')
-    ul.style.display = 'inline'
-    for (const player of toBid)
-      ul.appendChild(document.createElement('li')).textContent = player.name
-    */
   }
-  bidsDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
 })
 

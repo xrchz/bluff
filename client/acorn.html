@@ -22,7 +22,13 @@
     </div>
     <ul id=log hidden></ul>
     <div id=playArea>
-      <div id=bids hidden></div>
+      <div id=bids hidden>
+        <form>
+          <select id=select></select>
+          <input type=submit value='Bid'></input>
+          <label>auto<input id=autobid type=checkbox /></label>
+        </form>
+      </div>
       <div id=grid hidden></div>
     </div>
     <script src="acorn.js"></script>
