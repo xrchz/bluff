@@ -205,8 +205,10 @@ socket.on('updateGrid', data => {
         button.onclick = () => socket.emit('digRequest', {i: i, j: j})
       }
       if (cell.dug) {
-        if (cell.acorn)
+        if (cell.acorn) {
           div.textContent = '🌰'
+          div.style.color = 'brown'
+        }
         else {
           div.textContent = cell.dug.toString()
           div.style.color = DugColours[cell.dug - 1]
