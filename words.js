@@ -548,9 +548,10 @@ io.on('connection', socket => {
               { who: player.name, what: word.word, type: type, colour: word.colour })
           }
           io.in(gameName).emit('updateClues', { team: game.whoseTurn, clues: clues })
-          if (game.wordsLeft.includes(0)) {
+          const winner = game.wordsLeft.findIndex(x => x === 0)
+          if (winner > -1) {
             stopTimer(gameName)
-            game.winner = game.whoseTurn
+            game.winner = winner
             delete game.guessesLeft
             delete game.whoseTurn
           }
