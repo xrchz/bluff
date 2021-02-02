@@ -1,9 +1,11 @@
 {
   "name": "bluff",
   "version": "0.0.1",
+  "license": "GPL-3.0-or-later",
+  "repository": "github:xrchz/bluff",
   "description": "Networked multiplayer card game bluff, aka cheat, aka bullshit",
   "dependencies": {
     "express": "^4.17.1",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.4.1"
   }
 }
