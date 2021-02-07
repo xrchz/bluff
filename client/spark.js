@@ -178,8 +178,8 @@ socket.on('updatePlayers', data => {
       const cls = colourCls[card.colour]
       const colour = cls[0].toUpperCase()
       const number = card.number.toString()
-      const hiddenColour = card.colourClue ? colour : '?'
-      const hiddenNumber = card.numberClue ? number : '?'
+      const hiddenColour = card.colourClue ? colour : '*'
+      const hiddenNumber = card.numberClue ? number : '*'
       const li = ol.appendChild(document.createElement('li'))
       function addHidden(parens) {
         if (parens) li.appendChild(document.createElement('span')).textContent = ' ('
