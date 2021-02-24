@@ -106,6 +106,9 @@ ul.inline > li {
   border-color: brown;
   border-width: 1px
 }
+#grid > div.highlighted {
+  background-color: rgba(255,0,0,0.5);
+}
 #grid > div > input {
   width: 2em;
   height: 2em;

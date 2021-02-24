@@ -199,6 +199,7 @@ socket.on('updateGrid', data => {
     for (let j = 0; j < data.grid.length; j++) {
       const cell = data.grid[i][j]
       const div = fragment.appendChild(document.createElement('div'))
+      div.id = `g${i}${j}`
       if (cell.dug === undefined && current) {
         const button = div.appendChild(document.createElement('input'))
         button.type = 'button'
@@ -222,9 +223,22 @@ socket.on('updateGrid', data => {
   errorMsg.innerHTML = ''
 })
 
-socket.on('appendLog', markup => {
+socket.on('appendLog', entry => {
   const li = document.createElement('li')
-  li.innerHTML = markup
+  if (entry.msg) {
+    const a = li.appendChild(document.createElement('a'))
+    a.textContent = entry.msg
+    a.onclick = () => {
+      const div = document.getElementById(`g${entry.pos.i}${entry.pos.j}`)
+      const prev = gridDiv.querySelector('div.highlighted')
+      if (prev)
+        prev.classList.remove('highlighted')
+      if (div !== prev)
+        div.classList.add('highlighted')
+    }
+  }
+  else
+    li.textContent = entry
   log.appendChild(li)
   li.scrollIntoView(false)
   errorMsg.innerHTML = ''

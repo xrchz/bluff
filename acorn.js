@@ -384,7 +384,7 @@ io.on('connection', socket => {
             }
             else
               floodFill(game.grid, data.i, data.j)
-            appendLog(gameName, `${current.name} digs up ${what}.`)
+            appendLog(gameName, {msg: `${current.name} digs up ${what}.`, pos: data})
             if (game.acorns) {
               game.bidding = true
               game.whoseTurn++
