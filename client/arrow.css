@@ -92,10 +92,11 @@ ul.inline > li {
   border: solid DarkSalmon 2px;
 }
 div.piece {
-  height: 5em;
-  width: 5em;
+  height: 80px;
+  width: 80px;
   text-align: center;
-  line-height: 5em;
+  line-height: 80px;
+  font-size: 32pt;
 }
 #pieces div.selected {
   border-width: 4px;
