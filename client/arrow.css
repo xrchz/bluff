@@ -1,0 +1,135 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: Maroon;
+  color: RosyBrown;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button], input[type=submit] {
+  background-color: Indigo;
+  color: Moccasin;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators {
+  color: SlateGray
+}
+.disconnected {
+  color: Violet;
+}
+#players li.disconnected::after {
+  content: ' (d/c)';
+}
+#players li.current {
+  background-color: NavajoWhite;
+}
+#players li.current::after {
+  content: ' (*)';
+}
+#players li.winner::after {
+  content: ' victorious!'
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+form.inline {
+  display:inline;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+#board {
+  display: grid;
+  margin: auto;
+  width: min-content;
+  grid-template-columns: repeat(4, 1fr);
+  border: solid DarkOrange 4px;
+}
+#board div.piece {
+  border: solid DarkOrange 4px;
+}
+#pieces {
+  display: grid;
+  margin: auto;
+  margin-top: 2em;
+  width: min-content;
+  grid-template-columns: repeat(8, 1fr);
+}
+#pieces div.piece {
+  border: solid DarkSalmon 2px;
+}
+div.piece {
+  height: 5em;
+  width: 5em;
+  text-align: center;
+  line-height: 5em;
+}
+#pieces div.selected {
+  border-width: 4px;
+  border-style: dashed;
+  border-color: Orange;
+}
+div.playable:hover {
+  cursor: pointer;
+  border-color: Orange;
+}
+div.arrow {
+  border-color: DeepSkyBlue;
+}
+div.d00 {
+  background-color: Beige;
+}
+div.d01 {
+  background-color: SandyBrown;
+}
+div.d10 {
+  color: MidnightBlue;
+}
+div.d11 {
+  color: DarkRed;
+}
+div.d20.d30::after {
+  content: '■';
+}
+div.d20.d31::after {
+  content: '□';
+}
+div.d21.d30::after {
+  content: '●';
+}
+div.d21.d31::after {
+  content: '○';
+}
