@@ -101,6 +101,45 @@ function markArrow(board) {
   return false
 }
 
+const stateKeys = {
+  game: [
+    'players', 'started', 'board', 'pieces', 'ended'
+  ],
+  board: true, pieces: true,
+  players: [ 'current', 'winner' ]
+}
+
+function copy(keys, from, to, restore) {
+  for (const key of keys)
+    if (key in from) {
+      if (stateKeys[key] === true)
+        to[key] = JSON.parse(JSON.stringify(from[key]))
+      else if (key === 'players') {
+        if (!restore)
+          to.players = from.players.map(_ => ({}))
+        for (let i = 0; i < from.players.length; i++)
+          copy(stateKeys.players, from.players[i], to.players[i], restore)
+      }
+      else if (stateKeys[key]) {
+        if (!restore || !(key in to))
+          to[key] = {}
+        copy(stateKeys[key], from[key], to[key], restore)
+      }
+      else
+        to[key] = from[key]
+    }
+    else if (restore && key in to)
+      delete to[key]
+}
+
+function appendUndo(gameName) {
+  const game = games[gameName]
+  const entry = {}
+  copy(stateKeys.game, game, entry)
+  game.undoLog.push(entry)
+  io.in(gameName).emit('showUndo', true)
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -209,6 +248,26 @@ io.on('connection', socket => {
     }
   }
 
+  socket.on('undoRequest', () => inGame((gameName, game) => {
+    if (game.started && game.undoLog.length) {
+      const entry = game.undoLog.pop()
+      copy(stateKeys.game, entry, game, true)
+      io.in(gameName).emit('updatePlayers', game.players)
+      io.in(gameName).emit('updateBoard', game.board)
+      const data = { pieces: game.pieces }
+      const current = game.players.find(player => player.current)
+      if (current) data.currentPlayer = current.name
+      io.in(gameName).emit('updatePieces', data)
+      if (!game.undoLog.length)
+        io.in(gameName).emit('showUndo', false)
+      io.in(gameName).emit('errorMsg', `${socket.playerName} pressed Undo.`)
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
+      socket.emit('errorMsg', 'Error: there is nothing to undo.')
+    }
+  }))
+
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
       if (game.players.length) {
@@ -244,6 +303,7 @@ io.on('connection', socket => {
             Number.isInteger(data.pieceIndex) && 0 <= data.pieceIndex && data.pieceIndex < game.pieces.length &&
             Number.isInteger(data.placeIndex) && 0 <= data.placeIndex && data.placeIndex < 16 &&
             game.board[data.placeIndex] === null) {
+          appendUndo(gameName)
           const piece = game.pieces.splice(data.pieceIndex, 1)[0]
           game.board[data.placeIndex] = piece
           let nextPlayer
@@ -251,7 +311,6 @@ io.on('connection', socket => {
             game.ended = true
             delete player.current
             player.winner = true
-            io.in(gameName).emit('updatePlayers', game.players)
           }
           else {
             delete player.current
@@ -260,6 +319,7 @@ io.on('connection', socket => {
             nextPlayer = game.players[nextIndex]
             nextPlayer.current = true
           }
+          io.in(gameName).emit('updatePlayers', game.players)
           io.in(gameName).emit('updateBoard', game.board)
           data = { pieces: game.pieces }
           if (nextPlayer) data.currentPlayer = nextPlayer.name
