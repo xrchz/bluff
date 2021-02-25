@@ -169,6 +169,13 @@ socket.on('updateBoard', board => {
 socket.on('updatePieces', data => {
   piecesDiv.innerHTML = ''
   const current = !spectateInput.checked && nameInput.value === data.currentPlayer
+  const dropping = data.pieces.some(piece => piece && piece.selected)
+  if (current && dropping) {
+    boardDiv.querySelectorAll('div.empty').forEach(div => {
+      div.classList.add('playable')
+      div.onclick = () => socket.emit('dropRequest', div.placeIndex)
+    })
+  }
   for (let i = 0; i < data.pieces.length; i++) {
     const piece = data.pieces[i]
     const div = fragment.appendChild(document.createElement('div'))
@@ -176,25 +183,11 @@ socket.on('updatePieces', data => {
     if (piece === null) continue
     for (let d = 0; d < 4; d++)
       div.classList.add(`d${d}${piece.d[d]}`)
-    if (current) {
+    if (piece.selected)
+      div.classList.add('selected')
+    if (current && !dropping) {
       div.classList.add('selectable')
-      div.onclick = () => {
-        const selected = piecesDiv.querySelector('div.selected')
-        boardDiv.querySelectorAll('div.playable').forEach(div => {
-          div.classList.remove('playable')
-          div.onclick = null
-        })
-        if (selected) selected.classList.remove('selected')
-        if (selected !== div) {
-          div.classList.add('selected')
-          boardDiv.querySelectorAll('div.empty').forEach(placeDiv => {
-            placeDiv.classList.add('playable')
-            placeDiv.onclick = () => {
-              socket.emit('playRequest', { pieceIndex: i, placeIndex: placeDiv.placeIndex })
-            }
-          })
-        }
-      }
+      div.onclick = () => socket.emit('pickRequest', i)
     }
   }
   piecesDiv.appendChild(fragment)

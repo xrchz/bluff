@@ -103,7 +103,8 @@ function markArrow(board) {
 
 const stateKeys = {
   game: [
-    'players', 'started', 'board', 'pieces', 'ended'
+    'players', 'started', 'picking', 'dropping',
+    'board', 'pieces', 'ended'
   ],
   board: true, pieces: true,
   players: [ 'current', 'winner' ]
@@ -279,6 +280,7 @@ io.on('connection', socket => {
         for (let i = 0; i < 16; i++) game.board[i] = null
         const current = game.players[Math.floor(Math.random() * game.players.length)]
         current.current = true
+        game.picking = true
         io.in(gameName).emit('gameStarted')
         io.in(gameName).emit('updatePlayers', game.players)
         io.in(gameName).emit('updateBoard', game.board)
@@ -294,37 +296,68 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('playRequest', data => inGame((gameName, game) => {
-    if (game.started && !game.ended) {
+  socket.on('pickRequest', pieceIndex => inGame((gameName, game) => {
+    if (game.picking) {
       const currentIndex = game.players.findIndex(player => player.socketId === socket.id)
       if (0 <= currentIndex) {
         const player = game.players[currentIndex]
         if (player.current &&
-            Number.isInteger(data.pieceIndex) && 0 <= data.pieceIndex && data.pieceIndex < game.pieces.length &&
-            game.pieces[data.pieceIndex] !== null &&
-            Number.isInteger(data.placeIndex) && 0 <= data.placeIndex && data.placeIndex < game.board.length &&
-            game.board[data.placeIndex] === null) {
+            Number.isInteger(pieceIndex) && 0 <= pieceIndex && pieceIndex < game.pieces.length &&
+            game.pieces[pieceIndex] !== null) {
           appendUndo(gameName)
-          const piece = game.pieces[data.pieceIndex]
-          game.pieces[data.pieceIndex] = null
-          game.board[data.placeIndex] = piece
-          let nextPlayer
+          game.pieces[pieceIndex].selected = true
+          let nextIndex = currentIndex + 1
+          if (nextIndex === game.players.length) nextIndex = 0
+          const nextPlayer = game.players[nextIndex]
+          delete player.current
+          nextPlayer.current = true
+          delete game.picking
+          game.dropping = true
+          io.in(gameName).emit('updatePlayers', game.players)
+          io.in(gameName).emit('updatePieces', { pieces: game.pieces, currentPlayer: nextPlayer.name })
+        }
+        else {
+          console.log(`${socket.playerName} played invalid data or is not current`)
+          socket.emit('errorMsg', `Error: invalid play data.`)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} not found as player in ${gameName}`)
+        socket.emit('errorMsg', `Error: could not find you as a player.`)
+      }
+    }
+    else {
+      console.log(`${socket.playerName} picking in wrong state for ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} is not open for picking.`)
+    }
+  }))
+
+  socket.on('dropRequest', placeIndex => inGame((gameName, game) => {
+    if (game.dropping) {
+      const currentIndex = game.players.findIndex(player => player.socketId === socket.id)
+      const pieceIndex = game.pieces.findIndex(piece => piece && piece.selected)
+      if (0 <= currentIndex) {
+        const player = game.players[currentIndex]
+        if (player.current && 0 <= pieceIndex &&
+            Number.isInteger(placeIndex) && 0 <= placeIndex && placeIndex < game.board.length &&
+            game.board[placeIndex] === null) {
+          appendUndo(gameName)
+          delete game.dropping
+          const piece = game.pieces[pieceIndex]
+          game.pieces[pieceIndex] = null
+          game.board[placeIndex] = piece
+          const data = { pieces: game.pieces }
           if (markArrow(game.board)) {
             game.ended = true
             delete player.current
             player.winner = true
+            io.in(gameName).emit('updatePlayers', game.players)
           }
           else {
-            delete player.current
-            let nextIndex = currentIndex + 1
-            if (nextIndex === game.players.length) nextIndex = 0
-            nextPlayer = game.players[nextIndex]
-            nextPlayer.current = true
+            data.currentPlayer = player.name
+            game.picking = true
           }
-          io.in(gameName).emit('updatePlayers', game.players)
           io.in(gameName).emit('updateBoard', game.board)
-          data = { pieces: game.pieces }
-          if (nextPlayer) data.currentPlayer = nextPlayer.name
           io.in(gameName).emit('updatePieces', data)
         }
         else {
@@ -338,8 +371,8 @@ io.on('connection', socket => {
       }
     }
     else {
-      console.log(`${socket.playerName} playing in not active ${gameName}`)
-      socket.emit('errorMsg', `Error: ${gameName} has not started or has finished.`)
+      console.log(`${socket.playerName} dropping in wrong state for ${gameName}`)
+      socket.emit('errorMsg', `Error: ${gameName} is not open for dropping.`)
     }
   }))
 
