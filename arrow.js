@@ -301,10 +301,12 @@ io.on('connection', socket => {
         const player = game.players[currentIndex]
         if (player.current &&
             Number.isInteger(data.pieceIndex) && 0 <= data.pieceIndex && data.pieceIndex < game.pieces.length &&
-            Number.isInteger(data.placeIndex) && 0 <= data.placeIndex && data.placeIndex < 16 &&
+            game.pieces[data.pieceIndex] !== null &&
+            Number.isInteger(data.placeIndex) && 0 <= data.placeIndex && data.placeIndex < game.board.length &&
             game.board[data.placeIndex] === null) {
           appendUndo(gameName)
-          const piece = game.pieces.splice(data.pieceIndex, 1)[0]
+          const piece = game.pieces[data.pieceIndex]
+          game.pieces[data.pieceIndex] = null
           game.board[data.placeIndex] = piece
           let nextPlayer
           if (markArrow(game.board)) {

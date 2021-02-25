@@ -172,8 +172,8 @@ socket.on('updatePieces', data => {
   for (let i = 0; i < data.pieces.length; i++) {
     const piece = data.pieces[i]
     const div = fragment.appendChild(document.createElement('div'))
-    div.pieceIndex = i
     div.classList.add('piece')
+    if (piece === null) continue
     for (let d = 0; d < 4; d++)
       div.classList.add(`d${d}${piece.d[d]}`)
     if (current) {
@@ -190,7 +190,7 @@ socket.on('updatePieces', data => {
           boardDiv.querySelectorAll('div.empty').forEach(placeDiv => {
             placeDiv.classList.add('playable')
             placeDiv.onclick = () => {
-              socket.emit('playRequest', { pieceIndex: div.pieceIndex, placeIndex: placeDiv.placeIndex })
+              socket.emit('playRequest', { pieceIndex: i, placeIndex: placeDiv.placeIndex })
             }
           })
         }
