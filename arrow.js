@@ -343,8 +343,6 @@ io.on('connection', socket => {
     }
   }))
 
-  // TODO: undoRequest
-
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
     const gameName = socket.gameName

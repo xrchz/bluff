@@ -103,11 +103,14 @@ div.piece {
   border-style: dashed;
   border-color: Orange;
 }
-div.playable:hover {
+#pieces div.selectable:hover {
+  cursor: pointer;
+}
+#board div.playable:hover {
   cursor: pointer;
   border-color: Orange;
 }
-div.arrow {
+#board div.arrow {
   border-color: DeepSkyBlue;
 }
 div.d00 {
