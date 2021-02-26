@@ -43,6 +43,7 @@ socket.on('ensureLobby', () => {
   spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false
   startButton.hidden = true
+  startButton.disabled = false
   undoButton.hidden = true
   playersList.innerHTML = ''
   spectatorsList.innerHTML = ''
@@ -95,6 +96,8 @@ socket.on('updateGames', games => {
 
 socket.on('updatePlayers', players => {
   playersList.innerHTML = ''
+  if (!startButton.disabled)
+    startButton.hidden = players.length <= 1
   for (const player of players) {
     const li = fragment.appendChild(document.createElement('li'))
     li.textContent = player.name
@@ -132,7 +135,6 @@ socket.on('joinedGame', data => {
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
-    startButton.hidden = false
   }
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
@@ -141,6 +143,7 @@ socket.on('joinedGame', data => {
 
 socket.on('gameStarted', () => {
   startButton.hidden = true
+  startButton.disabled = true
   playArea.hidden = false
   errorMsg.innerHTML = ''
 })

@@ -271,7 +271,7 @@ io.on('connection', socket => {
 
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
-      if (game.players.length) {
+      if (game.players.length > 1) {
         console.log(`starting ${gameName}`)
         game.started = true
         game.undoLog = []
