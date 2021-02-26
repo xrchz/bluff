@@ -1,7 +1,7 @@
 body {
   font-family: sans-serif;
   font-size: large;
-  background-color: Maroon;
+  background-color: #300;
   color: RosyBrown;
   margin-left: 2vw;
   width: 96vw;
@@ -39,6 +39,7 @@ input[type=button], input[type=submit] {
 }
 #players li.current {
   background-color: NavajoWhite;
+  color: MidnightBlue;
 }
 #players li.current::after {
   content: ' (*)';
@@ -69,7 +70,8 @@ ul.inline {
 }
 ul.inline > li {
   display: inline;
-  padding-left: 1em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
 #board {
   display: grid;
@@ -87,6 +89,7 @@ ul.inline > li {
   margin-top: 2em;
   width: min-content;
   grid-template-columns: repeat(8, 1fr);
+  border: solid DarkSalmon 2px;
 }
 #pieces div.piece {
   border: solid DarkSalmon 2px;
@@ -99,9 +102,11 @@ div.piece {
   font-size: 32pt;
 }
 #pieces div.selected {
-  border-width: 4px;
   border-style: dashed;
   border-color: Orange;
+  border-width: 4px;
+  height: 76px;
+  width: 76px;
 }
 #pieces div.selectable:hover {
   cursor: pointer;
@@ -114,16 +119,16 @@ div.piece {
   border-color: DeepSkyBlue;
 }
 div.d00 {
-  background-color: Beige;
+  background-color: MintCream;
 }
 div.d01 {
-  background-color: SandyBrown;
+  background-color: Bisque;
 }
 div.d10 {
   color: MidnightBlue;
 }
 div.d11 {
-  color: DarkRed;
+  color: FireBrick;
 }
 div.d20.d30::after {
   content: '■';
