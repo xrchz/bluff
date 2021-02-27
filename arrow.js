@@ -75,6 +75,7 @@ function lineIndex(x, i, j) {
 }
 
 function markArrow(board) {
+  let marked = false
   for (let x = 0; x < 3; x++) {
     const imax = x < 2 ? 4 : 2
     for (let i = 0; i < imax; i++) {
@@ -93,12 +94,12 @@ function markArrow(board) {
             const k = lineIndex(x, i, j)
             board[k].arrow = true
           }
-          return true
+          marked = true
         }
       }
     }
   }
-  return false
+  return marked
 }
 
 const stateKeys = {
