@@ -313,7 +313,8 @@ io.on('connection', socket => {
           game.dropped[c] = [0, 0, 0, 0, 0, 0]
         }
         game.players.forEach(player => player.hand = [])
-        for (let i = 0; i < 5; i++)
+        const cardsPerHand = game.players.length < 4 ? 5 : 4
+        for (let i = 0; i < cardsPerHand; i++)
           game.players.forEach(player =>
             player.hand.push(game.deck.pop()))
         game.players[game.whoseTurn].current = true
