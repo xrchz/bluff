@@ -12,10 +12,14 @@ app.get('/', (req, res) => {
 })
 app.use(express.static(`${__dirname}/client`))
 
-const unix = '/run/games/acorn.socket'
-server.listen(unix)
-console.log(`server started on ${unix}`)
-server.on('listening', () => fs.chmodSync(unix, 0o777))
+const config = require(`${__dirname}/client/config.js`)
+
+const port = config.ServerPort('acorn')
+const unix = typeof port === 'string'
+server.listen(port)
+console.log(`server started on ${port}`)
+if (unix)
+  server.on('listening', () => fs.chmodSync(port, 0o777))
 
 function shuffleInPlace(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -463,5 +467,5 @@ io.on('connection', socket => {
   socket.on('saveGames', saveGames)
 })
 
-process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
+process.on('SIGINT', () => { saveGames(); if (unix) fs.unlinkSync(port); process.exit() })
 process.on('uncaughtExceptionMonitor', saveGames)

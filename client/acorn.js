@@ -1,5 +1,5 @@
 /* global io */
-var socket = io("https://xrchz.net", {path: '/games/acorn/socket.io'})
+var socket = io(ServerURI('acorn'), SocketOptions('acorn'))
 
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
