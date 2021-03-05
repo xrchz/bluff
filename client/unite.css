@@ -80,14 +80,29 @@ ul.inline > li {
   background-color: NavajoWhite;
   color: DarkRed;
 }
-#deck > div > span:first-child,
+#deck > div > span:last-child,
 #board > div > div > span,
 #opHand > span,
 #myHand > span,
+#buffer > span,
 #holding > span {
   font-size: xx-large;
   padding: 0.2em;
   text-align: center;
+}
+#holding, #buffer {
+  display: flex;
+  justify-content: space-around;
+}
+#holding {
+  margin-bottom: 0.2em;
+}
+#buffer {
+  margin-top: 0.2em;
+}
+#deck > div > span:first-child {
+  vertical-align: top;
+  line-height: 2em;
 }
 #playArea {
   display: flex;
@@ -95,12 +110,19 @@ ul.inline > li {
   justify-content: center;
   align-items: center;
 }
+#playArea[hidden] {
+  display: none;
+}
 #deck {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   margin-right: 2em;
+}
+#deck > div {
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
 }
 #board {
   display: flex;
@@ -148,4 +170,7 @@ span.clickable.clubs:hover {
 }
 span.clickable.spades:hover {
   color: #005;
+}
+span.removed {
+  color: SlateGray;
 }

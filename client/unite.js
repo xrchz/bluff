@@ -190,10 +190,10 @@ socket.on('updateBoard', data => {
   for (let suit = 0; suit < deck.length; suit++) {
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add(suitNames[suit])
+    const rem = deck[suit].length
+    div.appendChild(document.createElement('span')).textContent = `(${rem}) `
     const span = div.appendChild(document.createElement('span'))
     span.classList.add(suitNames[suit])
-    const rem = deck[suit].length
-    div.appendChild(document.createElement('span')).textContent = ` (${rem})`
     if (!rem)
       span.textContent = suitChar[suit]
     else {
@@ -293,8 +293,13 @@ socket.on('appendLog', entry => {
   if (typeof entry ===  'string')
     li.textContent = entry
   else {
-    const a = li.appendChild(document.createElement('a'))
-    a.textContent = 'TODO: log entry'
+    const span = li.appendChild(document.createElement('span'))
+    if (entry.dest)
+      span.textContent = `${entry.name} claims from the ${suitNames[entry.suit]} deck to ${entry.dest}.`
+    else {
+      span.textContent = `${entry.name} reorders via ${suitNames[entry.suit]}.`
+      // TODO: find the relevant cards from entry.cols, and add onclick to toggle highlight
+    }
   }
   log.appendChild(li)
   li.scrollIntoView(false)

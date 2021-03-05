@@ -15,10 +15,10 @@
       <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
       <input id=join type=submit value="Join" />
       <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+      <input id=start type=button value="Start!" hidden />
+      <input id=undo type=button value="Undo" hidden />
     </form>
     <ul id=games hidden></ul>
-    <input id=start type=button value="Start!" hidden />
-    <input id=undo type=button value="Undo" hidden />
     <ul id=players class=inline></ul>
     <ul id=spectators class=inline></ul>
     <ul id=log hidden></ul>
@@ -26,6 +26,7 @@
       <div id=deck></div>
       <div>
         <div id=opHand></div>
+        <div id=buffer><span></span></div>
         <div id=board>
           <div id=opBase>
             <div id=opL class=left></div><div id=opM></div><div id=opR></div>
