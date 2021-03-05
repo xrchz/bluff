@@ -410,7 +410,7 @@ io.on('connection', socket => {
               game.board.validColumns[data.pos.side].includes(data.pos.row))) {
           appendUndo(gameName)
           const rank = game.deck[suit].pop()
-          if (player.hand[suit]) {
+          if (player.hand[suit] !== null) {
             const side = data.pos.side
             const row = data.pos.row
             const col = game.board.z[row][side] * (side ? -1 : 1)

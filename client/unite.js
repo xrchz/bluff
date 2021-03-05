@@ -186,6 +186,7 @@ socket.on('updateBoard', data => {
   const currentIndex = players.findIndex(li => li.classList.contains('current') || li.classList.contains('winner'))
   const playerIndex = spectateInput.checked ? currentIndex : players.findIndex(li => nameInput.value === li.textContent)
   const current = !spectateInput.checked && currentIndex === playerIndex
+  const hold = holdingDiv.appendChild(document.createElement('span'))
   for (let suit = 0; suit < deck.length; suit++) {
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add(suitNames[suit])
@@ -204,7 +205,6 @@ socket.on('updateBoard', data => {
         if (hand.classList.contains('empty'))
           span.onclick = () => socket.emit('claimRequest', {suit: suit})
         else {
-          const hold = holdingDiv.appendChild(document.createElement('span'))
           span.onclick = () => {
             if (span.classList.contains('removed')) {
               span.classList.remove('removed')
