@@ -246,7 +246,7 @@ socket.on('updateBoard', data => {
         const hand = myHandDiv.children[suit]
         if (hand.classList.contains('empty'))
           span.onclick = () => {
-            if ('activePlots' in holdingDiv)
+            if ('activePlots' in holdingDiv || !doneButton.hidden)
               undoPlot()
             else
               socket.emit('takeRequest', {suit: suit})
@@ -266,7 +266,7 @@ socket.on('updateBoard', data => {
               })
               if (span !== removed) span.onclick()
             }
-            else if ('activePlots' in holdingDiv) {
+            else if ('activePlots' in holdingDiv || !doneButton.hidden) {
               undoPlot()
               span.onclick()
             }
