@@ -1,20 +1,20 @@
 'use strict'
 
-const express = require('express')
-const http = require('http')
 const fs = require('fs')
-var app = express()
-var server = http.createServer(app)
-var io = require('socket.io')(server)
+const express = require('express')
+const app = express()
+const gname = 'unite'
 
 app.get('/', (req, res) => {
-  res.sendFile(`${__dirname}/client/unite.html`)
+  res.sendFile(`${__dirname}/client/${gname}.html`)
 })
 app.use(express.static(`${__dirname}/client`))
 
 const config = require(`${__dirname}/client/config.js`)
+const server = require('http').createServer(app)
+const io = require('socket.io')(server)
 
-const port = config.ServerPort('unite')
+const port = config.ServerPort(gname)
 const unix = typeof port === 'string'
 server.listen(port)
 console.log(`server started on ${port}`)
@@ -32,6 +32,10 @@ function shuffleInPlace(array) {
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
+const saveFile = `${gname}.json`
+
+const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
+
 function randomUnusedGameName() {
   if (Object.keys(games).length === 26 * 26) {
     console.log('all game names in use')
@@ -41,10 +45,6 @@ function randomUnusedGameName() {
   do { name = randomLetter() + randomLetter() } while (name in games)
   return name
 }
-
-const saveFile = 'unite.json'
-
-const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
 
 function saveGames() {
   let toSave = {}
