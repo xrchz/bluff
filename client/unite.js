@@ -210,6 +210,27 @@ socket.on('updateBoard', data => {
   const currentIndex = players.findIndex(li => li.classList.contains('current') || li.classList.contains('winner'))
   const playerIndex = spectateInput.checked ? currentIndex : players.findIndex(li => nameInput.value === li.textContent)
   const current = !spectateInput.checked && currentIndex === playerIndex
+  function undoPlot() {
+    myHandDiv.childNodes.forEach(span => {
+      if (span.validPlots) span.onclick()
+    })
+    for (let i = 0; i < 3; i++) {
+      boardDiv.querySelectorAll(`#${rowIds[i]} > div > span.clickable`).forEach(span => {
+        if (span.homeRow !== i || span.homeColumn !== span.spanColumn) span.onclick()
+      })
+    }
+    while (holdingDiv.lastElementChild) {
+      if ('homeRow' in holdingDiv.lastElementChild) {
+        const rowId = rowIds[holdingDiv.lastElementChild.homeRow]
+        Array.from(
+          boardDiv.querySelectorAll(`#${rowId} > div > span.clickable`)).find(span =>
+            span.spanColumn === holdingDiv.lastElementChild.homeColumn).onclick()
+      }
+      else
+        holdingDiv.lastElementChild.onclick()
+    }
+    doneButton.hidden = true
+  }
   for (let suit = 0; suit < deck.length; suit++) {
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add(suitNames[suit])
@@ -226,15 +247,18 @@ socket.on('updateBoard', data => {
         span.classList.add('clickable')
         const hand = myHandDiv.children[suit]
         if (hand.classList.contains('empty'))
-          span.onclick = () => socket.emit('claimRequest', {suit: suit})
+          span.onclick = () => {
+            if ('activePlots' in holdingDiv)
+              undoPlot()
+            else
+              socket.emit('claimRequest', {suit: suit})
+          }
         else {
           span.onclick = () => {
             const removed = deckDiv.querySelector('span.removed')
-            if (removed === span) {
+            if (removed) {
               const hold = holdingDiv.lastElementChild
-              span.classList.remove('removed')
-              hand.classList.remove('clickable')
-              hand.onclick = null
+              removed.classList.remove('removed')
               if (hold.classList.contains('fromHand'))
                 hand.textContent = hold.textContent
               hold.parentElement.removeChild(hold)
@@ -242,15 +266,19 @@ socket.on('updateBoard', data => {
                 if (span.textContent === '🃟')
                   span.parentElement.removeChild(span)
               })
+              if (span !== removed) span.onclick()
             }
-            else if (removed === null) {
-              /* TODO: if there are active plots, undo the plot and try again, else */
+            else if ('activePlots' in holdingDiv) {
+              undoPlot()
+              span.onclick()
+            }
+            else {
               const hold = holdingDiv.appendChild(document.createElement('span'))
               hold.textContent = span.textContent
               hold.classList.add(suitNames[suit])
               span.classList.add('removed')
-              hand.classList.add('clickable')
-              hand.onclick = () => {
+              hold.classList.add('clickable')
+              hold.onclick = () => {
                 const temp = hand.textContent
                 hand.textContent = hold.textContent
                 hold.textContent = temp
@@ -273,10 +301,6 @@ socket.on('updateBoard', data => {
                                                   keepHand: !hold.classList.contains('fromHand') })
                 }
               }
-            }
-            else {
-              removed.onclick()
-              span.onclick()
             }
           }
         }
@@ -332,7 +356,7 @@ socket.on('updateBoard', data => {
       if (!span.classList.contains('empty'))
         span.fromHand = true
     })
-    // TODO: handle interaction with claiming
+    // TODO: allow sending to hand from anywhere in holding, not just last
     function updateActivePlots() {
       const onPlot = []
       for (let i = 0; i < 3; i++) {
@@ -413,6 +437,11 @@ socket.on('updateBoard', data => {
       }
     }
     function plotOnClick() {
+      const removed = deckDiv.querySelector('span.removed')
+      if (removed) {
+        removed.onclick()
+        return this.onclick()
+      }
       const last = holdingDiv.appendChild(document.createElement('span'))
       if (last.previousElementSibling) {
         last.previousElementSibling.classList.remove('clickable')
