@@ -508,7 +508,8 @@ socket.on('appendLog', entry => {
     if (entry.dest)
       span.textContent = `${entry.name} takes ${rankName(entry.rank)}${suitCharBold[entry.suit]} to ${entry.dest}.`
     else {
-      span.textContent = `${entry.name} reorders via ${rankName(entry.rank)}.`
+      const suffix = entry.newRank === entry.rank ? '' : ` (now ${rankName(entry.newRank)})`
+      span.textContent = `${entry.name} reorders via ${rankName(entry.rank)}${suffix}.`
     }
   }
   log.appendChild(li)

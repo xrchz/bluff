@@ -497,11 +497,12 @@ io.on('connection', socket => {
         if (boardCards) {
           appendUndo(gameName)
           player.hand = data.hand
+          const rank = boardCards[0].r
           data.board.forEach((c, i) => {
             boardCards[i].r = c.r
             boardCards[i].s = c.s
           })
-          appendLog(gameName, {name: player.name, rank: boardCards[0].r})
+          appendLog(gameName, {name: player.name, rank: rank, newRank: boardCards[0].r})
           delete player.current
           checkWin(gameName)
           if (!game.ended) {
