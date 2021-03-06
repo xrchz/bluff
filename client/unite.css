@@ -106,7 +106,7 @@ ul.inline > li {
   display: flex;
   font-size: xx-large;
   min-height: 1.4em;
-  justify-content: space-around;
+  justify-content: center;
 }
 #deck > div > span:first-child {
   vertical-align: top;
@@ -131,6 +131,21 @@ ul.inline > li {
 #deck > div {
   padding-top: 0.2em;
   padding-bottom: 0.2em;
+}
+#playArea > div:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  margin-top: 1em;
+}
+#done[hidden] {
+  display: none;
+}
+#done {
+  width: min-content;
+  margin-top: -2em;
+  margin-bottom: 1em;
 }
 #board {
   display: flex;

@@ -46,6 +46,8 @@ undoButton.onclick = () => {
   errorMsg.innerHTML = ''
 }
 
+const rowIds = ['myBase', 'middle', 'opBase']
+
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
   gameInput.disabled = false
@@ -62,6 +64,7 @@ socket.on('ensureLobby', () => {
   log.innerHTML = ''
   log.hidden = true
   playArea.hidden = true
+  doneButton.hidden = true
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -181,6 +184,23 @@ socket.on('gameStarted', () => {
   errorMsg.innerHTML = ''
 })
 
+doneButton.onclick = () => {
+  const hand = Array.from(myHandDiv.children).map(span =>
+    span.classList.contains('empty') ? null : charRank(span.textContent))
+  const board = []
+  const cols = 'activePlots' in holdingDiv ? holdingDiv.activePlots[0] : holdingDiv.defaultPlot
+  for (let i = 0; i < 3; i++) {
+    const span = Array.from(boardDiv.querySelectorAll(`#${rowIds[i]} > div > span`)).find(span =>
+      span.spanColumn === cols[i])
+    board.push({
+      r: charRank(span.textContent),
+      s: suitNames.findIndex(v => span.classList.contains(v))
+    })
+  }
+  doneButton.hidden = true
+  socket.emit('hatchRequest', {hand: hand, board: board, cols: cols})
+}
+
 socket.on('updateBoard', data => {
   deckDiv.innerHTML = ''
   holdingDiv.innerHTML = ''
@@ -190,7 +210,6 @@ socket.on('updateBoard', data => {
   const currentIndex = players.findIndex(li => li.classList.contains('current') || li.classList.contains('winner'))
   const playerIndex = spectateInput.checked ? currentIndex : players.findIndex(li => nameInput.value === li.textContent)
   const current = !spectateInput.checked && currentIndex === playerIndex
-  const hold = holdingDiv.appendChild(document.createElement('span'))
   for (let suit = 0; suit < deck.length; suit++) {
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add(suitNames[suit])
@@ -210,20 +229,23 @@ socket.on('updateBoard', data => {
           span.onclick = () => socket.emit('claimRequest', {suit: suit})
         else {
           span.onclick = () => {
-            if (span.classList.contains('removed')) {
+            const removed = deckDiv.querySelector('span.removed')
+            if (removed === span) {
+              const hold = holdingDiv.lastElementChild
               span.classList.remove('removed')
               hand.classList.remove('clickable')
               hand.onclick = null
-              if (hold.classList.contains('fromHand')) {
+              if (hold.classList.contains('fromHand'))
                 hand.textContent = hold.textContent
-                hold.classList.remove('fromHand')
-              }
-              hold.classList.remove(suitNames[suit])
-              hold.textContent = ''
-              boardDiv.querySelectorAll('span.clickable').forEach(span =>
-                span.parentElement.removeChild(span))
+              hold.parentElement.removeChild(hold)
+              boardDiv.querySelectorAll('span.clickable').forEach(span => {
+                if (span.textContent === '🃟')
+                  span.parentElement.removeChild(span)
+              })
             }
-            else if (hold.textContent === '') {
+            else if (removed === null) {
+              /* TODO: if there are active plots, undo the plot and try again, else */
+              const hold = holdingDiv.appendChild(document.createElement('span'))
               hold.textContent = span.textContent
               hold.classList.add(suitNames[suit])
               span.classList.add('removed')
@@ -251,7 +273,7 @@ socket.on('updateBoard', data => {
               }
             }
             else {
-              deckDiv.querySelector('span.removed').onclick()
+              removed.onclick()
               span.onclick()
             }
           }
@@ -266,6 +288,7 @@ socket.on('updateBoard', data => {
   for (let relRow = 0; relRow < 3; relRow++) {
     const row = playerIndex ? 2 - relRow : relRow
     const rowCards = playerIndex ? board.b[row].slice().reverse() : board.b[row]
+    const colSign = playerIndex ? -1 : 1
     const rowId = ['my','md','op'][relRow]
     const ZtoN = z => Math.floor((z - 1) / 2)
     const zs = [ZtoN(board.z[row][L]), [1,2,1][row], ZtoN(board.z[row][R])]
@@ -281,11 +304,169 @@ socket.on('updateBoard', data => {
       }
       const span = rowDiv.appendChild(document.createElement('span'))
       span.textContent = cardChar(card.s, card.r)
+      span.homeColumn = colSign * card.c
+      span.spanColumn = span.homeColumn
       span.classList.add(suitNames[card.s])
       n--
     }
   }
-  // TODO: add functionality for hatching
+  if (current) {
+    for (const v of board.validPlots) {
+      for (let i = 0; i < 3; i++) {
+        const rowId = rowIds[i]
+        const col = v[i]
+        const span = Array.from(
+          boardDiv.querySelectorAll(`#${rowId} > div > span`)).find(
+            span => span.homeColumn === col)
+        span.homeRow = i
+        if (!('validPlots' in span))
+          span.validPlots = []
+        span.validPlots.push(v)
+      }
+    }
+    if (board.validPlots.length)
+      holdingDiv.defaultPlot = board.validPlots[0]
+    myHandDiv.childNodes.forEach(span => {
+      if (!span.classList.contains('empty'))
+        span.fromHand = true
+    })
+    // TODO: handle interaction with claiming
+    function updateActivePlots() {
+      const onPlot = []
+      for (let i = 0; i < 3; i++) {
+        const rowId = rowIds[i]
+        const span =
+          Array.from(boardDiv.querySelectorAll(`#${rowId} > div > span`)).find(
+            span => 'fromHand' in span || 'homeRow' in span && span.homeRow !== i)
+        if (span) onPlot.push(span)
+      }
+      holdingDiv.childNodes.forEach(span => {
+        if (span.textContent) onPlot.push(span)
+      })
+      myHandDiv.childNodes.forEach(span => {
+        if ('homeRow' in span) onPlot.push(span)
+      })
+      if (onPlot.length) {
+        const cols = [null, null, null]
+        for (let i = 0; i < 3; i++) {
+          const span = onPlot.find(span => span.homeRow === i)
+          if (span) cols[i] = span.homeColumn
+        }
+        holdingDiv.activePlots = board.validPlots.filter(v =>
+          v.every((c, i) => cols[i] === null || cols[i] === c))
+      }
+      else {
+        delete holdingDiv.activePlots
+      }
+      if ('activePlots' in holdingDiv) {
+        boardDiv.querySelectorAll('span').forEach(span => {
+          if (span.fromHand || span.validPlots && span.validPlots.some(v => holdingDiv.activePlots.includes(v))) {
+            span.classList.add('clickable')
+            span.onclick = plotOnClick
+          }
+          else if (span.validPlots) {
+            span.classList.remove('clickable')
+            span.onclick = null
+          }
+        })
+        myHandDiv.childNodes.forEach(span => {
+          if (!span.classList.contains('empty')) {
+            span.classList.add('clickable')
+            span.onclick = plotOnClick
+          }
+        })
+      }
+      else {
+        boardDiv.querySelectorAll('span').forEach(span => {
+          if (span.validPlots) {
+            span.classList.remove('clickable')
+            span.onclick = null
+          }
+        })
+        myHandDiv.childNodes.forEach(span => {
+          span.classList.remove('clickable')
+          span.onclick = null
+        })
+        boardDiv.querySelectorAll('#myBase > div > span').forEach(span => {
+          if (span.validPlots) {
+            span.classList.add('clickable')
+            span.onclick = plotOnClick
+          }
+        })
+      }
+    }
+    function moveCard(toSpan, fromSpan) {
+      toSpan.textContent = fromSpan.textContent
+      if ('homeRow' in fromSpan) {
+        toSpan.homeRow = fromSpan.homeRow
+        delete fromSpan.homeRow
+        toSpan.homeColumn = fromSpan.homeColumn
+        delete fromSpan.homeColumn
+        toSpan.validPlots = fromSpan.validPlots
+        delete fromSpan.validPlots
+      }
+      if ('fromHand' in fromSpan) {
+        toSpan.fromHand = fromSpan.fromHand
+        delete fromSpan.fromHand
+      }
+    }
+    function plotOnClick() {
+      const last = holdingDiv.appendChild(document.createElement('span'))
+      if (last.previousElementSibling) {
+        last.previousElementSibling.classList.remove('clickable')
+        last.previousElementSibling.onclick = null
+      }
+      moveCard(last, this)
+      const thisSuitName = Array.from(this.classList.values()).find(v => suitNames.includes(v))
+      last.classList.add(thisSuitName)
+      last.suitIndex = suitNames.findIndex(v => v === thisSuitName)
+      this.classList.add('empty')
+      if (this.parentElement.id === 'myHand') {
+        this.textContent = suitChar[last.suitIndex]
+        this.classList.remove('clickable')
+        this.onclick = null
+      }
+      else {
+        this.textContent = '🃟'
+      }
+      updateAfterChangingLast()
+    }
+    function updateAfterChangingLast() {
+      const last = holdingDiv.lastElementChild
+      if (last) {
+        const hand = myHandDiv.children[last.suitIndex]
+        if (hand.classList.contains('empty')) {
+          last.classList.add('clickable')
+          last.onclick = () => receiveLast(hand)
+        }
+        // TODO: else make clicking on last swap with hand
+        boardDiv.querySelectorAll('span.empty').forEach(span => {
+          span.classList.remove(...suitNames)
+          span.classList.add(suitNames[last.suitIndex], 'clickable')
+          span.onclick = () => receiveLast(span)
+        })
+        doneButton.hidden = true
+      }
+      else {
+        const empties = boardDiv.querySelectorAll('span.empty')
+        empties.forEach(span => {
+          span.classList.remove(...suitNames, 'clickable')
+          span.onclick = null
+        })
+        if (!empties.length)
+          doneButton.hidden = false
+      }
+      updateActivePlots()
+    }
+    function receiveLast(target) {
+      const last = holdingDiv.lastElementChild
+      moveCard(target, last)
+      target.classList.remove('empty')
+      holdingDiv.removeChild(last)
+      updateAfterChangingLast()
+    }
+    updateActivePlots()
+  }
   errorMsg.innerHTML = ''
 })
 
