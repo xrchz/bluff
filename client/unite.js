@@ -466,11 +466,17 @@ socket.on('updateBoard', data => {
       const last = holdingDiv.lastElementChild
       if (last) {
         const hand = myHandDiv.children[last.suitIndex]
-        if (hand.classList.contains('empty')) {
-          last.classList.add('clickable')
+        last.classList.add('clickable')
+        if (hand.classList.contains('empty'))
           last.onclick = () => receiveLast(hand)
+        else {
+          last.onclick = () => {
+            const temp = {}
+            moveCard(temp, last)
+            moveCard(last, hand)
+            moveCard(hand, temp)
+          }
         }
-        // TODO: else make clicking on last swap with hand
         boardDiv.querySelectorAll('span.empty').forEach(span => {
           span.classList.remove(...suitNames)
           span.classList.add(suitNames[last.suitIndex], 'clickable')
