@@ -437,9 +437,9 @@ io.on('connection', socket => {
             nextPlayer.current = true
             game.board.validColumns = validColumns(game.board.z)
             game.board.validPlots = validPlots(game.board, nextPlayer.hand, nextIndex)
-            io.in(gameName).emit('updatePlayers', game.players)
-            updateBoard(gameName)
           }
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateBoard(gameName)
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} made an invalid claim`)
@@ -479,9 +479,9 @@ io.on('connection', socket => {
             const nextPlayer = game.players[nextIndex]
             nextPlayer.current = true
             game.board.validPlots = validPlots(game.board, nextPlayer.hand, nextIndex)
-            io.in(gameName).emit('updatePlayers', game.players)
-            updateBoard(gameName)
           }
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateBoard(gameName)
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried hatching with bad data`)
