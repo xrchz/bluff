@@ -514,7 +514,7 @@ socket.on('appendLog', entry => {
   else {
     const span = li.appendChild(document.createElement('span'))
     if (entry.dest)
-      span.textContent = `${entry.name} claims ${rankName(entry.rank)}${suitCharBold[entry.suit]} to ${entry.dest}.`
+      span.textContent = `${entry.name} takes ${rankName(entry.rank)}${suitCharBold[entry.suit]} to ${entry.dest}.`
     else {
       span.textContent = `${entry.name} reorders via ${rankName(entry.rank)}.`
       // TODO: find the relevant cards from entry.cols, and add onclick to toggle highlight
