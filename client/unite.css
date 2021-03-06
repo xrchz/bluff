@@ -97,7 +97,6 @@ ul.inline > li {
 #board > div > div > span,
 #opHand > span,
 #myHand > span,
-#buffer > span,
 #holding > span {
   font-size: xx-large;
   padding: 0.2em;
@@ -105,13 +104,9 @@ ul.inline > li {
 }
 #holding, #buffer {
   display: flex;
+  font-size: xx-large;
+  min-height: 1.4em;
   justify-content: space-around;
-}
-#holding {
-  margin-bottom: 0.2em;
-}
-#buffer {
-  margin-top: 0.2em;
 }
 #deck > div > span:first-child {
   vertical-align: top;
