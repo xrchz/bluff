@@ -413,7 +413,7 @@ io.on('connection', socket => {
           if (player.hand[suit] !== null) {
             const side = data.pos.side
             const row = data.pos.row
-            const col = game.board.z[row][side] * (side ? -1 : 1)
+            const col = game.board.z[row][side] * (side ? 1 : -1)
             const toBoard = { s: suit, r: rank, c: col }
             game.board.z[row][side] += 2
             if (!data.keepHand) {
