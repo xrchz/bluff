@@ -200,14 +200,16 @@ function validPlots(board, hand, playerIndex) {
 
 function checkPlot(newHand, newBoard, cols, hand, board, playerIndex) {
   if (!(Array.isArray(cols) && cols.length === 3)) return false
-  if (!board.validPlots.find(v => cols.every((c, i) => c === v[i]))) return false
+  if (!board.validPlots.some(v => cols.every((c, i) => c === v[i]))) return false
   const row = absRow(0, playerIndex)
-  const oldCards = hand.filter(r => r !== null).map((r, s) => ({r: r, s: s}))
-  const newCards = newHand.filter(r => r !== null).map((r, s) => ({r: r, s: s})).concat(newBoard)
+  const colSign = playerIndex ? -1 : 1
+  const toCards = (r, s) => r === null ? [] : [{r: r, s: s}]
+  const oldCards = hand.flatMap(toCards)
+  const newCards = newHand.flatMap(toCards).concat(newBoard)
   newCards.sort(cardCmp)
-  const c1 = board.b[row].find(c => c.c === cols[0])
-  const c2 = board.b[1].find(c => c.c === cols[1])
-  const c3 = board.b[2 - row].find(c => c.c === cols[2])
+  const c1 = board.b[row].find(c => c.c === colSign * cols[0])
+  const c2 = board.b[1].find(c => c.c === colSign * cols[1])
+  const c3 = board.b[2 - row].find(c => c.c === colSign * cols[2])
   oldCards.push({r: c1.r, s: c1.s})
   oldCards.push({r: c2.r, s: c2.s})
   oldCards.push({r: c3.r, s: c3.s})
