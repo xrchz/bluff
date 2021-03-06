@@ -209,7 +209,7 @@ socket.on('updateBoard', data => {
   const players = Array.from(playersList.children)
   const currentIndex = players.findIndex(li => li.classList.contains('current') || li.classList.contains('winner'))
   const playerIndex = spectateInput.checked ? currentIndex : players.findIndex(li => nameInput.value === li.textContent)
-  const current = !spectateInput.checked && currentIndex === playerIndex
+  const current = !spectateInput.checked && currentIndex === playerIndex && players[currentIndex].classList.contains('current')
   function undoPlot() {
     myHandDiv.childNodes.forEach(span => {
       if (span.validPlots) span.onclick()
