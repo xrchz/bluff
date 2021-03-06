@@ -259,10 +259,12 @@ socket.on('updateBoard', data => {
               for (let side = 0; side < 2; side++) {
                 const relSide = playerIndex ? 1 - side : side
                 const sideId = ['L','R'][relSide]
+                const addChild = ['prepend','appendChild'][relSide]
                 for (const row of board.validColumns[side]) {
                   const relRow = playerIndex ? 2 - row : row
                   const parentId = `${['my','md','op'][relRow]}${sideId}`
-                  const move = document.getElementById(parentId).appendChild(document.createElement('span'))
+                  const move = document.createElement('span')
+                  document.getElementById(parentId)[addChild](move)
                   move.classList.add(suitNames[suit])
                   move.classList.add('clickable')
                   move.textContent = '🃟'
