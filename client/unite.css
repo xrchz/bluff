@@ -44,9 +44,6 @@ input[type=button], input[type=submit] {
 #spectators {
   color: SlateGray
 }
-.disconnected {
-  color: Pink;
-}
 #games {
   list-style-type: none;
   display: flex;
@@ -73,8 +70,17 @@ ul.inline > li {
   background-color: NavajoWhite;
   color: #004;
 }
-.winner::after {
+#players > li.current::after {
+  content: ' (*)';
+}
+#players > li.winner::after {
   content: ' victorious!'
+}
+.disconnected {
+  color: Pink;
+}
+#players > li.disconnected::after {
+  content: ' (d/c)';
 }
 .current.disconnected {
   background-color: NavajoWhite;
