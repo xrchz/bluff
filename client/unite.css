@@ -100,7 +100,7 @@ ul.inline > li {
 #myHand > span,
 #holding > span {
   font-size: xx-large;
-  padding: 0.2em;
+  margin: 0.2em;
   text-align: center;
 }
 #opHand, #myHand {
@@ -139,8 +139,8 @@ ul.inline > li {
   margin-right: 2em;
 }
 #deck > div {
-  padding-top: 0.2em;
-  padding-bottom: 0.2em;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
 }
 #playArea > div:last-child {
   display: flex;
@@ -184,6 +184,10 @@ ul.inline > li {
 }
 .spades {
   color: PowderBlue;
+}
+span.clickable {
+  border-style: dashed;
+  border-width: 1px;
 }
 span.clickable:hover {
   cursor: pointer;
