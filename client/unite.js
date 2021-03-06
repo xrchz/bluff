@@ -315,17 +315,17 @@ socket.on('updateBoard', data => {
     const colSign = playerIndex ? -1 : 1
     const rowId = ['my','md','op'][relRow]
     const ZtoN = z => Math.floor((z - 1) / 2)
-    const zs = [ZtoN(board.z[row][R]), [1,2,1][row], ZtoN(board.z[row][L])]
-    const rowDivs = ['R','M','L'].map(sideId => document.getElementById(`${rowId}${sideId}`))
-    let n = 0
+    const zs = [ZtoN(board.z[row][L]), [1,2,1][row], ZtoN(board.z[row][R])]
+    const rowDivs = ['L','M','R'].map(sideId => document.getElementById(`${rowId}${sideId}`))
+    let n = zs.shift()
     for (const card of rowCards) {
-      while (!n) n = zs.pop()
+      while (!n) { n = zs.shift(); rowDivs.shift() }
       const span = fragment.appendChild(document.createElement('span'))
       span.textContent = cardChar(card.s, card.r)
       span.homeColumn = colSign * card.c
       span.spanColumn = span.homeColumn
       span.classList.add(suitNames[card.s])
-      if (!--n) rowDivs.pop().appendChild(fragment)
+      if (!--n) rowDivs[0].appendChild(fragment)
     }
   }
   if (current) {
