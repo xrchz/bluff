@@ -509,7 +509,6 @@ socket.on('appendLog', entry => {
       span.textContent = `${entry.name} takes ${rankName(entry.rank)}${suitCharBold[entry.suit]} to ${entry.dest}.`
     else {
       span.textContent = `${entry.name} reorders via ${rankName(entry.rank)}.`
-      // TODO: find the relevant cards from entry.cols, and add onclick to toggle highlight
     }
   }
   log.appendChild(li)

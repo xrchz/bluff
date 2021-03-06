@@ -222,6 +222,34 @@ function checkPlot(newHand, newBoard, cols, hand, board, playerIndex) {
   return [c1, c2, c3]
 }
 
+const colShift = (row, dir, col) =>
+  col + dir * (
+    (Math.abs(col) <= 2 &&
+      ((Math.sign(col) === Math.sign(dir))
+        === (Math.abs(col) === 1 && row === 1))) ?
+    1 : 2)
+
+const cardShift = (row, dir) =>
+  c => c.c = colShift(row, dir, c.c)
+
+function rebalance(board) {
+  const imbalances = board.z.map(z => z[1] - z[0])
+  if (imbalances.every(b => 2 < b)) {
+    board.z.forEach(z => {
+      z[0] += 2
+      z[1] -= 2
+    })
+    board.b.forEach((row, i) => row.forEach(cardShift(i, -1)))
+  }
+  else if (imbalances.every(b => b < -2)) {
+    board.z.forEach(z => {
+      z[0] -= 2
+      z[1] += 2
+    })
+    board.b.forEach((row, i) => row.forEach(cardShift(i, +1)))
+  }
+}
+
 function checkWin(gameName) {
   const game = games[gameName]
   const winner = game.players.find(player =>
@@ -436,6 +464,7 @@ io.on('connection', socket => {
             const nextIndex = 1 - playerIndex
             const nextPlayer = game.players[nextIndex]
             nextPlayer.current = true
+            rebalance(game.board)
             game.board.validColumns = validColumns(game.board.z)
             game.board.validPlots = validPlots(game.board, nextPlayer.hand, nextIndex)
           }
@@ -472,7 +501,7 @@ io.on('connection', socket => {
             boardCards[i].r = c.r
             boardCards[i].s = c.s
           })
-          appendLog(gameName, {name: player.name, rank: boardCards[0].r, cols: data.cols})
+          appendLog(gameName, {name: player.name, rank: boardCards[0].r})
           delete player.current
           checkWin(gameName)
           if (!game.ended) {
