@@ -143,9 +143,7 @@ ul.inline > li {
   grid-template-columns: 1fr auto 1fr;
 }
 #board > div > div.left {
-  display: flex;
-  flex-direction: row-reverse;
-  text-align: right;
+  justify-content: right;
 }
 #board > div > div {
   display: flex;

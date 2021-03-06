@@ -195,7 +195,7 @@ socket.on('updateBoard', data => {
     const div = fragment.appendChild(document.createElement('div'))
     div.classList.add(suitNames[suit])
     const rem = deck[suit].length
-    div.appendChild(document.createElement('span')).textContent = `(${rem}) `
+    div.appendChild(document.createElement('span')).textContent = `(${rem === 10 ? 'X' : rem}) `
     const span = div.appendChild(document.createElement('span'))
     span.classList.add(suitNames[suit])
     if (!rem)
