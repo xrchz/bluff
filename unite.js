@@ -158,20 +158,19 @@ const cardCmp = (a, b) =>
 function plotColumns(col, dir) {
   let t1 = col, t2, t3
   if ((col === 1 && dir === 0) || (col === -1 && dir === 1)) {
-    t2 = 0
+    t2 = t1
     t3 = 0
   }
-  else if (col === 0) {
-    t2 = 0
-    t3 = dir ? 1 : -1
-  }
-  else if (Boolean(dir) === col > 0) {
-    t2 = t1 + 1
-    t3 = t2 + 1
-  }
   else {
-    t2 = t1 - 1
-    t3 = t2 - 1
+    const i = dir ? 1 : -1
+    if (col === 0) {
+      t2 = i
+      t3 = i
+    }
+    else {
+      t2 = t1 + i
+      t3 = t2 + i
+    }
   }
   return [t2, t3]
 }
@@ -182,8 +181,9 @@ function validPlots(board, hand, playerIndex) {
   const L = playerIndex
   const R = 1 - playerIndex
   const base = playerIndex ? board.b[row].slice().reverse() : board.b[row]
-  for (let dir = 0; dir < 1; dir++) {
-    let col = 2 - board.z[row][L]
+  for (let dir = 0; dir < 2; dir++) {
+    let col = -board.z[row][L]
+    col += col === -1 ? 1 : 2
     for (const baseCard of base) {
       const pcs = plotColumns(col, dir)
       if (hand.includes(baseCard.r) &&
@@ -374,8 +374,8 @@ io.on('connection', socket => {
         currentPlayer.current = true
         game.board = { b: [[],[],[]], z: [[1,1],[2,2],[1,1]] }
         game.board.b[0].push({s: 0, c: 0, r: game.deck[0].pop()})
-        game.board.b[1].push({s: 0, c: 0, r: game.deck[0].pop()})
-        game.board.b[1].push({s: 0, c: 0, r: game.deck[0].pop()})
+        game.board.b[1].push({s: 0, c: -1, r: game.deck[0].pop()})
+        game.board.b[1].push({s: 0, c: +1, r: game.deck[0].pop()})
         game.board.b[2].push({s: 0, c: 0, r: game.deck[0].pop()})
         game.board.validColumns = validColumns(game.board.z)
         game.board.validPlots = validPlots(game.board, currentPlayer.hand, playerIndex)
