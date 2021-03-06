@@ -228,10 +228,7 @@ socket.on('updateBoard', data => {
                 const temp = hand.textContent
                 hand.textContent = hold.textContent
                 hold.textContent = temp
-                if (hold.classList.contains('fromHand'))
-                  hold.classList.remove('fromHand')
-                else
-                  hold.classList.add('fromHand')
+                hold.classList.toggle('fromHand')
               }
               for (let side = 0; side < 2; side++) {
                 const relSide = playerIndex ? 1 - side : side

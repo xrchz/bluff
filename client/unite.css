@@ -64,7 +64,8 @@ ul.inline {
 }
 ul.inline > li {
   display: inline;
-  padding-left: 1em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
 .current {
   background-color: NavajoWhite;
