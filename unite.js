@@ -427,7 +427,8 @@ io.on('connection', socket => {
           else {
             player.hand[suit] = rank
           }
-          appendLog(gameName, {name: player.name, suit: suit, dest: data.keepHand ? 'the board' : 'hand'})
+          appendLog(gameName, {name: player.name, rank: rank, suit: suit,
+                               dest: data.keepHand ? 'the board' : 'hand'})
           delete player.current
           checkWin(gameName)
           if (!game.ended) {
@@ -465,14 +466,12 @@ io.on('connection', socket => {
                                      player.hand, game.board, playerIndex)
         if (boardCards) {
           appendUndo(gameName)
-          const playerRow = playerIndex ? 2 : 0
-          const suit = boardCards[playerRow].s
           player.hand = data.hand
           data.board.forEach((c, i) => {
             boardCards[i].r = c.r
             boardCards[i].s = c.s
           })
-          appendLog(gameName, {name: player.name, suit: suit, cols: data.cols})
+          appendLog(gameName, {name: player.name, rank: boardCards[0].r, cols: data.cols})
           delete player.current
           checkWin(gameName)
           if (!game.ended) {

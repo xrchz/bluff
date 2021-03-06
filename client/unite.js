@@ -18,11 +18,15 @@ const boardDiv = document.getElementById('board')
 const holdingDiv = document.getElementById('holding')
 const opHandDiv = document.getElementById('opHand')
 const myHandDiv = document.getElementById('myHand')
+const doneButton = document.getElementById('done')
 
 const suitNames = ['spades', 'diamonds', 'clubs', 'hearts']
-const suitChar = ['♤', '♢',	'♧', '♡']
+const suitChar = ['♤', '♢', '♧', '♡']
+const suitCharBold = ['♠', '♦', '♣', '♥']
 const cardChar = (suit, rank) =>
   String.fromCodePoint(0x1F001 + [0xA0, 0xC0, 0xD0, 0xB0][suit] + rank)
+const rankName = r => r ? r + 1 : 'A'
+const charRank = c => (c.codePointAt(0) - 1) % 16
 
 const fragment = document.createDocumentFragment()
 
@@ -292,9 +296,9 @@ socket.on('appendLog', entry => {
   else {
     const span = li.appendChild(document.createElement('span'))
     if (entry.dest)
-      span.textContent = `${entry.name} claims from the ${suitNames[entry.suit]} deck to ${entry.dest}.`
+      span.textContent = `${entry.name} claims ${rankName(entry.rank)}${suitCharBold[entry.suit]} to ${entry.dest}.`
     else {
-      span.textContent = `${entry.name} reorders via ${suitNames[entry.suit]}.`
+      span.textContent = `${entry.name} reorders via ${rankName(entry.rank)}.`
       // TODO: find the relevant cards from entry.cols, and add onclick to toggle highlight
     }
   }
