@@ -83,6 +83,12 @@ ul.inline > li {
 #players > li.disconnected::after {
   content: ' (d/c)';
 }
+#players > li.current.disconnected::after {
+  content: ' (d/c) (*)';
+}
+#players > li.winner.disconnected::after {
+  content: ' (d/c) victorious!';
+}
 .current.disconnected {
   background-color: NavajoWhite;
   color: DarkRed;

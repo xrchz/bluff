@@ -44,8 +44,14 @@ input[type=button], input[type=submit] {
 #players li.current::after {
   content: ' (*)';
 }
+#players li.current.disconnected::after {
+  content: ' (d/c) (*)';
+}
 #players li.winner::after {
   content: ' victorious!'
+}
+#players li.winner.disconnected::after {
+  content: ' (d/c) victorious!'
 }
 #games {
   list-style-type: none;
