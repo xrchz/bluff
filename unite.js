@@ -230,6 +230,7 @@ function checkWin(gameName) {
   if (winner) {
     game.ended = true
     winner.winner = true
+    appendLog(gameName, `The game ends with ${winner.name} victorious!`)
   }
 }
 
