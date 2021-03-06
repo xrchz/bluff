@@ -16,9 +16,9 @@ const playArea = document.getElementById('playArea')
 const deckDiv = document.getElementById('deck')
 const boardDiv = document.getElementById('board')
 const holdingDiv = document.getElementById('holding')
-const opHandDiv = document.getElementById('opHand')
 const myHandDiv = document.getElementById('myHand')
 const doneButton = document.getElementById('done')
+const rowIds = ['myBase', 'middle', 'opBase']
 
 const suitNames = ['spades', 'diamonds', 'clubs', 'hearts']
 const suitChar = ['♤', '♢', '♧', '♡']
@@ -45,8 +45,6 @@ undoButton.onclick = () => {
   socket.emit('undoRequest')
   errorMsg.innerHTML = ''
 }
-
-const rowIds = ['myBase', 'middle', 'opBase']
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -198,7 +196,7 @@ doneButton.onclick = () => {
     })
   }
   doneButton.hidden = true
-  socket.emit('hatchRequest', {hand: hand, board: board, cols: cols})
+  socket.emit('reorderRequest', {hand: hand, board: board, cols: cols})
 }
 
 socket.on('updateBoard', data => {
@@ -251,7 +249,7 @@ socket.on('updateBoard', data => {
             if ('activePlots' in holdingDiv)
               undoPlot()
             else
-              socket.emit('claimRequest', {suit: suit})
+              socket.emit('takeRequest', {suit: suit})
           }
         else {
           span.onclick = () => {
@@ -297,8 +295,8 @@ socket.on('updateBoard', data => {
                   move.classList.add('clickable')
                   move.textContent = '🃟'
                   move.onclick = () =>
-                    socket.emit('claimRequest', { suit: suit, pos: {side: side, row: row},
-                                                  keepHand: !hold.classList.contains('fromHand') })
+                    socket.emit('takeRequest', { suit: suit, pos: {side: side, row: row},
+                                                 keepHand: !hold.classList.contains('fromHand') })
                 }
               }
             }

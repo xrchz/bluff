@@ -103,6 +103,15 @@ ul.inline > li {
   padding: 0.2em;
   text-align: center;
 }
+#opHand, #myHand {
+  display: flex;
+}
+#opHand {
+  flex-direction: row-reverse;
+}
+#myHand {
+  flex-direction: row;
+}
 #holding, #buffer {
   display: flex;
   font-size: xx-large;

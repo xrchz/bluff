@@ -398,7 +398,7 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('claimRequest', data => inGame((gameName, game) => {
+  socket.on('takeRequest', data => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       const suit = data.suit
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
@@ -442,22 +442,22 @@ io.on('connection', socket => {
           updateBoard(gameName)
         }
         else {
-          console.log(`error: ${socket.playerName} in ${gameName} made an invalid claim`)
-          socket.emit('errorMsg', `Error: that is not a valid claim.`)
+          console.log(`error: ${socket.playerName} in ${gameName} made an invalid take`)
+          socket.emit('errorMsg', `Error: that is not a valid take.`)
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
-        socket.emit('errorMsg', 'Error: it is not your turn to claim.')
+        socket.emit('errorMsg', 'Error: it is not your turn to take.')
       }
     }
     else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried claiming before start`)
-      socket.emit('errorMsg', `Error: claiming is not currently possible.`)
+      console.log(`error: ${socket.playerName} in ${gameName} tried taking before start`)
+      socket.emit('errorMsg', `Error: taking is not currently possible.`)
     }
   }))
 
-  socket.on('hatchRequest', data => inGame((gameName, game) => {
+  socket.on('reorderRequest', data => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = game.players[playerIndex]
@@ -484,18 +484,18 @@ io.on('connection', socket => {
           updateBoard(gameName)
         }
         else {
-          console.log(`error: ${socket.playerName} in ${gameName} tried hatching with bad data`)
-          socket.emit('errorMsg', `Error: hatch data is invalid.`)
+          console.log(`error: ${socket.playerName} in ${gameName} tried reordering with bad data`)
+          socket.emit('errorMsg', `Error: reorder data is invalid.`)
         }
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
-        socket.emit('errorMsg', 'Error: it is not your turn to hatch.')
+        socket.emit('errorMsg', 'Error: it is not your turn to reorder.')
       }
     }
     else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried hatching before start`)
-      socket.emit('errorMsg', `Error: hatching is not currently possible.`)
+      console.log(`error: ${socket.playerName} in ${gameName} tried reordering before start`)
+      socket.emit('errorMsg', `Error: reordering is not currently possible.`)
     }
   }))
 
