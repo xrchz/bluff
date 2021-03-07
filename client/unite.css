@@ -189,6 +189,12 @@ span.clickable {
   border-style: dashed;
   border-width: 1px;
 }
+span.clickable.claiming {
+  border-color: Orange;
+}
+span.clickable.reordering {
+  border-color: Orchid;
+}
 span.clickable:hover {
   cursor: pointer;
   background-color: LightGreen;

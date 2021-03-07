@@ -242,7 +242,7 @@ socket.on('updateBoard', data => {
       const rank = deck[suit][rem - 1]
       span.textContent = cardChar(suit, rank)
       if (current) {
-        span.classList.add('clickable')
+        span.classList.add('clickable', 'claiming')
         const hand = myHandDiv.children[suit]
         if (hand.classList.contains('empty'))
           span.onclick = () => {
@@ -275,7 +275,7 @@ socket.on('updateBoard', data => {
               hold.textContent = span.textContent
               hold.classList.add(suitNames[suit])
               span.classList.add('removed')
-              hold.classList.add('clickable')
+              hold.classList.add('clickable', 'claiming')
               hold.onclick = () => {
                 const temp = hand.textContent
                 hand.textContent = hold.textContent
@@ -292,7 +292,7 @@ socket.on('updateBoard', data => {
                   const move = document.createElement('span')
                   document.getElementById(parentId)[addChild](move)
                   move.classList.add(suitNames[suit])
-                  move.classList.add('clickable')
+                  move.classList.add('clickable', 'claiming')
                   move.textContent = '🃟'
                   move.onclick = () =>
                     socket.emit('takeRequest', { suit: suit, pos: {side: side, row: row},
@@ -379,17 +379,17 @@ socket.on('updateBoard', data => {
       if ('activePlots' in holdingDiv) {
         boardDiv.querySelectorAll('span').forEach(span => {
           if (span.fromHand || span.validPlots && span.validPlots.some(v => holdingDiv.activePlots.includes(v))) {
-            span.classList.add('clickable')
+            span.classList.add('clickable', 'reordering')
             span.onclick = plotOnClick
           }
           else if (span.validPlots) {
-            span.classList.remove('clickable')
+            span.classList.remove('clickable', 'reordering')
             span.onclick = null
           }
         })
         myHandDiv.childNodes.forEach(span => {
           if (!span.classList.contains('empty')) {
-            span.classList.add('clickable')
+            span.classList.add('clickable', 'reordering')
             span.onclick = plotOnClick
           }
         })
@@ -397,17 +397,17 @@ socket.on('updateBoard', data => {
       else {
         boardDiv.querySelectorAll('span').forEach(span => {
           if (span.validPlots) {
-            span.classList.remove('clickable')
+            span.classList.remove('clickable', 'reordering')
             span.onclick = null
           }
         })
         myHandDiv.childNodes.forEach(span => {
-          span.classList.remove('clickable')
+          span.classList.remove('clickable', 'reordering')
           span.onclick = null
         })
         boardDiv.querySelectorAll('#myBase > div > span').forEach(span => {
           if (span.validPlots) {
-            span.classList.add('clickable')
+            span.classList.add('clickable', 'reordering')
             span.onclick = plotOnClick
           }
         })
@@ -436,7 +436,7 @@ socket.on('updateBoard', data => {
       }
       const last = holdingDiv.appendChild(document.createElement('span'))
       if (last.previousElementSibling) {
-        last.previousElementSibling.classList.remove('clickable')
+        last.previousElementSibling.classList.remove('clickable', 'reordering')
         last.previousElementSibling.onclick = null
       }
       moveCard(last, this)
@@ -446,7 +446,7 @@ socket.on('updateBoard', data => {
       this.classList.add('empty')
       if (this.parentElement.id === 'myHand') {
         this.textContent = suitChar[last.suitIndex]
-        this.classList.remove('clickable')
+        this.classList.remove('clickable', 'reordering')
         this.onclick = null
       }
       else {
@@ -458,7 +458,7 @@ socket.on('updateBoard', data => {
       const last = holdingDiv.lastElementChild
       if (last) {
         const hand = myHandDiv.children[last.suitIndex]
-        last.classList.add('clickable')
+        last.classList.add('clickable', 'reordering')
         if (hand.classList.contains('empty'))
           last.onclick = () => receiveLast(hand)
         else {
@@ -471,7 +471,7 @@ socket.on('updateBoard', data => {
         }
         boardDiv.querySelectorAll('span.empty').forEach(span => {
           span.classList.remove(...suitNames)
-          span.classList.add(suitNames[last.suitIndex], 'clickable')
+          span.classList.add(suitNames[last.suitIndex], 'clickable', 'reordering')
           span.onclick = () => receiveLast(span)
         })
         doneButton.hidden = true
@@ -479,7 +479,7 @@ socket.on('updateBoard', data => {
       else {
         const empties = boardDiv.querySelectorAll('span.empty')
         empties.forEach(span => {
-          span.classList.remove(...suitNames, 'clickable')
+          span.classList.remove(...suitNames, 'clickable', 'reordering')
           span.onclick = null
         })
         if (!empties.length)
