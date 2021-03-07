@@ -348,7 +348,6 @@ socket.on('updateBoard', data => {
       if (!span.classList.contains('empty'))
         span.fromHand = true
     })
-    // TODO: allow sending to hand from anywhere in holding, not just last
     function updateActivePlots() {
       const onPlot = []
       for (let i = 0; i < 3; i++) {
@@ -435,10 +434,6 @@ socket.on('updateBoard', data => {
         return this.onclick()
       }
       const last = holdingDiv.appendChild(document.createElement('span'))
-      if (last.previousElementSibling) {
-        last.previousElementSibling.classList.remove('clickable', 'reordering')
-        last.previousElementSibling.onclick = null
-      }
       moveCard(last, this)
       const thisSuitName = Array.from(this.classList.values()).find(v => suitNames.includes(v))
       last.classList.add(thisSuitName)
@@ -452,27 +447,27 @@ socket.on('updateBoard', data => {
       else {
         this.textContent = '🃟'
       }
+      const hand = myHandDiv.children[last.suitIndex]
+      last.classList.add('clickable', 'reordering')
+      last.onclick = () => {
+        if (hand.classList.contains('empty'))
+          receiveHold(hand, last)
+        else {
+          const temp = {}
+          moveCard(temp, last)
+          moveCard(last, hand)
+          moveCard(hand, temp)
+        }
+      }
       updateAfterChangingLast()
     }
     function updateAfterChangingLast() {
       const last = holdingDiv.lastElementChild
       if (last) {
-        const hand = myHandDiv.children[last.suitIndex]
-        last.classList.add('clickable', 'reordering')
-        if (hand.classList.contains('empty'))
-          last.onclick = () => receiveLast(hand)
-        else {
-          last.onclick = () => {
-            const temp = {}
-            moveCard(temp, last)
-            moveCard(last, hand)
-            moveCard(hand, temp)
-          }
-        }
         boardDiv.querySelectorAll('span.empty').forEach(span => {
           span.classList.remove(...suitNames)
           span.classList.add(suitNames[last.suitIndex], 'clickable', 'reordering')
-          span.onclick = () => receiveLast(span)
+          span.onclick = () => receiveHold(span, last)
         })
         doneButton.hidden = true
       }
@@ -487,12 +482,12 @@ socket.on('updateBoard', data => {
       }
       updateActivePlots()
     }
-    function receiveLast(target) {
-      const last = holdingDiv.lastElementChild
-      moveCard(target, last)
+    function receiveHold(target, hold) {
+      moveCard(target, hold)
       target.classList.remove('empty')
-      holdingDiv.removeChild(last)
-      updateAfterChangingLast()
+      const wasLast = hold === holdingDiv.lastElementChild
+      holdingDiv.removeChild(hold)
+      if (wasLast) updateAfterChangingLast()
     }
     updateActivePlots()
   }
