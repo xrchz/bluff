@@ -500,11 +500,16 @@ socket.on('appendLog', entry => {
     li.textContent = entry
   else {
     const span = li.appendChild(document.createElement('span'))
-    if (entry.dest)
-      span.textContent = `${entry.name} takes ${rankName(entry.rank)}${suitCharBold[entry.suit]} to ${entry.dest}.`
+    if (entry.oldCards) {
+      const render = a => a.map(c => `${rankName(c.r)}${suitCharBold[c.s]}`).join(' ')
+      span.textContent = `${entry.name} reorders ${render(entry.oldCards)} to ${render(entry.newCards)}.`
+    }
     else {
-      const suffix = entry.newRank === entry.rank ? '' : ` (now ${rankName(entry.newRank)})`
-      span.textContent = `${entry.name} reorders via ${rankName(entry.rank)}${suffix}.`
+      const suit = suitCharBold[entry.suit]
+      const deckCard = `${rankName(entry.rank)}${suit}`
+      const dest = entry.handRank === null ? 'hand' :
+        `${entry.keepHand ? `the board (keeping ` : `hand (replacing `} ${rankName(entry.handRank)})`
+      span.textContent = `${entry.name} ${dest[0] === 't' ? 'moves' : 'takes'} ${deckCard} to ${dest}.`
     }
   }
   log.appendChild(li)

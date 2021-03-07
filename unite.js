@@ -441,7 +441,8 @@ io.on('connection', socket => {
               game.board.validColumns[data.pos.side].includes(data.pos.row))) {
           appendUndo(gameName)
           const rank = game.deck[suit].pop()
-          if (player.hand[suit] !== null) {
+          const handRank = player.hand[suit]
+          if (handRank !== null) {
             const side = data.pos.side
             const row = data.pos.row
             const col = game.board.z[row][side] * (side ? 1 : -1)
@@ -456,8 +457,8 @@ io.on('connection', socket => {
           else {
             player.hand[suit] = rank
           }
-          appendLog(gameName, {name: player.name, rank: rank, suit: suit,
-                               dest: data.keepHand ? 'the board' : 'hand'})
+          appendLog(gameName, {name: player.name, suit: suit, rank: rank,
+                               keepHand: data.keepHand, handRank: handRank})
           delete player.current
           checkWin(gameName)
           if (!game.ended) {
@@ -497,12 +498,12 @@ io.on('connection', socket => {
         if (boardCards) {
           appendUndo(gameName)
           player.hand = data.hand
-          const rank = boardCards[0].r
+          const oldCards = boardCards.map(c => ({r: c.r, s: c.s}))
           data.board.forEach((c, i) => {
             boardCards[i].r = c.r
             boardCards[i].s = c.s
           })
-          appendLog(gameName, {name: player.name, rank: rank, newRank: boardCards[0].r})
+          appendLog(gameName, {name: player.name, oldCards: oldCards, newCards: data.board})
           delete player.current
           checkWin(gameName)
           if (!game.ended) {
