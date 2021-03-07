@@ -21,20 +21,11 @@ console.log(`server started on ${port}`)
 if (unix)
   server.on('listening', () => fs.chmodSync(port, 0o777))
 
-function shuffleInPlace(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * i)
-    const t = array[i]
-    array[i] = array[j]
-    array[j] = t
-  }
-}
-
-const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
-
 const saveFile = `${gname}.json`
 
 const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
+
+const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
 function randomUnusedGameName() {
   if (Object.keys(games).length === 26 * 26) {
@@ -65,6 +56,15 @@ function updateGames(room) {
                 players: game.players.map(player => ({ name: player.name, socketId: player.socketId }))
               })
   io.in(room).emit('updateGames', data)
+}
+
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * i)
+    const t = array[i]
+    array[i] = array[j]
+    array[j] = t
+  }
 }
 
 function makeDeck() {
