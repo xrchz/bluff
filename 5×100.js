@@ -1,30 +1,29 @@
 'use strict'
 
-const express = require('express')
-const http = require('http')
 const fs = require('fs')
-var app = express()
-var server = http.createServer(app)
-var io = require('socket.io')(server)
+const express = require('express')
+const app = express()
+const gname = '5×100'
 
 app.get('/', (req, res) => {
-  res.sendFile(`${__dirname}/client/500.html`)
+  res.sendFile(`${__dirname}/client/${gname}.html`)
 })
 app.use(express.static(`${__dirname}/client`))
 
-const unix = '/run/games/500.socket'
-server.listen(unix)
-console.log(`server started on ${unix}`)
-server.on('listening', () => fs.chmodSync(unix, 0o777))
+const config = require(`${__dirname}/client/config.js`)
+const server = require('http').createServer(app)
+const io = require('socket.io')(server)
 
-function shuffleInPlace(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * i)
-    const t = array[i]
-    array[i] = array[j]
-    array[j] = t
-  }
-}
+const port = config.ServerPort(gname)
+const unix = typeof port === 'string'
+server.listen(port)
+console.log(`server started on ${port}`)
+if (unix)
+  server.on('listening', () => fs.chmodSync(port, 0o777))
+
+const saveFile = `${gname}.json`
+
+const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
@@ -38,10 +37,6 @@ function randomUnusedGameName() {
   return name
 }
 
-const saveFile = 'games.json'
-
-const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
-
 function saveGames() {
   let toSave = {}
   for (const [gameName, game] of Object.entries(games))
@@ -51,6 +46,25 @@ function saveGames() {
       toSave,
       (k, v) => k === 'socketId' ? null :
                 k === 'spectators' ? [] : v))
+}
+
+function updateGames(room) {
+  if (!room) room = 'lobby'
+  const data = []
+  for (const [gameName, game] of Object.entries(games))
+    data.push({ name: gameName,
+                players: game.players.map(player => ({ name: player.name, disconnected: !player.socketId }))
+              })
+  io.in(room).emit('updateGames', data)
+}
+
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * i)
+    const t = array[i]
+    array[i] = array[j]
+    array[j] = t
+  }
 }
 
 const Jack  = 11
@@ -409,16 +423,6 @@ function appendUndo(gameName) {
   entry.roundsLength = game.rounds.length
   game.undoLog.push(entry)
   io.in(gameName).emit('showUndo', true)
-}
-
-function updateGames(room) {
-  if (!room) room = 'lobby'
-  const data = []
-  for (const [gameName, game] of Object.entries(games))
-    data.push({ name: gameName,
-                players: game.players.map(player => ({ name: player.name, disconnected: !player.socketId }))
-              })
-  io.in(room).emit('updateGames', data)
 }
 
 io.on('connection', socket => {

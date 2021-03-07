@@ -1,5 +1,5 @@
 /* global io */
-var socket = io("https://xrchz.net", {path: '/games/500/socket.io'})
+var socket = io(ServerURI('5×100'), SocketOptions('5×100'))
 
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
