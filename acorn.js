@@ -380,7 +380,7 @@ io.on('connection', socket => {
             let what = 'nothing'
             if (cell.acorn) {
               cell.dug = true
-              const reward = game.minReward + Math.floor(Math.random() * (game.maxReward - game.minReward))
+              const reward = game.minReward + Math.floor(Math.random() * (1 + game.maxReward - game.minReward))
               what = `an acorn providing ${reward} stamina`
               current.stamina += reward
               current.acorns += 1
