@@ -117,3 +117,25 @@ ul.inline > li {
 div.dug {
   background-color: BurlyWood;
 }
+#settingsHeading {
+  width: 100%;
+  text-align: center;
+}
+#settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 50%;
+  margin: auto;
+}
+#settings[hidden] {
+  display: none;
+}
+input[type=number] {
+  background-color: DarkRed;
+  color: Orange;
+  font-size: medium;
+}
+#minReward, #maxReward {
+  width: 2em;
+}

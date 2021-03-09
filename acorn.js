@@ -426,6 +426,30 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('setMinReward', n => inGame((gameName, game) => {
+    if (game.players.find(player => player.socketId === socket.id)) {
+      if (!Number.isInteger(n)) n = game.minReward
+      game.minReward = Math.min(Math.max(0, n), game.maxReward)
+      io.in(gameName).emit('updateMinReward', game.minReward)
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} failed setting minReward`)
+      socket.emit('errorMsg', 'Error: cannot set minReward: invalid player.')
+    }
+  }))
+
+  socket.on('setMaxReward', n => inGame((gameName, game) => {
+    if (game.players.find(player => player.socketId === socket.id)) {
+      if (!Number.isInteger(n)) n = game.maxReward
+      game.maxReward = Math.max(Math.max(0, n), game.minReward)
+      io.in(gameName).emit('updateMaxReward', game.maxReward)
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} failed setting maxReward`)
+      socket.emit('errorMsg', 'Error: cannot set maxReward: invalid player.')
+    }
+  }))
+
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
     const gameName = socket.gameName

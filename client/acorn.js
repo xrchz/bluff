@@ -19,6 +19,9 @@ const bidSelect = document.getElementById('select')
 const autobid = document.getElementById('autobid')
 const bidButton = bidSelect.nextElementSibling
 const bidForm = bidSelect.parentElement
+const settingsDiv = document.getElementById('settings')
+const minRewardInput = document.getElementById('minReward')
+const maxRewardInput = document.getElementById('maxReward')
 
 const DugColours = ['black', 'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
 
@@ -53,6 +56,8 @@ socket.on('ensureLobby', () => {
   bidsDiv.hidden = true
   gridDiv.innerHTML = ''
   gridDiv.hidden = true
+  settingsDiv.hidden = true
+  settingsDiv.previousElementSibling.hidden = true
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -132,12 +137,21 @@ socket.on('joinedGame', data => {
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
+    minRewardInput.onchange = () =>
+      socket.emit('setMinReward', minRewardInput.valueAsNumber)
+    maxRewardInput.onchange = () =>
+      socket.emit('setMaxReward', maxRewardInput.valueAsNumber)
   }
   joinButton.hidden = true
+  settingsDiv.hidden = false
+  settingsDiv.previousElementSibling.hidden = false
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
     history.pushState(data, `Game ${data.gameName}`)
 })
+
+socket.on('updateMinReward', n => minRewardInput.value = n)
+socket.on('updateMaxReward', n => maxRewardInput.value = n)
 
 socket.on('gameStarted', () => {
   startButton.hidden = true
