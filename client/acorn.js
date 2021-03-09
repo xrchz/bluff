@@ -23,7 +23,7 @@ const settingsDiv = document.getElementById('settings')
 const minRewardInput = document.getElementById('minReward')
 const maxRewardInput = document.getElementById('maxReward')
 
-const DugColours = ['black', 'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
+const DugColours = ['#800000', '#9a6324', '#808000', '#3cb44b', '#469990', '#000075', '#911eb4', '#000000']
 
 const fragment = document.createDocumentFragment()
 
