@@ -151,7 +151,8 @@ function nextTurn(gameName) {
   if (dead || drawn || finished) {
     game.ended = true
     const score = game.played.reduce((total, count) => total + count)
-    appendLog(gameName, `The game ends${dead ? ' in defeat' : finished ? ' in victory' : ''} with a score of ${score}.`)
+    const suffix = game.undoCount ? ` (using ${game.undoCount} undo${game.undoCount === 1 ? '' : 's'})` : ''
+    appendLog(gameName, `The game ends${dead ? ' in defeat' : finished ? ' in victory' : ''} with a score of ${score}${suffix}.`)
   }
   else {
     game.whoseTurn++
@@ -280,6 +281,7 @@ io.on('connection', socket => {
 
   socket.on('undoRequest', () => inGame((gameName, game) => {
     if (game.started && game.undoLog.length) {
+      game.undoCount++
       const entry = game.undoLog.pop()
       copy(stateKeys.game, entry, game, true)
       io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
@@ -301,6 +303,7 @@ io.on('connection', socket => {
         console.log(`starting ${gameName}`)
         game.started = true
         game.undoLog = []
+        game.undoCount = 0
         game.log = []
         game.whoseTurn = 0
         game.deck = makeDeck()
