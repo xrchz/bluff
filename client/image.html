@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang=en>
+  <head>
+    <title>Image</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <!--link rel="icon" href="image.png" type="image/png" /-->
+    <link rel=stylesheet href="image.css" type="text/css" />
+    <script src="socket.io/socket.io.js"></script>
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <form class=inline>
+      <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+      <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+      <input id=join type=submit value="Join" />
+      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+      <input id=start type=button value="Start!" hidden />
+      <input id=undo type=button value="Undo" hidden />
+    </form>
+    <ul id=games hidden></ul>
+    <ul id=spectators class=inline></ul>
+    <ul id=log hidden></ul>
+    <div id=images>
+      <div id=drawing></div>
+      <div id=target></div>
+    </div>
+    <div id=info></div>
+    <div id=players></div>
+    <script src="image.js"></script>
+  </body>
+</html>

@@ -1,0 +1,141 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: #121;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button] {
+  background-color: RoyalBlue;
+  color: LightYellow;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  max-width: 40em;
+  margin: auto;
+}
+#log > li > ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators, .empty {
+  color: SlateGray
+}
+.disconnected {
+  color: Pink;
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+#info {
+  display: flex;
+  justify-content: space-around;
+  font-weight: bold;
+  max-width: 40em;
+  margin: auto;
+}
+#info[hidden] {
+  display: none;
+}
+#images {
+  margin: auto;
+  display: flex;
+  justify-content: space-around;
+  width: 60vw;
+  margin-top: 1em;
+}
+#images > div {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  width: min-content;
+}
+#target > div, #drawing > div {
+  border: dotted DarkGrey 2px;
+  text-align: center;
+  font-size: 8vw;
+  white-space: pre;
+  width: 10vw;
+  line-height: 10vw;
+}
+#drawing > div.cursor {
+  border: dashed DarkOrange 4px;
+}
+#players {
+  display: flex;
+  justify-content: space-around;
+}
+ol {
+  list-style-type: lower-roman;
+  margin: 0;
+}
+ol > li > input[type=button], ol > li > span {
+  font-size: 3vw;
+  width: 4vw;
+  height: 4vw;
+  background-color: DarkGreen;
+  color: LightYellow;
+}
+ol > li > span {
+  display: inline-block;
+  text-align: center;
+}
+li.selected {
+  background-color: #00a;
+}
+#players[hidden] {
+  display: none;
+}
