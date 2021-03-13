@@ -33,11 +33,11 @@ const Characters =
    '▞','▛','▟','█']
 
 const Directions = ['↺','↻']
-const Referents = ['⬚','⊞']
+const Referents = ['□','⊞','⬚']
 
 const CardChar = c =>
-  c.t < 2 ? Characters[Math.pow(2, 2 * c.t + c.b)] :
-  c.t < 3 ? Directions[c.b] : Referents[c.b]
+  c.t < 2 ? Characters[Math.pow(2, 2 * c.t + c.v)] :
+  c.t < 3 ? Directions[c.v] : Referents[c.v]
 
 const fragment = document.createDocumentFragment()
 
@@ -256,7 +256,7 @@ socket.on('appendLog', entry => {
   else if ('cluesRevealed' in entry) {
     for (const clue of entry.cluesRevealed) {
       fragment.appendChild(document.createElement('li')).textContent =
-        `${playerName(clue.mover)} clues ${playerName(clue.player)} about their ${ordinal(clue.card)} card: '${CardChar(clue.revealedCard)}'`
+        `${playerName(clue.mover)} clues ${playerName(clue.player)} about their ${ordinal(clue.card)} card: '${CardChar(clue.revealedCard)}'.`
     }
     li.appendChild(document.createElement('ul')).appendChild(fragment)
   }
@@ -267,7 +267,7 @@ socket.on('appendLog', entry => {
   else if ('playsPlayed' in entry) {
     for (const play of entry.playsPlayed) {
       fragment.appendChild(document.createElement('li')).textContent =
-        `${playerName(play.mover)} plays their ${ordinal(play.card)} card: '${CardChar(play.playedCard)}'`
+        `${playerName(play.mover)} plays their ${ordinal(play.card)} card: '${CardChar(play.playedCard)}'.`
     }
     li.appendChild(document.createElement('ul')).appendChild(fragment)
   }
@@ -278,19 +278,32 @@ socket.on('appendLog', entry => {
   else if ('characters' in entry) {
     entry.characters.push(entry.oldChar)
     li.textContent = `Characters combine: ${entry.characters.map(c => `'${Characters[c]}'`).join(' + ')}`
-    li.textContent += ` = '${Characters[entry.newChar]}'`
+    li.textContent += ` = '${Characters[entry.newChar]}'.`
   }
   else if ('directions' in entry) {
     li.textContent = `Directions combine: ${entry.directions.map(b => Directions[b]).join(' + ')}`
-    li.textContent += ` = ${Math.abs(entry.vector)}×${Directions[Number(entry.vector > 0)]}`
+    li.textContent += ` = ${Math.abs(entry.vector)}×${Directions[Number(entry.vector > 0)]}.`
   }
   else if ('referents' in entry) {
     li.textContent = `Referents combine: ${entry.referents.map(b => Referents[b]).join(' + ')}`
-    li.textContent += ` = ${entry.referent === 0 ? 'none' : Referents[Number(entry.referent > 0)]}`
+    let comboStr = ''
+    for (let i = 0; i < Referents.length; i++)
+      if (entry.combo & (1 << i))
+        comboStr += Referents[i]
+    li.textContent += ` = ${entry.combo ? comboStr : 'none'}.`
   }
   else if ('newlyCorrect' in entry) {
     li.textContent = `${plural(entry.newlyCorrect,'character')} became correct,`
     li.textContent += ` producing ${plural(entry.newClues,'clue')}.`
+  }
+  else if ('characterRotate' in entry) {
+    li.textContent = `Character '${Characters[entry.characterRotate]}' rotates to '${Characters[entry.newChar]}'.`
+  }
+  else if ('drawingRotate' in entry) {
+    li.textContent = `The drawing rotates by ${entry.drawingRotate}.`
+  }
+  else if ('cursorRotate' in entry) {
+    li.textContent = `The cursor rotates from ${entry.cursorRotate} to ${entry.newCursor}.`
   }
   else {
     li.textContent = 'TODO: log'

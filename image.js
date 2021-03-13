@@ -73,9 +73,9 @@ const Horizontal = 0
 const Vertical = 1
 const Direction = 2
 const Referent = 3
-const Cursor = -1
-const Nothing = 0
+const Character = 0
 const Drawing = 1
+const Cursor = 2
 
 function rotateOnce(x) {
   const l = (x >> 0) % 2
@@ -92,10 +92,12 @@ function rotateChar(v, c) {
 
 function makeDeck() {
   const deck = []
-  for (let t = 0; t < 4; t++)
-    for (let b = 0; b < 2; b++)
+  for (let t = 0; t < 4; t++) {
+    const vMax = t < 3 ? 2 : 3
+    for (let v = 0; v < vMax; v++)
       for (let n = 0; n < CardMultiplicity; n++)
-        deck.push({t: t, b: b})
+        deck.push({t: t, v: v})
+  }
   return deck
 }
 
@@ -369,37 +371,43 @@ io.on('connection', socket => {
               appendLog(gameName, {'playsPlayed': playAttempts})
               const characters = playAttempts.flatMap(play =>
                 play.playedCard.t < 2 ?
-                [Math.pow(2, 2 * play.playedCard.t + play.playedCard.b)]
+                [Math.pow(2, 2 * play.playedCard.t + play.playedCard.v)]
                 : [])
               const oldDrawing = game.drawing.slice()
               const oldChar = game.drawing[game.cursor]
               const newChar = characters.reduce((n, c) => n ^ c, oldChar)
               if (characters.length) appendLog(gameName, {'characters': characters, 'oldChar': oldChar, 'newChar': newChar})
               game.drawing[game.cursor] = newChar
-              const reducer = (s, c) => s + (c * 2 - 1)
-              const directions = playAttempts.flatMap(play => play.playedCard.t === Direction ? [play.playedCard.b] : [])
-              const vector = directions.reduce(reducer, 0)
+              const directions = playAttempts.flatMap(play => play.playedCard.t === Direction ? [play.playedCard.v] : [])
+              const vector = directions.reduce((s, c) => s + (c * 2 - 1), 0)
+              const modVector = ((vector % 4) + 4) % 4
               if (directions.length) appendLog(gameName, {'directions': directions, 'vector': vector})
-              const referents = playAttempts.flatMap(play => play.playedCard.t === Referent ? [play.playedCard.b] : [])
-              const referent = Math.sign(referents.reduce(reducer, 0))
-              if (referents.length) appendLog(gameName, {'referents': referents, 'referent': referent})
-              if (referent === Cursor) {
-                game.cursor += vector
-                game.cursor = ((game.cursor % 4) + 4) % 4
-                // TODO: log change of cursor
+
+              const referents = playAttempts.flatMap(play => play.playedCard.t === Referent ? [play.playedCard.v] : [])
+              const combo = referents.reduce((c, x) => c ^ (1 << x), 0)
+              if (referents.length) appendLog(gameName, {'referents': referents, 'combo': combo})
+              if (combo & (1 << Character)) {
+                const oldChar = game.drawing[game.cursor]
+                const newChar = rotateChar(modVector, oldChar)
+                game.drawing[game.cursor] = newChar
+                appendLog(gameName, {'characterRotate': oldChar, 'newChar': newChar})
               }
-              else if (referent === Drawing) {
+              if (combo & (1 << Drawing)) {
                 const newDrawing = Array(4)
-                const modVector = ((vector % 4) + 4) % 4
                 let i = modVector
                 for (const c of game.drawing) {
                   newDrawing[i] = rotateChar(modVector, c)
                   if (++i === 4) i = 0
                 }
                 game.drawing = newDrawing
-                // TODO: log change of drawing
+                appendLog(gameName, {'drawingRotate': modVector})
               }
-              // TODO: else log no movement
+              if (combo & (1 << Cursor)) {
+                const oldCursor = game.cursor
+                game.cursor += vector
+                game.cursor = ((game.cursor % 4) + 4) % 4
+                appendLog(gameName, {'cursorRotate': oldCursor, 'newCursor': game.cursor})
+              }
               const newlyCorrect = game.drawing.reduce((s, c, i) =>
                 (oldDrawing[i] !== game.target[i]) && (c === game.target[i]) ? s + 1 : s, 0)
               if (newlyCorrect) {
