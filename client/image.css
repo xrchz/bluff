@@ -133,7 +133,7 @@ ol > li > span {
   display: inline-block;
   text-align: center;
 }
-li.selected {
+li.selected > input[type=button] {
   background-color: #00a;
 }
 #players[hidden] {
