@@ -16,11 +16,22 @@ const drawingDiv = document.getElementById('drawing')
 const infoDiv = document.getElementById('info')
 const playersDiv = document.getElementById('players')
 
+/*
 const Characters =
   [' ','╴','╶','─',
    '╵','┘','└','┴',
    '╷','┐','┌','┬',
    '│','┤','├','┼',]
+*/
+const Characters =
+  [' ','▘','▗','▚',
+
+   '▝','▀','▐','▜',
+
+   '▖','▌','▄','▙',
+
+   '▞','▛','▟','█']
+
 const Directions = ['↺','↻']
 const Referents = ['⬚','⊞']
 
