@@ -67,12 +67,8 @@ function shuffleInPlace(array) {
   }
 }
 
-const MaxClues = 8
 const CardMultiplicity = 5
-const Horizontal = 0
-const Vertical = 1
 const Direction = 2
-const Referent = 3
 const Character = 0
 const Drawing = 1
 const Cursor = 2
@@ -93,7 +89,7 @@ function rotateChar(v, c) {
 function makeDeck() {
   const deck = []
   for (let t = 0; t < 4; t++) {
-    const vMax = t < 3 ? 2 : 3
+    const vMax = t < 3 ? 2 : 4
     for (let v = 0; v < vMax; v++)
       for (let n = 0; n < CardMultiplicity; n++)
         deck.push({t: t, v: v})
@@ -110,12 +106,12 @@ function appendLog(gameName, entry) {
 const stateKeys = {
   game: [
     'players', 'started',
-    'deck', 'clues',
+    'deck', 'rotation',
     'target', 'drawing', 'cursor',
     'scored', 'ended'
   ], deck: true, target: true, drawing: true,
   players: 'player',
-  player: ['hand' ], hand: true
+  player: ['hand', 'current' ], hand: true
 }
 
 function copy(keys, from, to, restore) {
@@ -166,7 +162,7 @@ function updateDrawing(gameName, roomName) {
 function updateRemaining(gameName, roomName) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
-  io.in(roomName).emit('updateRemaining', { cards: game.deck.length, clues: game.clues, scored: game.scored })
+  io.in(roomName).emit('updateRemaining', { cards: game.deck.length, rotation: game.rotation, scored: game.scored })
 }
 
 io.on('connection', socket => {
@@ -309,7 +305,7 @@ io.on('connection', socket => {
         game.log = []
         game.deck = makeDeck()
         shuffleInPlace(game.deck)
-        game.clues = MaxClues
+        game.rotation = 0
         game.players.forEach(player => player.hand = [])
         const handSize = game.players.length < 4 ? 5 : 4
         for (let i = 0; i < handSize; i++)
@@ -318,6 +314,7 @@ io.on('connection', socket => {
         game.target = generateTarget()
         game.drawing = Array(4).fill(0)
         game.cursor = Math.floor(Math.random() * 4)
+        game.players[Math.floor(Math.random() * game.players.length)].current = true
         io.in(gameName).emit('gameStarted')
         io.in(gameName).emit('updatePlayers', game.players)
         io.in(gameName).emit('updateTarget', game.target)
@@ -337,111 +334,89 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('moveRequest', data => inGame((gameName, game) => {
+  socket.on('moveRequest', cardIndex => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
-      if (0 <= playerIndex) {
-        if (Number.isInteger(data.player) && 0 <= data.player && data.player < game.players.length &&
-            Number.isInteger(data.card) && 0 <= data.card && data.card < game.players[data.player].hand.length) {
-          const player = game.players[playerIndex]
-          player.move = data
-          player.move.mover = playerIndex
-          if (game.players.every(player => player.move)) {
-            appendUndo(gameName)
-            const clueAttempts = game.players.flatMap(player =>
-              player.move.player === player.move.mover ? [] : [player.move])
-            if (clueAttempts.length <= game.clues) {
-              // TODO: clue all cards of the same type
-              // TODO: add negative clues
-              clueAttempts.forEach(clue => {
-                clue.revealedCard = game.players[clue.player].hand[clue.card]
-                clue.revealedCard.r = true
-              })
-              game.clues -= clueAttempts.length
-              appendLog(gameName, {'cluesRevealed': clueAttempts})
-            }
-            else {
-              appendLog(gameName, {'cluesDiscarded': clueAttempts})
-            }
-            const playAttempts = game.players.flatMap(player =>
-              player.move.player === player.move.mover ? [player.move] : [])
-            if (playAttempts.length <= game.deck.length) {
-              playAttempts.forEach(play =>
-                play.playedCard = game.players[play.player].hand.splice(play.card, 1, game.deck.pop())[0])
-              appendLog(gameName, {'playsPlayed': playAttempts})
-              const characters = playAttempts.flatMap(play =>
-                play.playedCard.t < 2 ?
-                [Math.pow(2, 2 * play.playedCard.t + play.playedCard.v)]
-                : [])
-              const oldDrawing = game.drawing.slice()
-              const oldChar = game.drawing[game.cursor]
-              const newChar = characters.reduce((n, c) => n ^ c, oldChar)
-              if (characters.length) appendLog(gameName, {'characters': characters, 'oldChar': oldChar, 'newChar': newChar})
-              game.drawing[game.cursor] = newChar
-              const directions = playAttempts.flatMap(play => play.playedCard.t === Direction ? [play.playedCard.v] : [])
-              const vector = directions.reduce((s, c) => s + (c * 2 - 1), 0)
-              const modVector = ((vector % 4) + 4) % 4
-              if (directions.length) appendLog(gameName, {'directions': directions, 'vector': vector})
-
-              const referents = playAttempts.flatMap(play => play.playedCard.t === Referent ? [play.playedCard.v] : [])
-              const combo = referents.reduce((c, x) => c ^ (1 << x), 0)
-              if (referents.length) appendLog(gameName, {'referents': referents, 'combo': combo})
-              if (combo & (1 << Character)) {
-                const oldChar = game.drawing[game.cursor]
-                const newChar = rotateChar(modVector, oldChar)
-                game.drawing[game.cursor] = newChar
-                appendLog(gameName, {'characterRotate': oldChar, 'newChar': newChar})
-              }
-              if (combo & (1 << Drawing)) {
-                const newDrawing = Array(4)
-                let i = modVector
-                for (const c of game.drawing) {
-                  newDrawing[i] = rotateChar(modVector, c)
-                  if (++i === 4) i = 0
-                }
-                game.drawing = newDrawing
-                appendLog(gameName, {'drawingRotate': modVector})
-              }
-              if (combo & (1 << Cursor)) {
-                const oldCursor = game.cursor
-                game.cursor += vector
-                game.cursor = ((game.cursor % 4) + 4) % 4
-                appendLog(gameName, {'cursorRotate': oldCursor, 'newCursor': game.cursor})
-              }
-              const newlyCorrect = game.drawing.reduce((s, c, i) =>
-                (oldDrawing[i] !== game.target[i]) && (c === game.target[i]) ? s + 1 : s, 0)
-              if (newlyCorrect) {
-                const newClues = Math.min(MaxClues - game.clues, newlyCorrect)
-                appendLog(gameName, {newlyCorrect: newlyCorrect, newClues: newClues})
-                game.clues += newClues
-              }
-              if (game.drawing.every((c, i) => c === game.target[i])) {
-                appendLog(gameName, `The target is achieved!`)
-                game.scored.push(game.target)
-                if (game.deck.length) {
-                  game.target = generateTarget()
-                  game.drawing = Array(4).fill(0)
-                  game.cursor = Math.floor(Math.random() * 4)
-                }
-                else {
-                  delete game.target
-                  delete game.drawing
-                  delete game.cursor
-                }
-                socket.emit('updateTarget', game.target)
-              }
-              if (!game.deck.length) {
-                appendLog(gameName, `The game ends with a score of ${game.scored.length}.`)
-                game.ended = true
-              }
-              updateDrawing(gameName)
-            }
-            else {
-              appendLog(gameName, {'playsDiscarded': playAttempts})
-            }
-            game.players.forEach(player => delete player.move)
-            updateRemaining(gameName)
+      const player = game.players[playerIndex]
+      if (0 <= playerIndex && player.current) {
+        if (Number.isInteger(cardIndex) && 0 <= cardIndex && cardIndex < player.hand.length) {
+          appendUndo(gameName)
+          delete player.current
+          const card = game.deck.length ?
+            player.hand.splice(cardIndex, 1, game.deck.pop())[0] :
+            player.hand.splice(cardIndex, 1)[0]
+          if (!game.players.some(player => player.hand.length)) game.ended = true
+          const data = { playerName: player.name, cardIndex: cardIndex, card: card }
+          if (card.t < Direction) {
+            data.character = Math.pow(2, 2 * card.t + card.v)
+            data.oldChar = game.drawing[game.cursor]
+            data.newChar = data.oldChar ^ data.character
+            game.drawing[game.cursor] = data.newChar
+            appendLog(gameName, data)
           }
+          else if (card.t === Direction) {
+            data.oldRotation = game.rotation
+            data.direction = card.v * 2 - 1
+            game.rotation += data.direction
+            game.rotation = ((game.rotation % 4) + 4) % 4
+            data.newRotation = game.rotation
+            appendLog(gameName, data)
+          }
+          else {
+            data.rotation = game.rotation
+            if (card.v === Character) {
+              data.oldChar = game.drawing[game.cursor]
+              data.newChar = rotateChar(data.rotation, data.oldChar)
+              game.drawing[game.cursor] = data.newChar
+              appendLog(gameName, data)
+            }
+            else if (card.v === Drawing) {
+              const newDrawing = Array(4)
+              let i = data.rotation
+              for (const c of game.drawing) {
+                newDrawing[i] = rotateChar(data.rotation, c)
+                if (++i === 4) i = 0
+              }
+              game.drawing = newDrawing
+              appendLog(gameName, data)
+            }
+            else if (card.v === Cursor) {
+              data.oldCursor = game.cursor
+              game.cursor += data.rotation
+              game.cursor %= 4
+              data.newCursor = game.cursor
+              appendLog(gameName, data)
+            }
+            else {
+              data.targetCursor = (game.cursor + data.rotation) % 4
+              data.sourceChar = game.drawing[game.cursor]
+              data.targetChar = game.drawing[data.targetCursor]
+              game.drawing[data.targetCursor] = data.sourceChar ^ data.targetChar
+              data.newChar = game.drawing[data.targetCursor]
+              appendLog(gameName, data)
+            }
+          }
+          if (game.drawing.every((c, i) => c === game.target[i])) {
+            appendLog(gameName, `The target is achieved!`)
+            game.scored.push(game.target)
+            if (game.ended) {
+              delete game.target
+              delete game.drawing
+              delete game.cursor
+            }
+            else {
+              game.target = generateTarget()
+              game.drawing = Array(4).fill(0)
+              game.cursor = Math.floor(Math.random() * 4)
+              io.in(gameName).emit('updateTarget', game.target)
+            }
+          }
+          if (game.ended)
+            appendLog(gameName, `The game ends with a score of ${game.scored.length}.`)
+          else
+            game.players[(playerIndex + 1) % game.players.length].current = true
+          updateDrawing(gameName)
+          updateRemaining(gameName)
           io.in(gameName).emit('updatePlayers', game.players)
         }
         else {
@@ -450,8 +425,8 @@ io.on('connection', socket => {
         }
       }
       else {
-        console.log(`error: ${socket.playerName} in ${gameName} not found`)
-        socket.emit('errorMsg', 'Error: player not found.')
+        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
+        socket.emit('errorMsg', 'Error: it is not your turn.')
       }
     }
     else {

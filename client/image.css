@@ -118,24 +118,27 @@ ul.inline > li {
   display: flex;
   justify-content: space-around;
 }
-ol {
-  list-style-type: lower-roman;
-  margin: 0;
+#players[hidden] {
+  display: none;
 }
-ol > li > input[type=button], ol > li > span {
+#players > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+ol {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+ol > li > input[type=button] {
   font-size: 3vw;
   width: 4vw;
   height: 4vw;
   background-color: DarkGreen;
   color: LightYellow;
+  border: solid 1px;
 }
-ol > li > span {
-  display: inline-block;
-  text-align: center;
-}
-li.selected > input[type=button] {
-  background-color: #00a;
-}
-#players[hidden] {
-  display: none;
+ol > li > input[type=button]:disabled {
+  background-color: DarkOliveGreen;
 }
