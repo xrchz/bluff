@@ -166,7 +166,7 @@ function neighbours(board, pos) {
 const opposite = dir => dir & 1 ? dir - 1 : dir + 1
 
 const compatible = (d1, dir, d2) =>
-  (d1 & (1 << opposite(dir))) && (d2 & (1 << dir))
+  Boolean(d1 & (1 << opposite(dir))) === Boolean(d2 & (1 << dir))
 
 function nextTurn(gameName, index) {
   const game = games[gameName]
@@ -418,7 +418,7 @@ io.on('connection', socket => {
           nextTurn(gameName, playerIndex)
         }
         else {
-          console.log(`error: ${socket.playerName} in ${gameName} tried clueing with bad data: ${data.index} ${data.colour} ${data.number}`)
+          console.log(`error: ${socket.playerName} in ${gameName} tried clueing with bad data: ${data.index} ${data.direction}`)
           socket.emit('errorMsg', `Error: clue is invalid.`)
         }
       }
