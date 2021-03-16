@@ -176,7 +176,7 @@ function nextTurn(gameName, index) {
   const finished = score >= Treasures
   if (dead || drawn || finished) {
     const suffix = game.undoCount ? ` (using ${game.undoCount} undo${game.undoCount === 1 ? '' : 's'})` : ''
-    appendLog(gameName, `The game ends${dead ? ' in defeat' : finished ? ' in victory' : ''} with a score of ${score}${suffix}.`)
+    appendLog(gameName, `The game ends${dead ? ' in defeat' : finished ? ' in victory' : ''} with a score of ${score}/${Treasures}${suffix}.`)
   }
   else {
     index++
