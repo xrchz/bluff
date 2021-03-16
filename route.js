@@ -104,7 +104,7 @@ const stateKeys = {
   ],
   deck: true, discard: true, board: true,
   players: 'player',
-  player: [ 'current', 'hand' ], hand: true
+  player: [ 'current', 'hand', 'finalised' ], hand: true
 }
 
 function copy(keys, from, to, restore) {
@@ -172,7 +172,7 @@ const compatible = (d1, dir, d2) =>
 function nextTurn(gameName, index) {
   const game = games[gameName]
   const dead = Lives <= game.discard.filter(c => c.f).length
-  const drawn = !game.deck.length && !game.players.some(player => player.hand.length)
+  const drawn = game.players.every(player => player.finalised)
   const score = game.board.reduce((t, c) => t + Number(c.d !== undefined && c.t === true), 0)
   const finished = score >= Treasures
   if (dead || drawn || finished) {
@@ -357,7 +357,7 @@ io.on('connection', socket => {
     if (game.started) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = game.players[playerIndex]
-      if (0 <= playerIndex && player.current) {
+      if (0 <= playerIndex && player.current && !player.finalised) {
         const targetNeighbours = neighbours(game.board, data.target)
         if (Number.isInteger(data.index) && 0 <= data.index && data.index < player.hand.length &&
             (data.drop || (targetNeighbours && targetNeighbours.some(d => d)))) {
@@ -389,6 +389,7 @@ io.on('connection', socket => {
             {player: player.name, verb: verb, index: data.index,
              card: card.d, gain: gain, target: data.target})
           if (game.deck.length) player.hand.push(game.deck.pop())
+          else player.finalised = true
           nextTurn(gameName, playerIndex)
         }
         else {
@@ -418,6 +419,7 @@ io.on('connection', socket => {
           appendUndo(gameName)
           delete player.current
           game.clues--
+          if (!game.deck.length) player.finalised = true
           const other = game.players[data.index]
           other.hand.forEach(c => c.c[data.direction] = Boolean(c.d & (1 << data.direction)))
           appendLog(gameName, {player: player.name, other: other.name, direction: data.direction})
