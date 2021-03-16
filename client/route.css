@@ -71,11 +71,16 @@ ul.inline > li {
 .disconnected {
   color: Pink;
 }
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
 #board {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
-  font-size: 4vw;
+  font-size: 5vw;
   margin: auto;
+  margin-top: 0.5em;
   width: min-content;
   background-color: DarkRed;
 }
@@ -87,12 +92,50 @@ ul.inline > li {
   line-height: 2ex;
 }
 #board > div.treasure {
+  color: Yellow;
   background-color: GoldenRod;
+}
+#board > div > input[type=button] {
+  width: 100%;
+  height: 100%;
+  background-color: LightYellow;
+}
+#board > div.playable {
+  line-height: 0;
 }
 #players {
   display: flex;
   margin: auto;
   justify-content: space-around;
+  align-items: center;
+}
+#players input[type=button] {
+  background-color: LightYellow;
+  color: Black;
+}
+#players > div > h3 {
+  text-align: center;
+  margin-bottom: 0;
+}
+#players > div > ol {
+  padding: 0;
+  margin-top: 0.5em;
+  list-style-position: inside;
+}
+#players > div > ol > li {
+  margin-top: 0.5em;
+}
+#players > div > ol > li > ul {
+  font-size: 3vw;
+}
+#players > div > ol > li > span {
+  font-size: 3vw;
+}
+#players > div > ol > li > input[type=button] {
+  margin-left: 1em;
+}
+#players > div > input[type=button] {
+  font-size: 3vw;
 }
 ul.clues {
   display: inline;
@@ -100,8 +143,26 @@ ul.clues {
   padding: 0;
 }
 ul.clues > li {
-  display: inline;
+  display: inline-block;
   padding: 0;
+  text-align: center;
+  width: 0.6em;
+}
+ul.clues > li.posClue {
+  background-color: #fbfb98;
+  color: Navy;
+}
+ul.clues.selected > li.posClue {
+  color: Black;
+}
+ul.clues > li.negClue {
+  text-decoration: wavy red line-through 5%;
+  background-color: LightPink;
+  color: Gray;
+}
+ul.clues.selected > li.negClue, ul.clickable:hover > li.negClue {
+  background-color: transparent;
+  text-decoration: none;
 }
 ul.clickable:hover {
   cursor: pointer;
@@ -115,5 +176,19 @@ ul.selected {
 #info {
   display: flex;
   margin: auto;
-  justify-content: space-around;
+  flex-direction: column;
+  align-items: center;
+}
+#info > div {
+  display: flex;
+  margin: auto;
+  justify-content: space-evenly;
+  width: 100%;
+}
+#info > div > p > ul {
+  display: inline;
+}
+#info > div > p > ul > li {
+  padding-left: 0.1em;
+  padding-right: 0.1em;
 }

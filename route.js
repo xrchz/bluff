@@ -415,7 +415,7 @@ io.on('connection', socket => {
           const other = game.players[data.index]
           other.hand.forEach(c => c.c[data.direction] = Boolean(c.d & (1 << data.direction)))
           appendLog(gameName, {player: player.name, other: other.name, direction: data.direction})
-          nextTurn(gameName)
+          nextTurn(gameName, playerIndex)
         }
         else {
           console.log(`error: ${socket.playerName} in ${gameName} tried clueing with bad data: ${data.index} ${data.colour} ${data.number}`)

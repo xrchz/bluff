@@ -183,11 +183,14 @@ socket.on('updateBoard', data => {
   boardDiv.appendChild(fragment)
 
   infoDiv.innerHTML = ''
-  fragment.appendChild(document.createElement('p')).textContent = `Cards: ${data.cards}`
-  fragment.appendChild(document.createElement('p')).textContent = `Clues: ${data.clues}`
-  fragment.appendChild(document.createElement('p')).textContent = `Lives: ${data.lives}`
+  const div = fragment.appendChild(document.createElement('div'))
+  div.appendChild(document.createElement('p')).textContent = `Cards: ${data.cards}`
+  div.appendChild(document.createElement('p')).textContent = `Clues: ${data.clues}`
+  div.appendChild(document.createElement('p')).textContent = `Lives: ${data.lives}`
   if (data.discard.length) {
-    const p = fragment.appendChild(document.createElement('p')).textContent = `Discards: `
+    const div = fragment.appendChild(document.createElement('div'))
+    const p = div.appendChild(document.createElement('p'))
+    p.textContent = `Discards: `
     const ul = p.appendChild(document.createElement('ul'))
     ul.classList.add('inline')
     for (const c of data.discard) {
@@ -206,11 +209,11 @@ socket.on('updateBoard', data => {
       const c = clue[i]
       const li = ul.appendChild(document.createElement('li'))
       if (typeof(c) === 'boolean') {
-        li.textContent = ClueChar[c]
+        li.textContent = ClueChar[i]
         li.classList.add(`${c ? 'pos' : 'neg'}Clue`)
       }
       else
-        li.textContent = '*'
+        li.textContent = '-'
     }
     return ul
   }
@@ -286,14 +289,23 @@ socket.on('setDisconnected', playerIndex => {
   }
 })
 
+const ordinal = n =>
+  n === 0 ? '1st' :
+  n === 1 ? '2nd' :
+  n === 2 ? '3rd' : `${n+1}th`
+
 socket.on('appendLog', entry => {
   const li = document.createElement('li')
   if (typeof entry ===  'string')
     li.textContent = entry
-  else {
-    const span = li.appendChild(document.createElement('span'))
-    span.textContent = `TODO: log`
+  else if ('verb' in entry) {
+    li.textContent = `${entry.player} ${entry.verb} their ${ordinal(entry.index)} card ${CardChar[entry.card]}${entry.gain ? ', gaining a clue.' : '.'}`
   }
+  else if ('other' in entry) {
+    li.textContent = `${entry.player} clues ${entry.other} about ${ClueChar[entry.direction]}.`
+  }
+  else
+    li.textContent = 'Error: unhandled log entry'
   log.appendChild(li)
   li.scrollIntoView(false)
   errorMsg.innerHTML = ''
