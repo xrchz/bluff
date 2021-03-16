@@ -71,8 +71,8 @@ const CardMultiplicity = 5
 const MaxClues = 8
 const Lives = 3
 const HandSize = n => n < 4 ? 5 : 4
-const RowsAbove = 3
-const ColumnsLeft = 4
+const RowsAbove = 2
+const ColumnsLeft = 6
 const Treasures = 10
 const Rows = 1 + 2 * RowsAbove
 const Columns = 1 + 2 * ColumnsLeft

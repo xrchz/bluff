@@ -25,8 +25,8 @@ const CardChar = [
   '║',  '╣',  '╠',  '╬'
 ]
 const ClueChar = ['╡', '╞', '╨', '╥']
-const Rows = 7
-const Columns = 9
+const Rows = 5
+const Columns = 13
 
 joinButton.parentElement.onsubmit = () => {
   socket.emit('joinRequest', {
@@ -153,6 +153,7 @@ socket.on('gameStarted', () => {
   startButton.hidden = true
   startButton.disabled = true
   log.hidden = false
+  boardDiv.style.gridTemplateColumns = `repeat(${Columns}, 1fr)`
   unseated.innerHTML = ''
   errorMsg.innerHTML = ''
 })

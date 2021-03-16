@@ -77,7 +77,6 @@ ul.inline > li {
 }
 #board {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
   font-size: 5vw;
   margin: auto;
   margin-top: 0.5em;
