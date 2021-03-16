@@ -84,7 +84,6 @@ li.clickable:hover {
   margin: auto;
   margin-top: 0.5em;
   width: min-content;
-  background-color: DarkRed;
 }
 #board > div {
   width: 0.6em;
@@ -94,6 +93,7 @@ li.clickable:hover {
   line-height: 2.15ex;
   box-sizing: border-box;
   color: MistyRose;
+  background-color: DarkRed;
 }
 #board > div.selected {
   border: 1px dashed Blue;
@@ -109,6 +109,9 @@ li.clickable:hover {
   color: Yellow;
   background-color: GoldenRod;
   border-color: Gold;
+}
+#board > div.wall {
+  background-color: transparent;
 }
 #board > div > input[type=button] {
   width: 100%;

@@ -74,6 +74,7 @@ const HandSize = n => n < 4 ? 5 : 4
 const RowsAbove = 2
 const ColumnsLeft = 6
 const Treasures = 10
+const Walls = 3
 const Rows = 1 + 2 * RowsAbove
 const Columns = 1 + 2 * ColumnsLeft
 const Left = 0
@@ -152,7 +153,7 @@ function updateBoard(gameName, roomName) {
 
 function neighbours(board, pos) {
   if (Number.isInteger(pos)) {
-    const result = Array(4).fill(null)
+    const result = Array(4).fill(0)
     const col = pos % Columns
     const row = (pos - col) / Columns
     if (col > 0) result[Left] = board[pos-1].d
@@ -323,9 +324,12 @@ io.on('connection', socket => {
         game.clues = MaxClues
         game.discard = []
         game.board = []
-        for (let i = 0; i < Treasures; i++)
+        let i
+        for (i = 0; i < Treasures; i++)
           game.board.push({t: true})
-        for (let i = Treasures; i < Rows * Columns - 1; i++)
+        for (; i < Treasures + Walls; i++)
+          game.board.push({d: 0})
+        for (; i < Rows * Columns - 1; i++)
           game.board.push({})
         shuffleInPlace(game.board)
         game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, game.deck.pop())
@@ -356,7 +360,7 @@ io.on('connection', socket => {
       if (0 <= playerIndex && player.current) {
         const targetNeighbours = neighbours(game.board, data.target)
         if (Number.isInteger(data.index) && 0 <= data.index && data.index < player.hand.length &&
-            (data.drop || (targetNeighbours && targetNeighbours.some(c => c !== undefined)))) {
+            (data.drop || (targetNeighbours && targetNeighbours.some(d => d)))) {
           appendUndo(gameName)
           delete player.current
           const card = player.hand.splice(data.index, 1)[0]

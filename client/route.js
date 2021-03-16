@@ -19,10 +19,10 @@ const playersDiv = document.getElementById('players')
 const fragment = document.createDocumentFragment()
 
 const CardChar = [
-  null, null, null, '═',
-  null, '╝',  '╚',  '╩',
-  null, '╗',  '╔',  '╦',
-  '║',  '╣',  '╠',  '╬'
+  ' ', null, null, '═',
+  null, '╝',  '╚', '╩',
+  null, '╗',  '╔', '╦',
+  '║',  '╣',  '╠', '╬'
 ]
 /* const ClueChar = ['╡', '╞', '╨', '╥'] */
 const ClueChar = ['←','→','↑','↓']
@@ -179,6 +179,8 @@ socket.on('updateBoard', data => {
         div.boardIndex = i
       }
     }
+    if (cell.d === 0)
+      div.classList.add('wall')
     if (cell.t)
       div.classList.add('treasure')
   }
