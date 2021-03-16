@@ -163,7 +163,8 @@ ul.clues > li {
   display: inline-block;
   padding: 0;
   text-align: center;
-  width: 0.6em;
+  /* width: 0.6em; */
+  width: 1em;
 }
 ul.clues > li.posClue {
   background-color: #fbfb98;

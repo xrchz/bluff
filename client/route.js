@@ -24,7 +24,8 @@ const CardChar = [
   null, '╗',  '╔',  '╦',
   '║',  '╣',  '╠',  '╬'
 ]
-const ClueChar = ['╡', '╞', '╨', '╥']
+/* const ClueChar = ['╡', '╞', '╨', '╥'] */
+const ClueChar = ['←','→','↑','↓']
 const Rows = 5
 const Columns = 13
 
