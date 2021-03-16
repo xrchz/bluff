@@ -97,7 +97,8 @@ li.clickable:hover {
 }
 #board > div.selected {
   border: 1px dashed Blue;
-  color: SkyBlue;
+  color: Azure;
+  background-color: SkyBlue;
 }
 #board > div.treasure.selected {
   border: 1px dashed Blue;
