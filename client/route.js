@@ -268,9 +268,10 @@ socket.on('updateBoard', data => {
         li.appendChild(document.createElement('span')).textContent = ')'
       }
     }
-    if (current && playerIndex !== currentIndex) {
+    if (current && playerIndex !== currentIndex && data.clues) {
+      const clueButtons = div.appendChild(document.createElement('div'))
       for (let direction = 0; direction < 4; direction++) {
-        const clueButton = div.appendChild(document.createElement('input'))
+        const clueButton = clueButtons.appendChild(document.createElement('input'))
         clueButton.type = 'button'
         clueButton.value = ClueChar[direction]
         clueButton.onclick = () =>
