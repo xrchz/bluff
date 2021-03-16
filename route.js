@@ -328,7 +328,7 @@ io.on('connection', socket => {
         for (let i = Treasures; i < Rows * Columns - 1; i++)
           game.board.push({})
         shuffleInPlace(game.board)
-        game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, {d: 0b1111})
+        game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, game.deck.pop())
         game.players.forEach(player => player.hand = [])
         const cardsPerHand = HandSize(game.players.length)
         for (let i = 0; i < cardsPerHand; i++)
