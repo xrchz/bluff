@@ -152,7 +152,7 @@ function updateBoard(gameName, roomName) {
 
 function neighbours(board, pos) {
   if (Number.isInteger(pos)) {
-    const result = Array(4)
+    const result = Array(4).fill(null)
     const col = pos % Columns
     const row = (pos - col) / Columns
     if (col > 0) result[Left] = board[pos-1].d
