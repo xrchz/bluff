@@ -89,22 +89,30 @@ li.clickable:hover {
 #board > div {
   width: 0.6em;
   height: 2.15ex;
-  border: 1px dotted LightPink;
+  border: 1px solid Maroon;
   text-align: center;
   line-height: 2.15ex;
   box-sizing: border-box;
+  color: MistyRose;
 }
 #board > div.selected {
-  border: 4px dashed Blue;
+  border: 1px dashed Blue;
+  color: SkyBlue;
+}
+#board > div.treasure.selected {
+  border: 1px dashed Blue;
+  background-color: AliceBlue;
+  color: SkyBlue;
 }
 #board > div.treasure {
   color: Yellow;
   background-color: GoldenRod;
+  border-color: Gold;
 }
 #board > div > input[type=button] {
   width: 100%;
   height: 100%;
-  background-color: LightYellow;
+  background-color: LavenderBlush;
 }
 #board > div.treasure > input[type=button] {
   background-color: Yellow;
@@ -120,12 +128,14 @@ li.clickable:hover {
 }
 #players input[type=button] {
   background-color: LightYellow;
-  color: Black;
+  color: Navy;
+  font-size: 2vw;
 }
 #players > div {
   display: flex;
   flex-direction: column;
   align-items: center;
+  color: LavenderBlush;
 }
 #players > div > h3 {
   text-align: center;
@@ -140,19 +150,27 @@ li.clickable:hover {
   margin-top: 0.5em;
 }
 #players > div > ol > li > ul {
-  font-size: 3vw;
+  font-size: 2.5vw;
 }
 #players > div > ol > li > span {
   font-size: 3vw;
 }
 #players > div > ol > li > input[type=button] {
-  margin-left: 1em;
+  margin-left: 0.5em;
+  line-height: 1em;
+  vertical-align: text-bottom;
 }
 #players > div > div > input[type=button] {
-  font-size: 3vw;
+  font-size: 2.5vw;
+  width: 1em;
+  padding: 0;
 }
 #players > div > div {
   margin: auto;
+}
+#players > div > div > span {
+  font-size: 3vw;
+  color: transparent;
 }
 ul.clues {
   display: inline;
@@ -167,29 +185,30 @@ ul.clues > li {
   width: 1em;
 }
 ul.clues > li.posClue {
-  background-color: #fbfb98;
-  color: Navy;
+  background-color: #fd7;
+  color: DarkGreen;
 }
 ul.clues.selected > li.posClue, ul.clickable:hover > li.posClue {
-  color: Blue;
+  color: MediumAquamarine;
 }
 ul.clues > li.negClue {
-  text-decoration: wavy red line-through 5%;
-  background-color: LightPink;
-  color: Gray;
+  text-decoration: DarkRed wavy underline;
+  background-color: Pink;
+  color: LightCoral;
 }
 ul.clues.selected > li.negClue, ul.clickable:hover > li.negClue {
   background-color: transparent;
-  text-decoration: none;
+  color: LightPink;
+  text-decoration-color: Firebrick;
 }
 ul.clickable:hover {
   cursor: pointer;
   background-color: LightYellow;
-  color: Black;
+  color: Navy;
 }
 ul.selected {
   background-color: LightYellow;
-  color: Black;
+  color: Navy;
 }
 #info {
   display: flex;

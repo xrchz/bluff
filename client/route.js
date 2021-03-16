@@ -241,7 +241,7 @@ socket.on('updateBoard', data => {
           const ul = li.appendChild(cluesList(card.c))
           const dropButton = li.appendChild(document.createElement('input'))
           dropButton.type = 'button'
-          dropButton.value = 'Drop'
+          dropButton.value = '✗'
           dropButton.onclick = () => socket.emit('playRequest', {index: cardIndex, drop: true})
           ul.classList.add('clickable')
           ul.onclick = () => {
@@ -264,13 +264,15 @@ socket.on('updateBoard', data => {
       }
       else {
         li.appendChild(document.createElement('span')).textContent = CardChar[card.d]
-        li.appendChild(document.createElement('span')).textContent = ' ('
+        li.appendChild(document.createElement('span')).textContent = ' ['
         li.appendChild(cluesList(card.c))
-        li.appendChild(document.createElement('span')).textContent = ')'
+        li.appendChild(document.createElement('span')).textContent = ']'
       }
     }
     if (current && playerIndex !== currentIndex && data.clues) {
       const clueButtons = div.appendChild(document.createElement('div'))
+      clueButtons.appendChild(document.createElement('span')).textContent = CardChar[15]
+      clueButtons.appendChild(document.createElement('span')).textContent = ' ['
       for (let direction = 0; direction < 4; direction++) {
         const clueButton = clueButtons.appendChild(document.createElement('input'))
         clueButton.type = 'button'
