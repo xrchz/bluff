@@ -302,6 +302,18 @@ socket.on('appendLog', entry => {
     li.textContent = entry
   else if ('verb' in entry) {
     li.textContent = `${entry.player} ${entry.verb} their ${ordinal(entry.index)} card ${CardChar[entry.card]}${entry.gain ? ', gaining a clue.' : '.'}`
+    if ('target' in entry) {
+      li.classList.add('clickable')
+      li.onclick = () => {
+        boardDiv.querySelectorAll('div.selected').forEach(div => div.classList.remove('selected'))
+        const selected = li.classList.contains('selected')
+        log.querySelectorAll('li.selected').forEach(li => li.classList.remove('selected'))
+        if (!selected) {
+          li.classList.add('selected')
+          boardDiv.children[entry.target].classList.add('selected')
+        }
+      }
+    }
   }
   else if ('other' in entry) {
     li.textContent = `${entry.player} clues ${entry.other} about ${ClueChar[entry.direction]}.`

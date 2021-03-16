@@ -381,7 +381,9 @@ io.on('connection', socket => {
             }
           }
           if (gain) game.clues++
-          appendLog(gameName, {player: player.name, verb: verb, index: data.index, card: card.d, gain: gain})
+          appendLog(gameName,
+            {player: player.name, verb: verb, index: data.index,
+             card: card.d, gain: gain, target: data.target})
           if (game.deck.length) player.hand.push(game.deck.pop())
           nextTurn(gameName, playerIndex)
         }

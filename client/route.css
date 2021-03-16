@@ -75,6 +75,9 @@ ul.inline > li {
   background-color: NavajoWhite;
   color: DarkRed;
 }
+li.clickable:hover {
+  cursor: pointer;
+}
 #board {
   display: grid;
   font-size: 5vw;
@@ -85,10 +88,14 @@ ul.inline > li {
 }
 #board > div {
   width: 0.6em;
-  height: 2ex;
+  height: 2.15ex;
   border: 1px dotted LightPink;
   text-align: center;
-  line-height: 2ex;
+  line-height: 2.15ex;
+  box-sizing: border-box;
+}
+#board > div.selected {
+  border: 4px dashed Blue;
 }
 #board > div.treasure {
   color: Yellow;
