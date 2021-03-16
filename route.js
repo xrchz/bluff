@@ -68,7 +68,7 @@ function shuffleInPlace(array) {
 }
 
 const CardMultiplicity = 5
-const MaxClues = 8
+const MaxClues = 6
 const Lives = 3
 const HandSize = n => n < 4 ? 5 : 4
 const RowsAbove = 2
