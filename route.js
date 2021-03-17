@@ -215,7 +215,7 @@ function nextTurn(gameName, index) {
   const game = games[gameName]
   const dead = Lives <= game.discard.filter(c => c.f).length
   const drawn = game.players.every(player => player.finalised)
-  const sealed = game.board.every(c => !c.d || c.s)
+  const sealed = game.board.every(c => !c.d || c.s) && game.board.some(c => c.d && !c.m)
   const score = game.board.reduce((t, c) => t + Number(c.d !== undefined && c.t === true), 0)
   const bonus = game.board.reduce((t, c) => t + Number(c.t === true && c.s === true), 0)
   const finished = score >= Treasures && bonus >= Treasures
@@ -380,6 +380,7 @@ io.on('connection', socket => {
         shuffleInPlace(game.board)
         const central = game.deck.pop()
         central.s = true
+        central.m = true
         game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, central)
         game.players.forEach(player => player.hand = [])
         const cardsPerHand = HandSize(game.players.length)
