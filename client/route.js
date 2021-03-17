@@ -19,10 +19,10 @@ const playersDiv = document.getElementById('players')
 const fragment = document.createDocumentFragment()
 
 const CardChar = [
-  ' ', null, null, '═',
-  null, '╝',  '╚', '╩',
-  null, '╗',  '╔', '╦',
-  '║',  '╣',  '╠', '╬'
+  ' ', '╡', '╞', '═',
+  '╨', '╝', '╚', '╩',
+  '╥', '╗', '╔', '╦',
+  '║', '╣', '╠', '╬'
 ]
 const ClueChar = ['←','→','↑','↓']
 const Rows = 5
@@ -180,6 +180,8 @@ socket.on('updateBoard', data => {
     }
     if (cell.d === 0)
       div.classList.add('wall')
+    if (cell.s)
+      div.classList.add('sealed')
     if (cell.t)
       div.classList.add('treasure')
   }
@@ -300,12 +302,22 @@ const ordinal = n =>
   n === 1 ? '2nd' :
   n === 2 ? '3rd' : `${n+1}th`
 
+const plural = (n, s) =>
+  n === 1 ? `a ${s}` : `${n} ${s}s`
+
 socket.on('appendLog', entry => {
   const li = document.createElement('li')
   if (typeof entry ===  'string')
     li.textContent = entry
   else if ('verb' in entry) {
-    li.textContent = `${entry.player} ${entry.verb} their ${ordinal(entry.index)} card ${CardChar[entry.card]}${entry.gain ? ', gaining a clue.' : '.'}`
+    li.textContent = `${entry.player} ${entry.verb} their ${ordinal(entry.index)} card ${CardChar[entry.card]}`
+    if (entry.gain) {
+      li.textContent += ', gaining a clue'
+      if (entry.seals) li.textContent += ` and sealing ${plural(entry.seals, 'treasure')}`
+    }
+    else if (entry.seals)
+      li.textContent += `, sealing ${plural(entry.seals, 'treasure')}`
+    li.textContent += '.'
     if ('target' in entry) {
       li.classList.add('clickable')
       li.onclick = () => {

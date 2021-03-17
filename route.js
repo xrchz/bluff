@@ -68,7 +68,7 @@ function shuffleInPlace(array) {
 }
 
 const CardMultiplicity = 5
-const MaxClues = 6
+const MaxClues = 8
 const Lives = 3
 const HandSize = n => n < 4 ? 5 : 4
 const RowsAbove = 2
@@ -84,8 +84,7 @@ const Down = 3
 
 function makeDeck() {
   const deck = []
-  for (let d = 3; d < 16; d++) {
-    if (d === 4 || d === 8) continue
+  for (let d = 1; d < 16; d++) {
     let m = CardMultiplicity
     while (m-- > 0) deck.push({d: d, c: Array(4)})
   }
@@ -169,15 +168,62 @@ const opposite = dir => dir & 1 ? dir - 1 : dir + 1
 const compatible = (d1, dir, d2) =>
   Boolean(d1 & (1 << opposite(dir))) === Boolean(d2 & (1 << dir))
 
+function checkSealed(board) {
+  const cpos = RowsAbove * Columns + ColumnsLeft
+  const central = board[cpos]
+  const sets = []
+  if (central.d & (1 << Left)) sets.push([cpos-1])
+  if (central.d & (1 << Right)) sets.push([cpos+1])
+  if (central.d & (1 << Up)) sets.push([cpos-Columns])
+  if (central.d & (1 << Down)) sets.push([cpos+Columns])
+  let newSeals = 0
+  for (const set of sets) {
+    if (board[set[0]].s) continue
+    central.stmp = true
+    for (let i = 0; i < set.length; i++) {
+      const pos = set[i]
+      const c = board[pos]
+      if (pos in board && 'd' in c) {
+        if (c.stmp) continue
+        else {
+          c.stmp = true
+          if (c.d & (1 << Left)) set.push(pos-1)
+          if (c.d & (1 << Right)) set.push(pos+1)
+          if (c.d & (1 << Up)) set.push(pos-Columns)
+          if (c.d & (1 << Down)) set.push(pos+Columns)
+        }
+      }
+      else {
+        delete central.stmp
+        set.forEach(pos => delete board[pos].stmp)
+        break
+      }
+    }
+    if (central.stmp) {
+      delete central.stmp
+      set.forEach(pos => {
+        delete board[pos].stmp
+        if (!board[pos].s && board[pos].t) newSeals++
+        board[pos].s = true
+      })
+    }
+  }
+  return newSeals
+}
+
 function nextTurn(gameName, index) {
   const game = games[gameName]
   const dead = Lives <= game.discard.filter(c => c.f).length
   const drawn = game.players.every(player => player.finalised)
+  const sealed = game.board.every(c => !c.d || c.s)
   const score = game.board.reduce((t, c) => t + Number(c.d !== undefined && c.t === true), 0)
-  const finished = score >= Treasures
-  if (dead || drawn || finished) {
-    const suffix = game.undoCount ? ` (using ${game.undoCount} undo${game.undoCount === 1 ? '' : 's'})` : ''
-    appendLog(gameName, `The game ends${dead ? ' in defeat' : finished ? ' in victory' : ''} with a score of ${score}/${Treasures}${suffix}.`)
+  const bonus = game.board.reduce((t, c) => t + Number(c.t === true && c.s === true), 0)
+  const finished = score >= Treasures && bonus >= Treasures
+  if (dead || drawn || sealed || finished) {
+    const ending = `The game ends${dead ? ' in defeat' : score >= Treasures ? ' in victory' : ''} with a score of`
+    const scoring = `${bonus ? `${score}+${bonus} = ${score + bonus}` : score} out of ${2*Treasures}`
+    const undoes = game.undoCount ? ` (using ${game.undoCount} undo${game.undoCount === 1 ? '' : 's'})` : ''
+    appendLog(gameName, `${ending} ${scoring}${undoes}.`)
   }
   else {
     index++
@@ -332,7 +378,9 @@ io.on('connection', socket => {
         for (; i < Rows * Columns - 1; i++)
           game.board.push({})
         shuffleInPlace(game.board)
-        game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, game.deck.pop())
+        const central = game.deck.pop()
+        central.s = true
+        game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, central)
         game.players.forEach(player => player.hand = [])
         const cardsPerHand = HandSize(game.players.length)
         for (let i = 0; i < cardsPerHand; i++)
@@ -364,12 +412,13 @@ io.on('connection', socket => {
           appendUndo(gameName)
           delete player.current
           const card = player.hand.splice(data.index, 1)[0]
-          let verb, gain = false
+          let verb, seals, gain = false
           if (!data.drop && targetNeighbours.every((d, i) => d === undefined || compatible(d, i, card.d))) {
             game.board[data.target].d = card.d
             verb = 'plays'
             if (game.board[data.target].t)
               gain = true
+            seals = checkSealed(game.board)
           }
           else {
             const dc = {d: card.d}
@@ -387,7 +436,7 @@ io.on('connection', socket => {
           if (gain) game.clues++
           appendLog(gameName,
             {player: player.name, verb: verb, index: data.index,
-             card: card.d, gain: gain, target: data.target})
+             card: card.d, gain: gain, seals: seals, target: data.target})
           if (game.deck.length) player.hand.push(game.deck.pop())
           else player.finalised = true
           nextTurn(gameName, playerIndex)

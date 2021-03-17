@@ -111,6 +111,18 @@ li.clickable:hover {
   background-color: GoldenRod;
   border-color: Gold;
 }
+#board > div.treasure.sealed {
+  color: OrangeRed;
+}
+#board > div.treasure.sealed.selected {
+  color: Orange;
+}
+#board > div.sealed {
+  color: Plum;
+}
+#board > div.sealed.selected {
+  color: Lavender;
+}
 #board > div.wall {
   background-color: transparent;
 }
