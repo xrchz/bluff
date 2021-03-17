@@ -1,6 +1,10 @@
+@font-face {
+  font-family: 'DejaVu Sans';
+  src: url('DejaVuSans.ttf') format('truetype');
+}
 body {
-  font-family: sans-serif;
-  font-size: large;
+  font-family: 'DejaVu Sans', sans-serif;
+  font-size: 14pt;
   background-color: #420;
   color: Lavender;
   margin-left: 2vw;
@@ -80,7 +84,7 @@ li.clickable:hover {
 }
 #board {
   display: grid;
-  font-size: 5vw;
+  font-size: 5rem;
   margin: auto;
   margin-top: 0.5em;
   width: min-content;
@@ -146,7 +150,7 @@ li.clickable:hover {
 #players input[type=button] {
   background-color: LightYellow;
   color: Navy;
-  font-size: 2vw;
+  font-size: 2rem;
 }
 #players > div {
   display: flex;
@@ -167,10 +171,10 @@ li.clickable:hover {
   margin-top: 0.5em;
 }
 #players > div > ol > li > ul {
-  font-size: 2.5vw;
+  font-size: 2.5rem;
 }
 #players > div > ol > li > span {
-  font-size: 3vw;
+  font-size: 3rem;
 }
 #players > div > ol > li > input[type=button] {
   margin-left: 0.5em;
@@ -178,7 +182,7 @@ li.clickable:hover {
   vertical-align: text-bottom;
 }
 #players > div > div > input[type=button] {
-  font-size: 2.5vw;
+  font-size: 2.5rem;
   width: 1em;
   padding: 0;
 }
@@ -186,7 +190,7 @@ li.clickable:hover {
   margin: auto;
 }
 #players > div > div > span {
-  font-size: 3vw;
+  font-size: 3rem;
   color: transparent;
 }
 ul.clues {
@@ -208,7 +212,7 @@ ul.clues.selected > li.posClue, ul.clickable:hover > li.posClue {
   color: MediumAquamarine;
 }
 ul.clues > li.negClue {
-  text-decoration: DarkRed wavy underline;
+  text-decoration: DarkRed wavy underline 0.1rem;
   background-color: Pink;
   color: LightCoral;
 }
