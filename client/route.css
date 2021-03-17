@@ -142,7 +142,6 @@ li.clickable:hover {
   display: flex;
   margin: auto;
   justify-content: space-around;
-  align-items: center;
 }
 #players input[type=button] {
   background-color: LightYellow;
