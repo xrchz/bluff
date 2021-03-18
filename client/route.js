@@ -170,10 +170,10 @@ socket.on('updateBoard', data => {
     else if (current) {
       const col = i % Columns
       const row = (i - col) / Columns
-      if (0 < col && data.board[i-1].d ||
-          col+1 < Columns && data.board[i+1].d ||
-          0 < row && data.board[i-Columns].d ||
-          row+1 < Rows && data.board[i+Columns].d) {
+      if (0 < col && (2 & data.board[i-1].d) ||
+          col+1 < Columns && (1 & data.board[i+1].d) ||
+          0 < row && (8 & data.board[i-Columns].d) ||
+          row+1 < Rows && (4 & data.board[i+Columns].d)) {
         div.classList.add('playable')
         div.boardIndex = i
       }
