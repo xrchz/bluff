@@ -252,3 +252,6 @@ ul.selected {
   padding-left: 0.1em;
   padding-right: 0.1em;
 }
+li.fumbled {
+  color: LightCoral;
+}
