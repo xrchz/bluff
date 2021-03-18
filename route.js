@@ -378,7 +378,15 @@ io.on('connection', socket => {
         for (; i < Rows * Columns - 1; i++)
           game.board.push({})
         shuffleInPlace(game.board)
-        const central = game.deck.pop()
+        const wallsOppositeCentre =
+          [ColumnsLeft-1, ColumnsLeft, -ColumnsLeft-1, Columns-1+ColumnsLeft].flatMap(
+            i => game.board[RowsAbove * Columns + i].d === 0 ? [opposite(i)] : [])
+        let central = game.deck.pop()
+        // terminates assuming Walls < 4
+        while (wallsOppositeCentre.some(dir => central.d & (1 << dir))) {
+          game.deck.unshift(central)
+          central = game.deck.pop()
+        }
         central.s = true
         central.m = true
         game.board.splice(RowsAbove * Columns + ColumnsLeft, 0, central)
