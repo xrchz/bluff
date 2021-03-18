@@ -79,8 +79,11 @@ ul.inline > li {
   background-color: NavajoWhite;
   color: DarkRed;
 }
-li.clickable:hover {
+.clickable:hover {
   cursor: pointer;
+}
+li.selected {
+  background-color: #026;
 }
 #board {
   display: grid;
@@ -100,12 +103,12 @@ li.clickable:hover {
   background-color: DarkRed;
   position: relative;
 }
-#board > div.selected {
+#board > div.cardLight, .cardLight {
   border: 1px dashed Blue;
   color: Azure;
   background-color: SkyBlue;
 }
-#board > div.treasure.selected {
+#board > div.treasure.cardLight {
   border: 1px dashed Blue;
   background-color: AliceBlue;
   color: SkyBlue;
@@ -118,13 +121,13 @@ li.clickable:hover {
 #board > div.treasure.sealed {
   color: OrangeRed;
 }
-#board > div.treasure.sealed.selected {
+#board > div.treasure.sealed.cardLight {
   color: Orange;
 }
 #board > div.sealed {
   color: Plum;
 }
-#board > div.sealed.selected {
+#board > div.sealed.cardLight {
   color: Lavender;
 }
 #board > div.wall {
@@ -222,7 +225,6 @@ ul.clues.selected > li.negClue, ul.clickable:hover > li.negClue {
   text-decoration-color: Firebrick;
 }
 ul.clickable:hover {
-  cursor: pointer;
   background-color: LightYellow;
   color: Navy;
 }

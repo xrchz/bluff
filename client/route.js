@@ -162,11 +162,30 @@ socket.on('updateBoard', data => {
   const currentIndex = data.players.findIndex(player => player.name === nameInput.value)
   const current = !spectateInput.checked && data.players[currentIndex].current
   boardDiv.innerHTML = ''
+  function cardLight() {
+    log.querySelectorAll('li.selected').forEach(li => li.classList.remove('selected'))
+    boardDiv.parentElement.querySelectorAll('.cardLight').forEach(el =>
+      el.classList.remove('cardLight'))
+    if (boardDiv.cardLight === this.textContent)
+      delete boardDiv.cardLight
+    else {
+      boardDiv.cardLight = this.textContent
+      boardDiv.parentElement.querySelectorAll('.clickable').forEach(el => {
+        if (el.textContent === this.textContent)
+          el.classList.add('cardLight')
+      })
+    }
+  }
   for (let i = 0; i < data.board.length; i++) {
     const div = fragment.appendChild(document.createElement('div'))
     const cell = data.board[i]
-    if (cell.d !== undefined)
+    if (cell.d !== undefined) {
       div.textContent = CardChar[cell.d]
+      if (cell.d) {
+        div.classList.add('clickable')
+        div.onclick = cardLight
+      }
+    }
     else if (current) {
       const col = i % Columns
       const row = (i - col) / Columns
@@ -202,6 +221,8 @@ socket.on('updateBoard', data => {
       const li = ul.appendChild(document.createElement('li'))
       li.textContent = CardChar[c.d]
       if (c.f) li.classList.add('fumbled')
+      li.classList.add('clickable')
+      li.onclick = cardLight
     }
   }
   infoDiv.appendChild(fragment)
@@ -267,6 +288,8 @@ socket.on('updateBoard', data => {
       }
       else {
         li.appendChild(document.createElement('span')).textContent = CardChar[card.d]
+        li.firstElementChild.classList.add('clickable')
+        li.firstElementChild.onclick = cardLight
         li.appendChild(document.createElement('span')).textContent = ' ['
         li.appendChild(cluesList(card.c))
         li.appendChild(document.createElement('span')).textContent = ']'
@@ -321,12 +344,14 @@ socket.on('appendLog', entry => {
     if ('target' in entry) {
       li.classList.add('clickable')
       li.onclick = () => {
-        boardDiv.querySelectorAll('div.selected').forEach(div => div.classList.remove('selected'))
+        boardDiv.parentElement.querySelectorAll('.cardLight').forEach(el =>
+          el.classList.remove('cardLight'))
+        delete boardDiv.cardLight
         const selected = li.classList.contains('selected')
         log.querySelectorAll('li.selected').forEach(li => li.classList.remove('selected'))
         if (!selected) {
           li.classList.add('selected')
-          boardDiv.children[entry.target].classList.add('selected')
+          boardDiv.children[entry.target].classList.add('cardLight')
         }
       }
     }
