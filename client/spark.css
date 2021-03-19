@@ -158,6 +158,6 @@ li.clue {
   color: MistyRose;
 }
 .negated {
-  text-decoration: line-through;
+  text-decoration: line-through 0.2em;
   color: #33c;
 }
