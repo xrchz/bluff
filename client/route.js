@@ -260,39 +260,39 @@ socket.on('updateBoard', data => {
     for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
       const card = player.hand[cardIndex]
       const li = ol.appendChild(document.createElement('li'))
-      if (playerIndex === currentIndex) {
-        if (current) {
-          const ul = li.appendChild(cluesList(card.c))
-          const dropButton = li.appendChild(document.createElement('input'))
-          dropButton.type = 'button'
-          dropButton.value = '✗'
-          dropButton.onclick = () => socket.emit('playRequest', {index: cardIndex, drop: true})
-          ul.classList.add('clickable')
-          ul.onclick = () => {
-            ol.querySelectorAll('ul.selected').forEach(ul => ul.classList.remove('selected'))
-            boardDiv.querySelectorAll('div.playable').forEach(div => div.replaceChildren())
-            if (ol.cardIndex === cardIndex) delete ol.cardIndex
-            else {
-              ul.classList.add('selected')
-              ol.cardIndex = cardIndex
-              boardDiv.querySelectorAll('div.playable').forEach(div => {
-                const playButton = div.appendChild(document.createElement('input'))
-                playButton.type = 'button'
-                playButton.onclick = () => socket.emit('playRequest', {index: cardIndex, target: div.boardIndex})
-              })
-            }
+      if (playerIndex === currentIndex && current) {
+        const ul = li.appendChild(cluesList(card.c))
+        const dropButton = li.appendChild(document.createElement('input'))
+        dropButton.type = 'button'
+        dropButton.value = '✗'
+        dropButton.onclick = () => socket.emit('playRequest', {index: cardIndex, drop: true})
+        ul.classList.add('clickable')
+        ul.onclick = () => {
+          ol.querySelectorAll('ul.selected').forEach(ul => ul.classList.remove('selected'))
+          boardDiv.querySelectorAll('div.playable').forEach(div => div.replaceChildren())
+          if (ol.cardIndex === cardIndex) delete ol.cardIndex
+          else {
+            ul.classList.add('selected')
+            ol.cardIndex = cardIndex
+            boardDiv.querySelectorAll('div.playable').forEach(div => {
+              const playButton = div.appendChild(document.createElement('input'))
+              playButton.type = 'button'
+              playButton.onclick = () => socket.emit('playRequest', {index: cardIndex, target: div.boardIndex})
+            })
           }
+        }
+      }
+      else {
+        if (playerIndex !== currentIndex || data.players.every(player => !player.current)) {
+          li.appendChild(document.createElement('span')).textContent = CardChar[card.d]
+          li.firstElementChild.classList.add('clickable')
+          li.firstElementChild.onclick = cardLight
+          li.appendChild(document.createElement('span')).textContent = ' ['
+          li.appendChild(cluesList(card.c))
+          li.appendChild(document.createElement('span')).textContent = ']'
         }
         else
           li.appendChild(cluesList(card.c))
-      }
-      else {
-        li.appendChild(document.createElement('span')).textContent = CardChar[card.d]
-        li.firstElementChild.classList.add('clickable')
-        li.firstElementChild.onclick = cardLight
-        li.appendChild(document.createElement('span')).textContent = ' ['
-        li.appendChild(cluesList(card.c))
-        li.appendChild(document.createElement('span')).textContent = ']'
       }
     }
     if (current && playerIndex !== currentIndex && data.clues) {
