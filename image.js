@@ -69,27 +69,32 @@ function shuffleInPlace(array) {
 
 const CardMultiplicity = 5
 const Direction = 2
+const Rotate = 3
 const Character = 0
 const Drawing = 1
 const Cursor = 2
 
-function rotateOnce(x) {
-  const l = (x >> 0) % 2
-  const r = (x >> 1) % 2
-  const u = (x >> 2) % 2
-  const d = (x >> 3) % 2
-  return 8 * r + 4 * l + 2 * u + 1 * d
+const rotateOnce = x => x << 1 & 0b1110 | x >> 3
+
+function funpow(v, f, x) {
+  while (v-- > 0) x = f(x)
+  return x
 }
 
-function rotateChar(v, c) {
-  while (v-- > 0) c = rotateOnce(c)
-  return c
-}
+const rotateChar = (v, c) =>
+  funpow(v, rotateOnce, c)
+
+const reflectArray = (v, a) =>
+  funpow(v, a => {a.unshift(a.pop()); return a}, a.slice().reverse())
+
+const reflectChar = (v, c) =>
+  reflectArray(v, [0, 1, 2, 3].map(i => (c >> i) % 2)).reduceRight(
+    (t, v) => 2 * t + v)
 
 function makeDeck() {
   const deck = []
-  for (let t = 0; t < 4; t++) {
-    const vMax = t < 3 ? 2 : 4
+  for (let t = 0; t < 5; t++) {
+    const vMax = t === Rotate ? 4 : 2
     for (let v = 0; v < vMax; v++)
       for (let n = 0; n < CardMultiplicity; n++)
         deck.push({t: t, v: v})
@@ -352,7 +357,6 @@ io.on('connection', socket => {
             data.oldChar = game.drawing[game.cursor]
             data.newChar = data.oldChar ^ data.character
             game.drawing[game.cursor] = data.newChar
-            appendLog(gameName, data)
           }
           else if (card.t === Direction) {
             data.oldRotation = game.rotation
@@ -360,15 +364,13 @@ io.on('connection', socket => {
             game.rotation += data.direction
             game.rotation = ((game.rotation % 4) + 4) % 4
             data.newRotation = game.rotation
-            appendLog(gameName, data)
           }
-          else {
+          else if (card.t === Rotate) {
             data.rotation = game.rotation
             if (card.v === Character) {
               data.oldChar = game.drawing[game.cursor]
               data.newChar = rotateChar(data.rotation, data.oldChar)
               game.drawing[game.cursor] = data.newChar
-              appendLog(gameName, data)
             }
             else if (card.v === Drawing) {
               const newDrawing = Array(4)
@@ -378,14 +380,12 @@ io.on('connection', socket => {
                 if (++i === 4) i = 0
               }
               game.drawing = newDrawing
-              appendLog(gameName, data)
             }
             else if (card.v === Cursor) {
               data.oldCursor = game.cursor
               game.cursor += data.rotation
               game.cursor %= 4
               data.newCursor = game.cursor
-              appendLog(gameName, data)
             }
             else {
               data.targetCursor = (game.cursor + data.rotation) % 4
@@ -393,9 +393,20 @@ io.on('connection', socket => {
               data.targetChar = game.drawing[data.targetCursor]
               game.drawing[data.targetCursor] = data.sourceChar ^ data.targetChar
               data.newChar = game.drawing[data.targetCursor]
-              appendLog(gameName, data)
             }
           }
+          else {
+            data.reflection = game.rotation
+            if (card.v === Character) {
+              data.oldChar = game.drawing[game.cursor]
+              data.newChar = reflectChar(data.reflection, data.oldChar)
+              game.drawing[game.cursor] = data.newChar
+            }
+            else
+              game.drawing = reflectArray(data.reflection, game.drawing).map(
+                c => reflectChar(data.reflection, c))
+          }
+          appendLog(gameName, data)
           if (game.drawing.every((c, i) => c === game.target[i])) {
             appendLog(gameName, `The target is achieved!`)
             game.scored.push(game.target)

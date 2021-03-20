@@ -16,29 +16,25 @@ const drawingDiv = document.getElementById('drawing')
 const infoDiv = document.getElementById('info')
 const playersDiv = document.getElementById('players')
 
-/*
 const Characters =
-  [' ','╴','╶','─',
-   '╵','┘','└','┴',
-   '╷','┐','┌','┬',
-   '│','┤','├','┼',]
-*/
-const Characters =
-  [' ','▘','▗','▚',
+  [' ','▘','▝','▀',
 
-   '▝','▀','▐','▜',
+   '▗','▚','▐','▜',
 
-   '▖','▌','▄','▙',
+   '▖','▌','▞','▛',
 
-   '▞','▛','▟','█']
+   '▄','▙','▟','█']
 
 const Directions = ['↺','↻']
-const RotationTargets = ['□','⊞','⬚','⟴']
-const Rotations = ['0','↻','🔃','↺']
+const RotationTargets = ['○','⊕','⬚','⟴']
+const ReflectionTargets = ['□','⊞']
+const Rotations = ['0','↻','π','↺']
+const Reflections = ['—', '\\', '|', '/']
 
 const CardChar = c =>
   c.t < 2 ? Characters[Math.pow(2, 2 * c.t + c.v)] :
-  c.t < 3 ? Directions[c.v] : RotationTargets[c.v]
+  c.t < 3 ? Directions[c.v] :
+  c.t < 4 ? RotationTargets[c.v] : ReflectionTargets[c.v]
 
 const fragment = document.createDocumentFragment()
 
@@ -218,7 +214,7 @@ socket.on('updateTarget', target => {
 socket.on('updateRemaining', data => {
   infoDiv.innerHTML = ''
   fragment.appendChild(document.createElement('p')).textContent = `Cards: ${data.cards}`
-  fragment.appendChild(document.createElement('p')).textContent = `Rotation: ${Rotations[data.rotation]}`
+  fragment.appendChild(document.createElement('p')).textContent = `{Rota, Reflec}tion: ${Rotations[data.rotation]}, ${Reflections[data.rotation]}`
   fragment.appendChild(document.createElement('p')).textContent = `Score: ${data.scored.length}`
   // TODO: click to show individual scored drawings
   infoDiv.appendChild(fragment)
@@ -249,10 +245,15 @@ socket.on('appendLog', entry => {
         `Result: '${Characters[entry.oldChar]}' ⊕ '${Characters[entry.character]}' = '${Characters[entry.newChar]}'.`
     else if ('direction' in entry)
       li2.textContent =
-        `Rotation ${entry.direction < 0 ? 'decreases' : 'increases'} from ${Rotations[entry.oldRotation]} to ${Rotations[entry.newRotation]}.`
+        `{Rota, Reflec}tion ${entry.direction < 0 ? 'decreases' : 'increases'} ` +
+        `from ${Rotations[entry.oldRotation]}, ${Reflections[entry.oldRotation]} ` +
+        `to ${Rotations[entry.newRotation]}, ${Reflections[entry.newRotation]}.`
     else if ('oldChar' in entry)
       li2.textContent =
-        `Character '${Characters[entry.oldChar]}' rotates by ${Rotations[entry.rotation]} to '${Characters[entry.newChar]}'.`
+        `Character '${Characters[entry.oldChar]}' ` +
+        ('reflection' in entry ? `reflects by ${Reflections[entry.reflection]}`
+                               : `rotates by ${Rotations[entry.rotation]}`) +
+        ` to '${Characters[entry.newChar]}'.`
     else if ('oldCursor' in entry)
       li2.textContent =
         `Cursor moves from ${entry.oldCursor} by ${Rotations[entry.rotation]} to ${entry.newCursor}.`
@@ -261,7 +262,9 @@ socket.on('appendLog', entry => {
         `At ${entry.targetCursor} (cursor + ${Rotations[entry.rotation]}), '${Characters[entry.targetChar]}' ⊕ '${Characters[entry.sourceChar]}' = '${Characters[entry.newChar]}'.`
     else
       li2.textContent =
-        `The drawing rotates by ${Rotations[entry.rotation]}.`
+        `The drawing ` +
+        ('reflection' in entry ? `reflects by ${Reflections[entry.reflection]}.`
+                               : `rotates by ${Rotations[entry.rotation]}.`)
     li.appendChild(document.createElement('ul')).appendChild(fragment)
   }
   else {
