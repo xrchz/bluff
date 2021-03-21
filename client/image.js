@@ -133,7 +133,10 @@ socket.on('updatePlayers', players => {
   playersDiv.innerHTML = ''
   if (!startButton.disabled)
     startButton.hidden = players.length < 2
-  for (const player of players) {
+  const currentIndex = players.findIndex(player => player.current)
+  const isCurrent = 0 <= currentIndex && !spectateInput.checked && players[currentIndex].name === nameInput.value
+  for (let playerIndex = 0; playerIndex < players.length; playerIndex++) {
+    const player = players[playerIndex]
     const div = fragment.appendChild(document.createElement('div'))
     const name = div.appendChild(document.createElement('h3'))
     name.textContent = player.name
@@ -154,10 +157,16 @@ socket.on('updatePlayers', players => {
         const button = li.appendChild(document.createElement('input'))
         button.type = 'button'
         button.value = CardChar(card)
-        if (player.current && player.name === nameInput.value && !spectateInput.checked)
-          button.onclick = () => socket.emit('moveRequest', cardIndex)
+        if (isCurrent && playerIndex === currentIndex)
+          button.onclick = () => socket.emit('playRequest', cardIndex)
         else
           button.disabled = true
+      }
+      if (isCurrent && playerIndex !== currentIndex) {
+        const button = ol.appendChild(document.createElement('li')).appendChild(document.createElement('input'))
+        button.type = 'button'
+        button.value = '⬇'
+        button.onclick = () => socket.emit('drawRequest', playerIndex)
       }
     }
   }
@@ -213,10 +222,24 @@ socket.on('updateTarget', target => {
 
 socket.on('updateRemaining', data => {
   infoDiv.innerHTML = ''
-  fragment.appendChild(document.createElement('p')).textContent = `Cards: ${data.cards}`
-  fragment.appendChild(document.createElement('p')).textContent = `{Rota, Reflec}tion: ${Rotations[data.rotation]}, ${Reflections[data.rotation]}`
-  fragment.appendChild(document.createElement('p')).textContent = `Score: ${data.scored.length}`
+  const div = fragment.appendChild(document.createElement('div'))
+  div.appendChild(document.createElement('p')).textContent = `Moves: ${data.moves}`
+  div.appendChild(document.createElement('p')).textContent = `{Rota, Reflec}tion: ${Rotations[data.rotation]}, ${Reflections[data.rotation]}`
+  div.appendChild(document.createElement('p')).textContent = `Score: ${data.scored.length}`
   // TODO: click to show individual scored drawings
+  const current = !spectateInput.checked && 0 <= data.currentIndex && nameInput.value === playerName(data.currentIndex)
+  const ul = fragment.appendChild(document.createElement('div')).appendChild(document.createElement('ul'))
+  ul.classList.add('inline')
+  for (let cardIndex = 0; cardIndex < data.deck.length; cardIndex++) {
+    if (current) {
+      const button = ul.appendChild(document.createElement('li')).appendChild(document.createElement('input'))
+      button.type = 'button'
+      button.value = '⬅'
+      button.onclick = () => socket.emit('shiftRequest', cardIndex)
+    }
+    const li = ul.appendChild(document.createElement('li'))
+    li.textContent = CardChar(data.deck[cardIndex])
+  }
   infoDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
 })
@@ -237,35 +260,41 @@ socket.on('appendLog', entry => {
   if (typeof entry ===  'string')
     li.textContent = entry
   else if ('playerName' in entry) {
-    fragment.appendChild(document.createElement('li')).textContent =
-      `${entry.playerName} plays their ${ordinal(entry.cardIndex)} card, ${CardChar(entry.card)}.`
-    const li2 = fragment.appendChild(document.createElement('li'))
-    if ('character' in entry)
-      li2.textContent =
-        `Result: '${Characters[entry.oldChar]}' ⊕ '${Characters[entry.character]}' = '${Characters[entry.newChar]}'.`
-    else if ('direction' in entry)
-      li2.textContent =
-        `{Rota, Reflec}tion ${entry.direction < 0 ? 'decreases' : 'increases'} ` +
-        `from ${Rotations[entry.oldRotation]}, ${Reflections[entry.oldRotation]} ` +
-        `to ${Rotations[entry.newRotation]}, ${Reflections[entry.newRotation]}.`
-    else if ('oldChar' in entry)
-      li2.textContent =
-        `Character '${Characters[entry.oldChar]}' ` +
-        ('reflection' in entry ? `reflects by ${Reflections[entry.reflection]}`
-                               : `rotates by ${Rotations[entry.rotation]}`) +
-        ` to '${Characters[entry.newChar]}'.`
-    else if ('oldCursor' in entry)
-      li2.textContent =
-        `Cursor moves from ${entry.oldCursor} by ${Rotations[entry.rotation]} to ${entry.newCursor}.`
-    else if ('targetCursor' in entry)
-      li2.textContent =
-        `At ${entry.targetCursor} (cursor + ${Rotations[entry.rotation]}), '${Characters[entry.targetChar]}' ⊕ '${Characters[entry.sourceChar]}' = '${Characters[entry.newChar]}'.`
+    if ('targetName' in entry)
+      li.textContent = `${entry.playerName} adds card ${CardChar(entry.card)} to ${entry.targetName}'s hand.`
+    else if ('cardIndex' in entry) {
+      fragment.appendChild(document.createElement('li')).textContent =
+        `${entry.playerName} plays their ${ordinal(entry.cardIndex)} card, ${CardChar(entry.card)}.`
+      const li2 = fragment.appendChild(document.createElement('li'))
+      if ('character' in entry)
+        li2.textContent =
+          `Result: '${Characters[entry.oldChar]}' ⊕ '${Characters[entry.character]}' = '${Characters[entry.newChar]}'.`
+      else if ('direction' in entry)
+        li2.textContent =
+          `{Rota, Reflec}tion ${entry.direction < 0 ? 'decreases' : 'increases'} ` +
+          `from ${Rotations[entry.oldRotation]}, ${Reflections[entry.oldRotation]} ` +
+          `to ${Rotations[entry.newRotation]}, ${Reflections[entry.newRotation]}.`
+      else if ('oldChar' in entry)
+        li2.textContent =
+          `Character '${Characters[entry.oldChar]}' ` +
+          ('reflection' in entry ? `reflects by ${Reflections[entry.reflection]}`
+                                 : `rotates by ${Rotations[entry.rotation]}`) +
+          ` to '${Characters[entry.newChar]}'.`
+      else if ('oldCursor' in entry)
+        li2.textContent =
+          `Cursor moves from ${entry.oldCursor} by ${Rotations[entry.rotation]} to ${entry.newCursor}.`
+      else if ('targetCursor' in entry)
+        li2.textContent =
+          `At ${entry.targetCursor} (cursor + ${Rotations[entry.rotation]}), '${Characters[entry.targetChar]}' ⊕ '${Characters[entry.sourceChar]}' = '${Characters[entry.newChar]}'.`
+      else
+        li2.textContent =
+          `The drawing ` +
+          ('reflection' in entry ? `reflects by ${Reflections[entry.reflection]}.`
+                                 : `rotates by ${Rotations[entry.rotation]}.`)
+      li.appendChild(document.createElement('ul')).appendChild(fragment)
+    }
     else
-      li2.textContent =
-        `The drawing ` +
-        ('reflection' in entry ? `reflects by ${Reflections[entry.reflection]}.`
-                               : `rotates by ${Rotations[entry.rotation]}.`)
-    li.appendChild(document.createElement('ul')).appendChild(fragment)
+      li.textContent = `${entry.playerName} shifts card ${CardChar(entry.card)} left.`
   }
   else {
     li.textContent = 'TODO: log'

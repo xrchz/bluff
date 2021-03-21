@@ -83,10 +83,15 @@ ul.inline > li {
 }
 #info {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  flex-direction: column;
   font-weight: bold;
   max-width: 40em;
   margin: auto;
+}
+#info > div {
+  display: flex;
+  justify-content: space-around;
 }
 #info[hidden] {
   display: none;

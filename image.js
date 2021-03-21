@@ -67,7 +67,7 @@ function shuffleInPlace(array) {
   }
 }
 
-const CardMultiplicity = 5
+const InitialMoves = 20
 const Direction = 2
 const Rotate = 3
 const Character = 0
@@ -96,8 +96,7 @@ function makeDeck() {
   for (let t = 0; t < 5; t++) {
     const vMax = t === Rotate ? 4 : 2
     for (let v = 0; v < vMax; v++)
-      for (let n = 0; n < CardMultiplicity; n++)
-        deck.push({t: t, v: v})
+      deck.push({t: t, v: v})
   }
   return deck
 }
@@ -111,7 +110,7 @@ function appendLog(gameName, entry) {
 const stateKeys = {
   game: [
     'players', 'started',
-    'deck', 'rotation',
+    'moves', 'deck', 'rotation',
     'target', 'drawing', 'cursor',
     'scored', 'ended'
   ], deck: true, target: true, drawing: true,
@@ -167,7 +166,20 @@ function updateDrawing(gameName, roomName) {
 function updateRemaining(gameName, roomName) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
-  io.in(roomName).emit('updateRemaining', { cards: game.deck.length, rotation: game.rotation, scored: game.scored })
+  io.in(roomName).emit('updateRemaining',
+    { moves: game.moves,
+      deck: game.deck,
+      currentIndex: game.players.findIndex(player => player.current),
+      rotation: game.rotation,
+      scored: game.scored })
+}
+
+function nextTurn(gameName, playerIndex) {
+  const game = games[gameName]
+  if (game.ended)
+    appendLog(gameName, `The game ends with a score of ${game.scored.length}.`)
+  else
+    game.players[(playerIndex + 1) % game.players.length].current = true
 }
 
 io.on('connection', socket => {
@@ -310,11 +322,9 @@ io.on('connection', socket => {
         game.log = []
         game.deck = makeDeck()
         shuffleInPlace(game.deck)
+        game.moves = InitialMoves
         game.rotation = 0
         game.players.forEach(player => player.hand = [])
-        const handSize = game.players.length < 4 ? 5 : 4
-        for (let i = 0; i < handSize; i++)
-          game.players.forEach(player => player.hand.push(game.deck.pop()))
         game.scored = []
         game.target = generateTarget()
         game.drawing = Array(4).fill(0)
@@ -339,7 +349,7 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('moveRequest', cardIndex => inGame((gameName, game) => {
+  socket.on('playRequest', cardIndex => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = game.players[playerIndex]
@@ -347,10 +357,7 @@ io.on('connection', socket => {
         if (Number.isInteger(cardIndex) && 0 <= cardIndex && cardIndex < player.hand.length) {
           appendUndo(gameName)
           delete player.current
-          const card = game.deck.length ?
-            player.hand.splice(cardIndex, 1, game.deck.pop())[0] :
-            player.hand.splice(cardIndex, 1)[0]
-          if (!game.players.some(player => player.hand.length)) game.ended = true
+          const card = player.hand.splice(cardIndex, 1)[0]
           const data = { playerName: player.name, cardIndex: cardIndex, card: card }
           if (card.t < Direction) {
             data.character = Math.pow(2, 2 * card.t + card.v)
@@ -407,6 +414,7 @@ io.on('connection', socket => {
                 c => reflectChar(data.reflection, c))
           }
           appendLog(gameName, data)
+          if (!--game.moves) game.ended = true
           if (game.drawing.every((c, i) => c === game.target[i])) {
             appendLog(gameName, `The target is achieved!`)
             game.scored.push(game.target)
@@ -422,17 +430,14 @@ io.on('connection', socket => {
               io.in(gameName).emit('updateTarget', game.target)
             }
           }
-          if (game.ended)
-            appendLog(gameName, `The game ends with a score of ${game.scored.length}.`)
-          else
-            game.players[(playerIndex + 1) % game.players.length].current = true
+          nextTurn(gameName, playerIndex)
           updateDrawing(gameName)
-          updateRemaining(gameName)
           io.in(gameName).emit('updatePlayers', game.players)
+          updateRemaining(gameName)
         }
         else {
-          console.log(`error: ${socket.playerName} in ${gameName} made an invalid move`)
-          socket.emit('errorMsg', `Error: that is not a valid move.`)
+          console.log(`error: ${socket.playerName} in ${gameName} made an invalid play`)
+          socket.emit('errorMsg', `Error: that is not a valid play.`)
         }
       }
       else {
@@ -442,6 +447,73 @@ io.on('connection', socket => {
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried moving before start`)
+      socket.emit('errorMsg', `Error: game has not started.`)
+    }
+  }))
+
+  socket.on('drawRequest', targetIndex => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      const player = game.players[playerIndex]
+      if (0 <= playerIndex && player.current) {
+        if (Number.isInteger(targetIndex) && 0 <= targetIndex &&
+            targetIndex < game.players.length && targetIndex !== playerIndex) {
+          appendUndo(gameName)
+          delete player.current
+          const card = game.deck[0]
+          const target = game.players[targetIndex]
+          target.hand.push(card)
+          appendLog(gameName, {'playerName': player.name, 'targetName': target.name, 'card': card})
+          if (!--game.moves) game.ended = true
+          nextTurn(gameName, playerIndex)
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateRemaining(gameName)
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} made an invalid draw`)
+          socket.emit('errorMsg', `Error: that is not a valid draw.`)
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
+        socket.emit('errorMsg', 'Error: it is not your turn.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried drawing before start`)
+      socket.emit('errorMsg', `Error: game has not started.`)
+    }
+  }))
+
+  socket.on('shiftRequest', cardIndex => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      const player = game.players[playerIndex]
+      if (0 <= playerIndex && player.current) {
+        if (Number.isInteger(cardIndex) && 0 <= cardIndex && cardIndex < game.deck.length) {
+          appendUndo(gameName)
+          delete player.current
+          const card = game.deck.splice(cardIndex, 1)[0]
+          cardIndex = cardIndex ? cardIndex - 1 : game.deck.length
+          game.deck.splice(cardIndex, 0, card)
+          appendLog(gameName, {playerName: player.name, card: card})
+          if (!--game.moves) game.ended = true
+          nextTurn(gameName, playerIndex)
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateRemaining(gameName)
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} made an invalid shift`)
+          socket.emit('errorMsg', `Error: that is not a valid shift.`)
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
+        socket.emit('errorMsg', 'Error: it is not your turn.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried shifting before start`)
       socket.emit('errorMsg', `Error: game has not started.`)
     }
   }))
