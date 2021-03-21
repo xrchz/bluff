@@ -85,13 +85,34 @@ ul.inline > li {
   display: flex;
   justify-content: space-between;
   flex-direction: column;
+  align-items: center;
   font-weight: bold;
   max-width: 40em;
   margin: auto;
 }
 #info > div {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  width: 100%;
+}
+#info > div:last-child {
+  flex-direction: column;
+  width: auto;
+  font-size: 2vw;
+}
+#info ul.inline {
+  margin: 0;
+}
+#info ul.inline li {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  text-align: center;
+  padding: 0.5em;
+  border: solid 1px;
+}
+#info ul.inline li.button {
+  border: none;
 }
 #info[hidden] {
   display: none;

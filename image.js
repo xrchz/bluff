@@ -68,6 +68,7 @@ function shuffleInPlace(array) {
 }
 
 const InitialMoves = 20
+const MaxHandSize = 5
 const Direction = 2
 const Rotate = 3
 const Character = 0
@@ -84,8 +85,11 @@ function funpow(v, f, x) {
 const rotateChar = (v, c) =>
   funpow(v, rotateOnce, c)
 
+const rotateArrayInPlace = (v, a) =>
+  funpow(v, a => {a.unshift(a.pop()); return a}, a)
+
 const reflectArray = (v, a) =>
-  funpow(v, a => {a.unshift(a.pop()); return a}, a.slice().reverse())
+  rotateArrayInPlace(v, a.slice().reverse())
 
 const reflectChar = (v, c) =>
   reflectArray(v, [0, 1, 2, 3].map(i => (c >> i) % 2)).reduceRight(
@@ -320,10 +324,17 @@ io.on('connection', socket => {
         game.started = true
         game.undoLog = []
         game.log = []
-        game.deck = makeDeck()
-        shuffleInPlace(game.deck)
+        const deck = makeDeck()
+        shuffleInPlace(deck)
+        game.deck = []
+        while (deck.length) {
+          const row = []
+          for (let i = 0; i < 4; i++)
+            row.push(deck.pop())
+          game.deck.push(row)
+        }
         game.moves = InitialMoves
-        game.rotation = 0
+        game.rotation = 1
         game.players.forEach(player => player.hand = [])
         game.scored = []
         game.target = generateTarget()
@@ -413,9 +424,11 @@ io.on('connection', socket => {
               game.drawing = reflectArray(data.reflection, game.drawing).map(
                 c => reflectChar(data.reflection, c))
           }
+          // TODO: gain moves for newly matching characters (and add to log)
           appendLog(gameName, data)
           if (!--game.moves) game.ended = true
           if (game.drawing.every((c, i) => c === game.target[i])) {
+            // TODO: gain moves for achieving the target (and add to log)
             appendLog(gameName, `The target is achieved!`)
             game.scored.push(game.target)
             if (game.ended) {
@@ -457,13 +470,16 @@ io.on('connection', socket => {
       const player = game.players[playerIndex]
       if (0 <= playerIndex && player.current) {
         if (Number.isInteger(targetIndex) && 0 <= targetIndex &&
-            targetIndex < game.players.length && targetIndex !== playerIndex) {
+            targetIndex < game.players.length && targetIndex !== playerIndex &&
+            game.players[targetIndex].hand.length + 3 <= MaxHandSize) {
           appendUndo(gameName)
           delete player.current
-          const card = game.deck[0]
+          const cards = game.deck.reduce((c, r) => {c.push(r[game.rotation]); return c}, [])
           const target = game.players[targetIndex]
-          target.hand.push(card)
-          appendLog(gameName, {'playerName': player.name, 'targetName': target.name, 'card': card})
+          target.hand.push(...cards)
+          appendLog(gameName,
+            {playerName: player.name, targetName: target.name,
+             column: game.rotation, cards: cards})
           if (!--game.moves) game.ended = true
           nextTurn(gameName, playerIndex)
           io.in(gameName).emit('updatePlayers', game.players)
@@ -485,18 +501,19 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('shiftRequest', cardIndex => inGame((gameName, game) => {
+  socket.on('shiftRequest', rowIndex => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = game.players[playerIndex]
       if (0 <= playerIndex && player.current) {
-        if (Number.isInteger(cardIndex) && 0 <= cardIndex && cardIndex < game.deck.length) {
+        if (Number.isInteger(rowIndex) && 0 <= rowIndex && rowIndex < game.deck.length) {
           appendUndo(gameName)
           delete player.current
-          const card = game.deck.splice(cardIndex, 1)[0]
-          cardIndex = cardIndex ? cardIndex - 1 : game.deck.length
-          game.deck.splice(cardIndex, 0, card)
-          appendLog(gameName, {playerName: player.name, card: card})
+          const oldRow = game.deck[rowIndex].slice()
+          rotateArrayInPlace(game.rotation, game.deck[rowIndex])
+          appendLog(gameName,
+            {playerName: player.name, rowIndex: rowIndex, rotation: game.rotation,
+             oldRow: oldRow, newRow: game.deck[rowIndex]})
           if (!--game.moves) game.ended = true
           nextTurn(gameName, playerIndex)
           io.in(gameName).emit('updatePlayers', game.players)
