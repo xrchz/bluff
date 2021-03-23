@@ -173,7 +173,8 @@ function updatePlayers(gameName, roomName) {
   const next = nextToDraw(game.players)
   const data = {
     playing: next < 0,
-    next: 0 <= next && game.players.length - next <= drawable(game) ? next : false,
+    next: (game.targets.length && 0 <= next &&
+           game.players.length - next <= drawable(game)) ? next : false,
     players: game.players
   }
   io.in(roomName).emit('updatePlayers', data)
@@ -405,7 +406,7 @@ io.on('connection', socket => {
     if (game.started) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = game.players[playerIndex]
-      if (0 <= playerIndex && nextToDraw(game.players) === playerIndex) {
+      if (0 <= playerIndex && nextToDraw(game.players) === playerIndex && game.targets.length) {
         if (Number.isInteger(data.playerIndex) &&
             -1 <= data.playerIndex && data.playerIndex < game.players.length &&
             (data.playerIndex < 0 && game.deck.length ||
