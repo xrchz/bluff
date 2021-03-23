@@ -347,7 +347,9 @@ io.on('connection', socket => {
             ['p','d'].includes(play[0]) && ['h','d'].includes(play[1])) {
           player.play = play
           if (game.players.every(player => player.play)) {
+            delete player.play
             appendUndo(gameName)
+            player.play = play
             let played = ''
             game.players.forEach(player => {
               const fromHand = player.play[1] === 'h'
