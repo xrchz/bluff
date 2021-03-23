@@ -242,7 +242,10 @@ socket.on('appendLog', entry => {
     li.textContent = entry
   else if ('plays' in entry)
     li.textContent =
-      `${entry.player} ${entry.plays ? 'plays' : 'pools'} ${entry.fromHand ? 'their' : 'the'} '${entry.letter}' ${entry.fromHand ? 'from hand' : 'they drew'}.`
+      `${entry.player} ${entry.plays ? 'plays' : 'pools'}` +
+      ` ${entry.fromHand ? 'their' : 'the'} '${entry.letter}'` +
+      ` ${entry.fromHand ? 'from hand' : 'they drew'}` +
+      `${entry.discarding ? `, discarding ${entry.discarding}` : ''}.`
   else if ('played' in entry)
     li.textContent = `Target '${entry.played}' achieved!`
   else if ('fumbled' in entry)
