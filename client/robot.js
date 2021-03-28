@@ -259,9 +259,6 @@ const ordinal = n =>
   n === 1 ? '2nd' :
   n === 2 ? '3rd' : `${n+1}th`
 
-const plural = (n, s1, s2) =>
-  `${n} ${n === 1 ? s1 : s2}`
-
 socket.on('appendLog', entry => {
   const li = document.createElement('li')
   if (typeof entry ===  'string')
@@ -284,11 +281,15 @@ socket.on('appendLog', entry => {
   else if ('clueAttempts' in entry) {
     if ('cluesLeft' in entry)
       li.textContent =
-        `${plural(entry.clueAttempts, 'clue attempt', 'clue attempts')} failed` +
-        ` since only ${plural(entry.cluesLeft, 'clue was', 'clues were')} possible.`
+        `The ${entry.clueAttempts === 1 ? 'clue attempt fails' :
+                                          `${entry.clueAttempts} clue attempts fail`}` +
+        ` since ${entry.cluesLeft === 0 ? 'no clues are' :
+                  entry.cluesLeft === 1 ? 'only 1 clue is' :
+                  `only ${entry.cluesLeft} clues are`} possible.`
     else
       li.textContent =
-        `${plural(entry.clueAttempts, 'clue succeeds', 'clues succeed')}.`
+        `The ${entry.clueAttempts === 1 ? 'clue succeeds' :
+                                          `${entry.clueAttempts} clues succeed`}.`
   }
   else
     li.textContent = 'Error: unhandled log entry'
