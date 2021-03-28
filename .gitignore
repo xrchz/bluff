@@ -10,4 +10,5 @@ words.json
 image.json
 route.json
 spell.json
+robot.json
 client/config.js

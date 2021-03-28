@@ -1,0 +1,143 @@
+body {
+  font-family: sans-serif;
+  font-size: 14pt;
+  background-color: #242;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button] {
+  background-color: RoyalBlue;
+  color: LightYellow;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  max-width: 40em;
+  margin: auto;
+}
+#spectators {
+  color: SlateGray
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+#games a:hover {
+  cursor: pointer;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.disconnected {
+  color: Pink;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+input.selected {
+  background-color: #026;
+}
+#grid {
+  display: grid;
+  margin: auto;
+  margin-top: 0.5em;
+  width: min-content;
+}
+#grid > div {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid Maroon;
+  text-align: center;
+  line-height: 3rem;
+  box-sizing: border-box;
+  color: MistyRose;
+  background-color: DarkRed;
+  position: relative;
+}
+#grid > div.lava {
+  background-color: Orange;
+}
+#grid > div.gem {
+  background-color: SkyBlue;
+}
+#grid > div.gem::after {
+  content: '💎';
+}
+#grid > div.robot {
+  color: green;
+}
+#players {
+  display: flex;
+  margin: auto;
+  justify-content: space-around;
+}
+#players > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: LavenderBlush;
+}
+#players > div > h3 {
+  text-align: center;
+  margin-bottom: 0;
+}
+#players > div > ol {
+  padding: 0;
+  margin-top: 0.5em;
+  list-style-position: inside;
+}
+#players > div > ol > li {
+  margin-top: 0.5em;
+}
+#players > div > ol > li > input {
+  margin-left: 0.5em;
+}
+#info {
+  display: flex;
+  margin: auto;
+  flex-direction: column;
+  align-items: center;
+  font-size: larger;
+}
