@@ -173,6 +173,7 @@ function updatePlayers(gameName, roomName) {
   const next = nextToDraw(game.players)
   const data = {
     playing: next < 0,
+    cardsLeft: game.deck.length,
     next: (game.targets.length && 0 <= next &&
            game.players.length - next <= drawable(game)) ? next : false,
     players: game.players

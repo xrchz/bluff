@@ -209,7 +209,7 @@ socket.on('updatePlayers', data => {
         if (!spectateInput.checked && data.playing)
           addPlayPool(drawn, 'd')
       }
-      if (data.next === playerIndex) {
+      if (data.next === playerIndex && data.cardsLeft) {
         const draw = div.appendChild(document.createElement('input'))
         draw.type = 'button'
         draw.value = 'Deck'
