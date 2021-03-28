@@ -252,7 +252,8 @@ async function checkEndRound(gameName, lastPlayer) {
     })
     if (clueAttempts <= game.cluesLeft) {
       game.cluesLeft -= clueAttempts
-      appendLog(gameName, {clueAttempts: clueAttempts})
+      if (clueAttempts)
+        appendLog(gameName, {clueAttempts: clueAttempts})
     }
     else
       appendLog(gameName, {clueAttempts: clueAttempts, cluesLeft: game.cluesLeft})
