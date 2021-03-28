@@ -221,7 +221,7 @@ function updatePlayers(gameName, roomName) {
   })
 }
 
-function checkEndRound(gameName, lastPlayer) {
+async function checkEndRound(gameName, lastPlayer) {
   const game = games[gameName]
   if (game.players.every(player => 'cardIndex' in player)) {
     const lastPlayerIndex = lastPlayer.playerIndex
@@ -272,21 +272,21 @@ function checkEndRound(gameName, lastPlayer) {
         plays.push(false)
     })
     let robotIndex = game.grid.findIndex(c => c.r)
-    plays.forEach(d => {
+    for (const d of plays) {
       if (!game.grid[robotIndex].l) {
+        await (new Promise(resolve => setTimeout(resolve, 1000)))
         if (d && game.grid[robotIndex].r !== d) {
           game.grid[robotIndex].r = d
           appendLog(gameName, {turn: d})
         }
         else {
-          const cont = !d
-          d = game.grid[robotIndex].r
+          const move = game.grid[robotIndex].r
           delete game.grid[robotIndex].r
           robotIndex +=
-            (d === Left ? -1 :
-             d === Down ? Cols + 2 :
-             d === Up ? -(Cols + 2) : 1)
-          game.grid[robotIndex].r = d
+            (move === Left ? -1 :
+             move === Down ? Cols + 2 :
+             move === Up ? -(Cols + 2) : 1)
+          game.grid[robotIndex].r = move
           let gem = false, clue = false
           if (game.grid[robotIndex].g) {
             delete game.grid[robotIndex].g
@@ -298,10 +298,12 @@ function checkEndRound(gameName, lastPlayer) {
             }
           }
           appendLog(gameName,
-            {move: d, cont: cont, gem: gem, clue: clue, lava: game.grid[robotIndex].l})
+            {move: move, cont: !d, gem: gem, clue: clue, lava: game.grid[robotIndex].l})
         }
+        updateGrid(gameName)
+        updateInfo(gameName)
       }
-    })
+    }
     const dead = game.grid[robotIndex].l
     const finished = !game.grid.find(c => c.g)
     if (dead || finished || !game.deck.length) {
