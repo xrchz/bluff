@@ -240,7 +240,7 @@ function checkEndRound(gameName, lastPlayer) {
           other.hand.forEach(card => {
             if (card.d === player.cardIndex)
               card.c = true
-            else if (card.c !== true)
+            else if (Array.isArray(card.c) && !card.c.includes(player.cardIndex))
               card.c.push(player.cardIndex)
           })
         }
