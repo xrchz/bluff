@@ -162,9 +162,11 @@ function makeGrid() {
 
 const stateKeys = {
   game: [
-    'players', 'started', 'deck', 'dropped', 'cluesLeft', 'grid', 'ended'
+    'players', 'started',
+    'deck', 'grid', 'discarded',
+    'cluesLeft', 'score', 'ended'
   ],
-  deck: true, dropped: true, grid: true,
+  deck: true, discarded: true, grid: true,
   players: 'player',
   player: [ 'playerIndex', 'cardIndex', 'hand' ], hand: true
 }
@@ -198,7 +200,8 @@ function updateInfo(gameName, roomName) {
   io.in(roomName).emit('updateInfo', {
     cardsLeft: game.deck.length,
     cluesLeft: game.cluesLeft,
-    dropped: game.dropped
+    score: game.score,
+    discarded: game.discarded
   })
 }
 
@@ -258,12 +261,8 @@ function checkEndRound(gameName, lastPlayer) {
       if ('cardIndex' in player) {
         const card = player.hand.splice(player.cardIndex, 1)[0].d
         const drop = player.playerIndex === -1
-        if (drop) {
-          game.dropped.push(card)
-          plays.push(false)
-        }
-        else
-          plays.push(card)
+        game.discarded.push(card)
+        plays.push(drop ? false : card)
         if (game.deck.length) player.hand.push({d: game.deck.pop(), c: []})
         appendLog(gameName, {name: player.name, card: card, index: player.cardIndex, drop: drop})
         delete player.playerIndex
@@ -291,6 +290,7 @@ function checkEndRound(gameName, lastPlayer) {
           let gem = false, clue = false
           if (game.grid[robotIndex].g) {
             delete game.grid[robotIndex].g
+            game.score++
             gem = true
             if (game.cluesLeft < MaxClues) {
               game.cluesLeft++
@@ -307,9 +307,8 @@ function checkEndRound(gameName, lastPlayer) {
     if (dead || finished || !game.deck.length) {
       game.ended = true
       const ending = dead ? ' in defeat' : finished ? ' in victory' : ''
-      const score = Gems - game.grid.reduce((t, c) => c.g ? t+1 : t, 0)
       const undos = game.undoCount ? '.' : ` (using ${game.undoCount} undos).`
-      appendLog(gameName, `The game ends${ending} with a score of ${score}${undos}`)
+      appendLog(gameName, `The game ends${ending} with a score of ${game.score}/${Gems}${undos}`)
     }
     updateGrid(gameName)
     updateInfo(gameName)
@@ -458,8 +457,9 @@ io.on('connection', socket => {
         game.undoCount = 0
         game.log = []
         game.deck = makeDeck()
+        game.score = 0
         game.cluesLeft = MaxClues
-        game.dropped = []
+        game.discarded = []
         game.grid = makeGrid()
         game.players.forEach(player => player.hand = [])
         const cardsPerHand = HandSize(game.players.length)

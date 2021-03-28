@@ -141,3 +141,9 @@ input.selected {
   align-items: center;
   font-size: larger;
 }
+#info > div {
+  display: flex;
+  justify-content: space-around;
+  margin: auto;
+  width: 80%;
+}

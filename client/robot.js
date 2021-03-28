@@ -235,10 +235,13 @@ socket.on('updatePlayers', data => {
 
 socket.on('updateInfo', data => {
   infoDiv.innerHTML = ''
-  fragment.appendChild(document.createElement('p')).textContent = `Cards: ${data.cardsLeft}`
-  fragment.appendChild(document.createElement('p')).textContent = `Clues: ${data.cluesLeft}`
+  const div = fragment.appendChild(document.createElement('div'))
+  div.appendChild(document.createElement('p')).textContent =
+    `Score: ${data.score} ${Array(data.score).fill('💎').join('')}`
+  div.appendChild(document.createElement('p')).textContent = `Cards: ${data.cardsLeft}`
+  div.appendChild(document.createElement('p')).textContent = `Clues: ${data.cluesLeft}`
   fragment.appendChild(document.createElement('p')).textContent =
-    `Dropped: ${data.dropped.map(d => CardChar[d-1]).join(' ')}`
+    `Discards: ${data.discarded.map(d => CardChar[d-1]).join(',')}`
   infoDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
 })
