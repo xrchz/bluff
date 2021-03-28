@@ -285,7 +285,7 @@ socket.on('appendLog', entry => {
     if ('cluesLeft' in entry)
       li.textContent =
         `${plural(entry.clueAttempts, 'clue attempt', 'clue attempts')} failed` +
-        ` since only ${plural(entry.cluesLeft, 'clue is', 'clues are')} possible.`
+        ` since only ${plural(entry.cluesLeft, 'clue was', 'clues were')} possible.`
     else
       li.textContent =
         `${plural(entry.clueAttempts, 'clue succeeds', 'clues succeed')}.`
