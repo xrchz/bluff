@@ -262,10 +262,16 @@ async function checkEndRound(gameName, lastPlayer) {
       if ('cardIndex' in player) {
         const card = player.hand.splice(player.cardIndex, 1)[0].d
         const drop = player.playerIndex === -1
+        let clue = false
+        if (drop && game.cluesLeft < MaxClues) {
+          game.cluesLeft++
+          clue = true
+        }
         game.discarded.push(card)
         plays.push(drop ? false : card)
         if (game.deck.length) player.hand.push({d: game.deck.pop(), c: []})
-        appendLog(gameName, {name: player.name, card: card, index: player.cardIndex, drop: drop})
+        appendLog(gameName,
+          {name: player.name, card: card, index: player.cardIndex, drop: drop, clue: clue})
         delete player.playerIndex
         delete player.cardIndex
       }

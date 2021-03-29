@@ -276,7 +276,9 @@ socket.on('appendLog', entry => {
     if ('other' in entry)
       li.textContent = `${entry.name} clues ${entry.other}'s ${CardChar[entry.direction-1]} cards.`
     else
-      li.textContent = `${entry.name} ${entry.drop ? 'drops' : 'plays'} their ${ordinal(entry.index)} card ${CardChar[entry.card-1]}.`
+      li.textContent =
+        `${entry.name} ${entry.drop ? 'drops' : 'plays'} their ${ordinal(entry.index)} card ${CardChar[entry.card-1]}` +
+        (entry.clue ? ` and gains a clue.` : `.`)
   }
   else if ('clueAttempts' in entry) {
     if ('cluesLeft' in entry)
