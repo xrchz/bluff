@@ -313,11 +313,11 @@ async function checkEndRound(gameName, lastPlayer) {
     }
     const dead = game.grid[robotIndex].l
     const finished = !game.grid.find(c => c.g)
-    if (dead || finished || !game.deck.length) {
+    if (dead || finished || game.players.some(player => !player.hand.length)) {
       game.ended = true
-      const ending = dead ? ' in defeat' : finished ? ' in victory' : ''
-      const undos = game.undoCount ? '.' : ` (using ${game.undoCount} undos).`
-      appendLog(gameName, `The game ends${ending} with a score of ${game.score}/${Gems}${undos}`)
+      const ending = dead ? 'in defeat' : finished ? 'in victory' : 'by exhaustion'
+      const undos = game.undoCount === 0 ? '.' : ` (using ${game.undoCount} undos).`
+      appendLog(gameName, `The game ends ${ending} with a score of ${game.score}/${Gems}${undos}`)
     }
     updateGrid(gameName)
     updateInfo(gameName)
