@@ -269,7 +269,7 @@ socket.on('appendLog', entry => {
     li.textContent = `The robot ${entry.cont ? 'continues' : 'moves'} ${RobotChar[entry.move-1]}`
     if (entry.lava) li.textContent += ` and sinks into the lava`
     if (entry.gem) li.textContent += ` and collects a gem`
-    if (entry.gain) li.textContent += `, gaining a clue.`
+    if (entry.clue) li.textContent += `, gaining a clue.`
     else li.textContent += `.`
   }
   else if ('name' in entry) {
