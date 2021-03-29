@@ -93,11 +93,11 @@ input.selected {
   line-height: 3rem;
   box-sizing: border-box;
   color: MistyRose;
-  background-color: DarkRed;
+  background-color: DarkOrange;
   position: relative;
 }
 #grid > div.lava {
-  background-color: Orange;
+  background-color: DarkRed;
 }
 #grid > div.gem {
   background-color: SkyBlue;
