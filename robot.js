@@ -136,22 +136,21 @@ function makeGrid() {
       [i+1, i-1, i+Rows, i-Rows].forEach(add)
     }
     reachable.forEach(i => delete interior[i].m)
+    reachable.shift()
     return reachable
   }
   console.log('Ensuring gems are reachable')
   shuffleInPlace(interior)
   let reachable = reachableIndices()
-  while (reachable.length - 1 < Gems) {
+  while (reachable.length < Gems) {
     console.log(`Only ${reachable.length} reachable but ${Gems} required`)
     shuffleInPlace(interior)
     reachable = reachableIndices()
   }
   shuffleInPlace(reachable)
   console.log('Adding gems')
-  for (i = 0; i < Gems;) {
-    if (interior[reachable[i]].r) continue
-    else interior[reachable[i++]].g = true
-  }
+  for (i = 0; i < Gems; i++)
+    interior[reachable[i]].g = true
   console.log('Finishing making grid')
   i = 0
   for (let r = 1; r <= Rows; r++)
