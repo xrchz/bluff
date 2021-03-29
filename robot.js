@@ -124,16 +124,17 @@ function makeGrid() {
   for (i++; i < Rows * Cols; i++)
     interior.push({})
   function reachableIndices() {
-    const reachable = [interior.findIndex(c => c.r)]
-    while (true) {
-      const i = reachable.find(i => !interior[i].m)
-      if (i === undefined) break
+    const sources = [interior.findIndex(c => c.r)]
+    const reachable = []
+    while (sources.length) {
+      const i = sources.pop()
+      if (interior[i].m) continue
       interior[i].m = true
-      function add(j) {
+      reachable.push(i);
+      [i+1, i-1, i+Rows, i-Rows].forEach(j => {
         if (0 <= j && j < Rows * Cols && !interior[j].m && !interior[j].l)
-          reachable.push(j)
-      }
-      [i+1, i-1, i+Rows, i-Rows].forEach(add)
+          sources.push(j)
+      })
     }
     reachable.forEach(i => delete interior[i].m)
     reachable.shift()
