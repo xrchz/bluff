@@ -295,6 +295,7 @@ function startRound(gameName) {
   game.players[game.whoseTurn].bidFilter = NoTrumps
   io.in(gameName).emit('updatePlayers', game.players)
   io.in(gameName).emit('updateKitty', { kitty: game.kitty })
+  io.in(gameName).emit('blameMsg', '')
 }
 
 function startPlaying(gameName) {
