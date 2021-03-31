@@ -130,8 +130,11 @@ function makeGrid() {
       const i = sources.pop()
       if (interior[i].m) continue
       interior[i].m = true
-      reachable.push(i);
-      [i+1, i-1, i+Rows, i-Rows].forEach(j => {
+      reachable.push(i)
+      const n = [i+Cols, i-Cols]
+      if (i % Cols) n.push(i-1)
+      if ((i+1) % Cols) n.push(i+1)
+      n.forEach(j => {
         if (0 <= j && j < Rows * Cols && !interior[j].m && !interior[j].l)
           sources.push(j)
       })
@@ -143,6 +146,7 @@ function makeGrid() {
   console.log('Ensuring gems are reachable')
   shuffleInPlace(interior)
   let reachable = reachableIndices()
+  console.log(`${reachable.length} reachable...`)
   while (reachable.length < Gems) {
     console.log(`Only ${reachable.length} reachable but ${Gems} required`)
     shuffleInPlace(interior)
