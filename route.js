@@ -380,7 +380,7 @@ io.on('connection', socket => {
         shuffleInPlace(game.board)
         const wallsOppositeCentre =
           [ColumnsLeft-1, ColumnsLeft, -ColumnsLeft-1, Columns-1+ColumnsLeft].flatMap(
-            (i,d) => game.board[RowsAbove * Columns + i].d === 0 ? [opposite(d)] : [])
+            (i,d) => game.board[RowsAbove * Columns + i].d === 0 ? [d] : [])
         let central = game.deck.pop()
         // terminates assuming Walls < 4
         while (wallsOppositeCentre.some(dir => central.d & (1 << dir))) {
