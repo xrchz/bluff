@@ -340,6 +340,7 @@ function restoreScore(room, teamNames, rounds, players) {
         contractor: players[round.contractorIndex].name,
         contract: round.contract,
         tricks: round.tricksMade,
+        kitty: round.kitty,
         score: score,
         total: total
       })
@@ -370,12 +371,12 @@ const stateKeys = {
     'players', 'teamNames', 'total',
     'started', 'dealer',
     'bidding', 'whoseTurn', 'lastBidder',
-    'selectKitty', 'kitty', 'nominateJoker',
+    'selectKitty', 'kitty', 'origKitty', 'nominateJoker',
     'playing', 'leader', 'trick', 'unledSuits',
     'ended'
   ],
   teamNames: true, total: true,
-  kitty: true,
+  kitty: true, origKitty: true,
   trick: true, unledSuits: true,
   players: [
     'current', 'open', 'dummy',
@@ -769,6 +770,7 @@ io.on('connection', socket => {
               lastBidder.selecting = true
               game.players.forEach(player => sortAndFormat(player.hand, lastBid.trumps))
               sortAndFormat(game.kitty, lastBid.trumps)
+              game.origKitty = Array.from(game.kitty)
               io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateKitty',
                 { kitty: game.kitty,
@@ -1014,7 +1016,7 @@ io.on('connection', socket => {
                     const contractTricks = contractor.tricks.length + contractorPartner.tricks.length
                     if (!game.rounds.length)
                       io.in(gameName).emit('initScore', game.teamNames)
-                    game.rounds.push({ contractorIndex: game.lastBidder, contract: contract, tricksMade: contractTricks })
+                    game.rounds.push({ contractorIndex: game.lastBidder, kitty: game.origKitty, contract: contract, tricksMade: contractTricks })
                     const contractTeam = game.lastBidder % 2
                     const result = calculateScore(contract, contractTricks, game.total[1 - contractTeam])
                     appendLog(gameName,
@@ -1024,6 +1026,7 @@ io.on('connection', socket => {
                     for (const i of [0, 1]) game.total[i] += result.score[i]
                     io.in(gameName).emit('appendScore', {
                       round: game.rounds.length,
+                      kitty: game.origKitty,
                       contractor: contractor.name,
                       contract: contract,
                       tricks: contractTricks,

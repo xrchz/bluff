@@ -467,6 +467,14 @@ socket.on('appendScore', data => {
   elem.appendChild(document.createElement('td')).textContent = data.score[1]
   elem.appendChild(document.createElement('td')).textContent = data.total[0]
   elem.appendChild(document.createElement('td')).textContent = data.total[1]
+  if (data.kitty) {
+    const td = elem.appendChild(document.createElement('td'))
+    for (const c of data.kitty) {
+      const span = td.appendChild(document.createElement('span'))
+      span.textContent = c.formatted.chr
+      span.classList.add(c.formatted.cls)
+    }
+  }
   scoreTable.insertBefore(fragment, scoreTable.firstChild)
   errorMsg.innerHTML = ''
 })
