@@ -447,6 +447,7 @@ socket.on('initScore', teamNames => {
   elem.appendChild(document.createElement('th')).textContent = `${teamNames[1]} Score`
   elem.appendChild(document.createElement('th')).textContent = `${teamNames[0]} Total`
   elem.appendChild(document.createElement('th')).textContent = `${teamNames[1]} Total`
+  elem.appendChild(document.createElement('th')).textContent = `Kitty`
   scoreTable.appendChild(fragment)
   scoreTable.hidden = false
   errorMsg.innerHTML = ''
@@ -467,8 +468,8 @@ socket.on('appendScore', data => {
   elem.appendChild(document.createElement('td')).textContent = data.score[1]
   elem.appendChild(document.createElement('td')).textContent = data.total[0]
   elem.appendChild(document.createElement('td')).textContent = data.total[1]
+  const td = elem.appendChild(document.createElement('td'))
   if (data.kitty) {
-    const td = elem.appendChild(document.createElement('td'))
     for (const c of data.kitty) {
       const span = td.appendChild(document.createElement('span'))
       span.textContent = c.formatted.chr
