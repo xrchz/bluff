@@ -213,7 +213,7 @@ socket.on('updateGrid', data => {
     for (let j = 0; j < data.grid.length; j++) {
       const cell = data.grid[i][j]
       const div = fragment.appendChild(document.createElement('div'))
-      div.id = `g${i}${j}`
+      div.id = `g${i}g${j}`
       if (cell.dug === undefined && current) {
         const button = div.appendChild(document.createElement('input'))
         button.type = 'button'
@@ -243,7 +243,7 @@ socket.on('appendLog', entry => {
     const a = li.appendChild(document.createElement('a'))
     a.textContent = entry.msg
     a.onclick = () => {
-      const div = document.getElementById(`g${entry.pos.i}${entry.pos.j}`)
+      const div = document.getElementById(`g${entry.pos.i}g${entry.pos.j}`)
       const prev = gridDiv.querySelector('div.highlighted')
       if (prev)
         prev.classList.remove('highlighted')
