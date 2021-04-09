@@ -24,6 +24,8 @@ String.fromCodePoint(0x1F0A0 +
   (0x10 * c.s) +
   [0xE, 0xD, 0xA, 0x1, 0x9, 0xB][c.r])
 
+const SuitChar = ['♠', '♥', '♦', '♣']
+
 joinButton.parentElement.onsubmit = () => {
   socket.emit('joinRequest', {
     gameName: gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
@@ -125,8 +127,10 @@ socket.on('updateSpectators', spectators => {
 })
 
 function setDisconnected(h3) {
-  h3.textContent += ' (d/c)'
-  h3.classList.add('disconnected')
+  if (!h3.classList.contains('disconnected')) {
+    h3.textContent += ' (d/c)'
+    h3.classList.add('disconnected')
+  }
 }
 
 socket.on('updateSeats', players => {
@@ -215,6 +219,14 @@ socket.on('updatePlayers', players => {
         li.textContent = CardChar(card)
       else
         li.textContent = '🂠'
+    }
+    if (!spectateInput.checked && currentIndex === playerIndex &&
+        player.validBids && player.current) {
+      const bids = playerDiv.appendChild(document.createElement('ul'))
+      for (const vb of player.validBids) {
+        const li = bids.appendChild(document.createElement('li'))
+        li.textContent = `${vb.p ? '+' : ''}${vb.n}${SuitChar[vb.s]}`
+      }
     }
   }
 })

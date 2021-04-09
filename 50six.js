@@ -89,6 +89,33 @@ const cardCmp = (a, b) =>
     a.r - b.r :
     a.s - b.s
 
+const Jack = 5
+
+function validBids(lastBid, hand) {
+  const hasSuit = Array(4).fill(false)
+  const hasJack = Array(4).fill(false)
+  for (const c of hand) {
+    hasSuit[c.s] = true
+    if (c.r === Jack)
+      hasJack[c.s] = true
+  }
+  const bids = []
+  const nextN = lastBid ? (lastBid.n === 56 ? null : lastBid.n + 1) : 28
+  for (let s = 0; s < 4; s++) {
+    if (hasSuit[s]) {
+      const bid = {s: s, n: nextN}
+      if (!hasJack[s]) bid.p = true
+      bids.push(bid)
+      if (nextN < 40) {
+        const bid = {s: s, n: 40}
+        if (!hasJack[s]) bid.p = true
+        bids.push(bid)
+      }
+    }
+  }
+  return bids
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -260,6 +287,8 @@ io.on('connection', socket => {
       const currentIndex = (game.dealer + 1) % game.players.length
       game.players[currentIndex].current = true
       game.bidding = true
+      game.players.forEach(player =>
+        player.validBids = validBids(game.lastBid, player.hand))
       io.in(gameName).emit('updatePlayers', game.players)
     }
     else {
