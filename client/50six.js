@@ -8,6 +8,14 @@ const joinButton = document.getElementById('join')
 const startButton = document.getElementById('start')
 const undoButton = document.getElementById('undo')
 const spectateInput = document.getElementById('spectate')
+const unseatedList = document.getElementById('unseated')
+const spectatorsList = document.getElementById('spectators')
+const log = document.getElementById('log')
+const playArea = document.getElementById('playArea')
+
+const playerDivs = []
+for (let i = 0; i < 6; i++)
+  playerDivs.push(document.getElementById(`player${i}`))
 
 const fragment = document.createDocumentFragment()
 
@@ -31,6 +39,10 @@ socket.on('ensureLobby', () => {
   undoButton.hidden = true
   startButton.hidden = true
   startButton.disabled = false
+  unseatedList.innerHTML = ''
+  spectatorsList.innerHTML = ''
+  log.hidden = true
+  playArea.hidden = true
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -86,9 +98,55 @@ socket.on('joinedGame', data => {
     spectateInput.hidden = true
   }
   joinButton.hidden = true
+  playArea.hidden = false
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
     history.pushState(data, `Game ${data.gameName}`)
+})
+
+socket.on('updateSpectators', spectators => {
+  spectatorsList.innerHTML = ''
+  if (spectators.length)
+    spectators.unshift({ name: 'Spectators:' })
+  for (spectator of spectators) {
+    const elem = document.createElement('li')
+    elem.textContent = spectator.name
+    spectatorsList.appendChild(elem)
+  }
+})
+
+socket.on('updateSeats', players => {
+  unseatedList.innerHTML = ''
+  let elem
+  for (player of players) {
+    if ('seat' in players) continue
+    elem = document.createElement('li')
+    elem.textContent = player.name
+    fragment.appendChild(elem)
+  }
+  unseatedList.appendChild(fragment)
+  if (!startButton.disabled) {
+    startButton.hidden = players.length < 6 || elem
+    const current = players.find(player => player.name === nameInput.value)
+    if (current && !spectateInput.checked) {
+      if ('seat' in current) {
+        const button = playerDivs[current.seat].appendChild(document.createElement('input'))
+        button.type = 'button'
+        button.value = 'Leave Seat'
+        button.onclick = () => socket.emit('leaveSeat')
+      }
+      else {
+        for (let i = 0; i < playerDivs.length; i++) {
+          if (players.find(player => player.seat === i)) continue
+          const button = playerDivs[i].appendChild(document.createElement('input'))
+          button.type = 'button'
+          button.value = 'Sit Here'
+          button.onclick = () => socket.emit('joinSeat', i)
+        }
+      }
+    }
+  }
+  errorMsg.innerHTML = ''
 })
 
 socket.on('errorMsg', msg => errorMsg.textContent = msg)

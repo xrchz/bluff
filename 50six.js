@@ -102,13 +102,13 @@ io.on('connection', socket => {
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
+        socket.emit('updateSeats', game.players)
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started)
-          socket.emit('updateUnseated', game.players)
+          socket.emit('updateSeats', game.players)
         else {
           socket.emit('gameStarted')
-          updateBoard(gameName, socket.id)
-          game.log.forEach(entry => socket.emit('appendLog', entry))
+          // TODO: update the game situation for the spectator
         }
       }
       else {
@@ -152,8 +152,8 @@ io.on('connection', socket => {
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-        // socket.emit('updateSpectators', game.spectators)
-        // io.in(gameName).emit('updateUnseated', game.players)
+        socket.emit('updateSpectators', game.spectators)
+        io.in(gameName).emit('updateSeats', game.players)
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
@@ -162,6 +162,47 @@ io.on('connection', socket => {
     }
     updateGames()
   })
+
+  function inGame(func) {
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (game) func(gameName, game)
+    else {
+      console.log(`${socket.playerName} failed to find game ${gameName}`)
+      socket.emit('errorMsg', `Game ${gameName} not found. Try reconnecting.`)
+    }
+  }
+
+  socket.on('joinSeat', seat => inGame((gameName, game) => {
+    const player = game.players.find(player => player.socketId === socket.id)
+    if (player && !('seat' in player)) {
+      if (Number.isInteger(seat) && 0 <= seat && seat < 6 &&
+          !game.players.find(player => player.seat === seat)) {
+        player.seat = seat
+        io.in(gameName).emit('updateSeats', game.players)
+      }
+      else {
+        console.log(`${socket.playerName} in ${gameName} tried to sit with bad data`)
+        socket.emit('errorMsg', 'That seat is already occupied.')
+      }
+    }
+    else {
+      console.log(`${socket.playerName} not found, or tried to sit but is already seated`)
+      socket.emit('errorMsg', 'Error: player not found or already seated.')
+    }
+  }))
+
+  socket.on('leaveSeat', () => inGame((gameName, game) => {
+    const player = game.players.find(player => player.socketId === socket.id)
+    if (player && 'seat' in player) {
+      delete player.seat
+      io.in(gameName).emit('updateSeats', game.players)
+    }
+    else {
+      console.log(`${socket.playerName} not found or not seated`)
+      socket.emit('errorMsg', 'Error: player not found or not yet seated.')
+    }
+  }))
 
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
@@ -172,7 +213,7 @@ io.on('connection', socket => {
         game.players = game.players.filter(player => player.socketId !== socket.id)
         game.spectators = game.spectators.filter(player => player.socketId !== socket.id)
         io.in(gameName).emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateUnseated', game.players)
+        io.in(gameName).emit('updateSeats', game.players)
         if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)
           delete games[gameName]
