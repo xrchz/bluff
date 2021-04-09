@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'DejaVu Sans';
+  src: url('DejaVuSans.ttf') format('truetype');
+}
+body {
+  font-family: 'DejaVu Sans', sans-serif;
+  font-size: large;
+  background-color: DarkRed;
+  color: Lavender;
+  margin-left: 2vw;
+  width: 96vw;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding: 0.5em;
+}
