@@ -91,7 +91,9 @@ const cardCmp = (a, b) =>
 
 const Jack = 5
 
-function validBids(lastBid, hand) {
+function validBids(lastBid, players, playerIndex) {
+  const player = players[playerIndex]
+  const hand = player.hand
   const hasSuit = Array(4).fill(false)
   const hasJack = Array(4).fill(false)
   for (const c of hand) {
@@ -99,9 +101,16 @@ function validBids(lastBid, hand) {
     if (c.r === Jack)
       hasJack[c.s] = true
   }
-  const bids = []
+  const teamBidSuit = Array(4).fill(false)
+  for (let otherIndex = playerIndex % 2; otherIndex < 6; otherIndex += 2) {
+    const other = players[otherIndex]
+    if (other.lastBid && other.lastBid.n)
+      teamBidSuit[other.lastBid.s] = true
+  }
+  const bids = [{}]
   const nextN = lastBid ? (lastBid.n === 56 ? null : lastBid.n + 1) : 28
   for (let s = 0; s < 4; s++) {
+    if (player.lastBid && !player.lastBid.n && !teamBidSuit[s]) continue
     if (hasSuit[s]) {
       const bid = {s: s, n: nextN}
       if (!hasJack[s]) bid.p = true

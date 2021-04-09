@@ -223,9 +223,13 @@ socket.on('updatePlayers', players => {
     if (!spectateInput.checked && currentIndex === playerIndex &&
         player.validBids && player.current) {
       const bids = playerDiv.appendChild(document.createElement('ul'))
-      for (const vb of player.validBids) {
+      for (let bidIndex = 0; bidIndex < player.validBids.length; bidIndex++) {
+        const vb = player.validBids[bidIndex]
         const li = bids.appendChild(document.createElement('li'))
-        li.textContent = `${vb.p ? '+' : ''}${vb.n}${SuitChar[vb.s]}`
+        const button = li.appendChild(document.createElement('input'))
+        button.type = 'button'
+        button.value = vb.n ? `${vb.p ? '+' : ''}${vb.n}${SuitChar[vb.s]}` : 'Pass'
+        button.onclick = () => socket.emit('bidRequest', bidIndex)
       }
     }
   }
