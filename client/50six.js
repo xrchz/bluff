@@ -117,18 +117,32 @@ socket.on('updateSpectators', spectators => {
 
 socket.on('updateSeats', players => {
   unseatedList.innerHTML = ''
+  const filledSeats = Array(playerDivs.length).fill(false)
   let elem
   for (player of players) {
-    if ('seat' in players) continue
-    elem = document.createElement('li')
-    elem.textContent = player.name
-    fragment.appendChild(elem)
+    if ('seat' in player) {
+      const playerDiv = playerDivs[player.seat]
+      if (!playerDiv.querySelector('h3'))
+        playerDiv.appendChild(document.createElement('h3')).textContent = player.name
+      filledSeats[player.seat] = true
+    }
+    else {
+      elem = document.createElement('li')
+      elem.textContent = player.name
+      fragment.appendChild(elem)
+    }
   }
   unseatedList.appendChild(fragment)
+  for (let i = 0; i < playerDivs.length; i++) {
+    if (!filledSeats[i])
+      playerDivs[i].querySelectorAll('h3').forEach(h3 => h3.parentElement.removeChild(h3))
+  }
   if (!startButton.disabled) {
     startButton.hidden = players.length < 6 || elem
     const current = players.find(player => player.name === nameInput.value)
     if (current && !spectateInput.checked) {
+      playArea.querySelectorAll('input[type=button]').forEach(button =>
+        button.parentElement.removeChild(button))
       if ('seat' in current) {
         const button = playerDivs[current.seat].appendChild(document.createElement('input'))
         button.type = 'button'
