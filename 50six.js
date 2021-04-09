@@ -67,6 +67,28 @@ function shuffleInPlace(array) {
   }
 }
 
+function appendLog(gameName, entry) {
+  const game = games[gameName]
+  game.log.push(entry)
+  io.in(gameName).emit('appendLog', entry)
+}
+
+function makeDeck() {
+  const deck = []
+  for (let r = 0; r < 6; r++) {
+    for (let s = 0; s < 4; s++) {
+      deck.push({r: r, s: s})
+      deck.push({r: r, s: s})
+    }
+  }
+  return deck
+}
+
+const cardCmp = (a, b) =>
+  a.s === b.s ?
+    a.r - b.r :
+    a.s - b.s
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -108,6 +130,7 @@ io.on('connection', socket => {
           socket.emit('updateSeats', game.players)
         else {
           socket.emit('gameStarted')
+          socket.emit('updatePlayers', game.players)
           // TODO: update the game situation for the spectator
         }
       }
@@ -129,7 +152,8 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          updateBoard(gameName)
+          socket.emit('updatePlayers', game.players)
+          // TODO: update the game situation for a rejoined player
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
             socket.emit('showUndo', true)
@@ -146,14 +170,20 @@ io.on('connection', socket => {
     }
     else {
       if (game.players.every(player => player.name !== socket.playerName)) {
-        console.log(`${socket.playerName} joining ${gameName}`)
-        socket.leave('lobby'); socket.emit('updateGames', [])
-        socket.join(gameName)
-        socket.gameName = gameName
-        game.players.push({ socketId: socket.id, name: socket.playerName })
-        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-        socket.emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updateSeats', game.players)
+        if (game.players.length < 6) {
+          console.log(`${socket.playerName} joining ${gameName}`)
+          socket.leave('lobby'); socket.emit('updateGames', [])
+          socket.join(gameName)
+          socket.gameName = gameName
+          game.players.push({ socketId: socket.id, name: socket.playerName })
+          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+          socket.emit('updateSpectators', game.spectators)
+          io.in(gameName).emit('updateSeats', game.players)
+        }
+        else {
+          console.log(`${socket.playerName} barred from joining ${gameName} which is full`)
+          socket.emit('errorMsg', `Game ${gameName} already has enough players. Try spectating.`)
+        }
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
@@ -204,6 +234,40 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('startGame', () => inGame((gameName, game) => {
+    if (!game.started && game.players.length === 6) {
+      game.started = true
+      game.log = []
+      game.undoLog = []
+      game.dealer = Math.floor(Math.random() * game.players.length)
+      io.in(gameName).emit('gameStarted')
+      appendLog(gameName, 'The game begins!')
+      game.deck = makeDeck()
+      shuffleInPlace(game.deck)
+      game.players.forEach(player => player.hand = [])
+      for (let round = 0; round < 2; round++) {
+        let i = game.dealer + 1
+        while (true) {
+          if (i === game.players.length) i = 0
+          for (let cards = 0; cards < 4; cards++)
+            game.players[i].hand.push(game.deck.pop())
+          if (i === game.dealer) break
+          else i++
+        }
+      }
+      game.players.forEach(player => player.hand.sort(cardCmp))
+      appendLog(gameName, `${game.players[game.dealer].name} deals.`)
+      const currentIndex = (game.dealer + 1) % game.players.length
+      game.players[currentIndex].current = true
+      game.bidding = true
+      io.in(gameName).emit('updatePlayers', game.players)
+    }
+    else {
+      console.log(`${socket.playerName} tried to start ${gameName} incorrectly`)
+      socket.emit('errorMsg', 'Error: need exactly 6 players to start.')
+    }
+  }))
+
   socket.on('disconnecting', () => {
     console.log(`${socket.playerName} exiting ${socket.gameName}`)
     const gameName = socket.gameName
@@ -236,6 +300,14 @@ io.on('connection', socket => {
       updateGames()
     }
   })
+
+  socket.on('deleteGame', gameName => {
+    console.log(`Received deleteGame message with argument ${gameName}`)
+    delete games[gameName]
+    updateGames()
+  })
+
+  socket.on('saveGames', saveGames)
 })
 
 process.on('SIGINT', () => { saveGames(); fs.unlinkSync(port); process.exit() })

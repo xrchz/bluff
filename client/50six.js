@@ -19,6 +19,11 @@ for (let i = 0; i < 6; i++)
 
 const fragment = document.createDocumentFragment()
 
+const CardChar = c =>
+String.fromCodePoint(0x1F0A0 +
+  (0x10 * c.s) +
+  [0xE, 0xD, 0xA, 0x1, 0x9, 0xB][c.r])
+
 joinButton.parentElement.onsubmit = () => {
   socket.emit('joinRequest', {
     gameName: gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
@@ -27,6 +32,8 @@ joinButton.parentElement.onsubmit = () => {
   })
   return false
 }
+
+startButton.onclick = () => socket.emit('startGame')
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -43,6 +50,7 @@ socket.on('ensureLobby', () => {
   spectatorsList.innerHTML = ''
   log.hidden = true
   playArea.hidden = true
+  playerDivs.forEach(div => div.replaceChildren())
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -59,19 +67,20 @@ socket.on('updateGames', games => {
   gamesList.innerHTML = ''
   for (const game of games) {
     const li = fragment.appendChild(document.createElement('li'))
-    let a = li.appendChild(document.createElement('a'))
-    a.textContent = game.name
-    a.onclick = () =>
+    const span = li.appendChild(document.createElement('span'))
+    span.textContent = game.name
+    span.classList.add('clickable')
+    span.onclick = () =>
       gameInput.value = gameInput.value === game.name ? '' : game.name
     const ul = li.appendChild(document.createElement('ul'))
     ul.classList.add('inline')
     for (const player of game.players) {
-      a = ul.appendChild(document.createElement('li'))
-      a.textContent = player.name
+      const li = ul.appendChild(document.createElement('li'))
+      li.textContent = player.name
       if (!player.socketId) {
-        a = a.appendChild(document.createElement('a'))
-        a.classList.add('disconnected')
-        a.onclick = () => {
+        li.classList.add('disconnected')
+        li.classList.add('clickable')
+        li.onclick = () => {
           if (gameInput.value === game.name && nameInput.value === player.name)
             nameInput.value = ''
           else {
@@ -115,6 +124,11 @@ socket.on('updateSpectators', spectators => {
   }
 })
 
+function setDisconnected(h3) {
+  h3.textContent += ' (d/c)'
+  h3.classList.add('disconnected')
+}
+
 socket.on('updateSeats', players => {
   unseatedList.innerHTML = ''
   const filledSeats = Array(playerDivs.length).fill(false)
@@ -122,8 +136,11 @@ socket.on('updateSeats', players => {
   for (player of players) {
     if ('seat' in player) {
       const playerDiv = playerDivs[player.seat]
-      if (!playerDiv.querySelector('h3'))
-        playerDiv.appendChild(document.createElement('h3')).textContent = player.name
+      if (!playerDiv.querySelector('h3')) {
+        const h3 = playerDiv.appendChild(document.createElement('h3'))
+        h3.textContent = player.name
+        if (!player.socketId) setDisconnected(h3)
+      }
       filledSeats[player.seat] = true
     }
     else {
@@ -160,6 +177,56 @@ socket.on('updateSeats', players => {
       }
     }
   }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('setDisconnected', playerIndex => {
+  playerDivs[playerIndex].querySelectorAll('h3').forEach(setDisconnected)
+})
+
+socket.on('gameStarted', () => {
+  startButton.hidden = true
+  startButton.disabled = true
+  playArea.querySelectorAll('input[type=button]').forEach(button =>
+    button.parentElement.removeChild(button)
+  )
+  log.hidden = false
+  errorMsg.innerHTML = ''
+})
+
+socket.on('updatePlayers', players => {
+  const currentIndex = players.findIndex(player => player.name === nameInput.value)
+  for (let playerIndex = 0; playerIndex < players.length; playerIndex++) {
+    const player = players[playerIndex]
+    const playerDiv = playerDivs[playerIndex]
+    playerDiv.replaceChildren()
+    const nameDiv = playerDiv.appendChild(document.createElement('h3'))
+    nameDiv.textContent = player.name
+    if (player.current) {
+      nameDiv.textContent += ' (*)'
+      nameDiv.classList.add('current')
+    }
+    if (!player.socketId) setDisconnected(nameDiv)
+    const hand = playerDiv.appendChild(document.createElement('ul'))
+    hand.classList.add('inline')
+    for (const card of player.hand) {
+      const li = hand.appendChild(document.createElement('li'))
+      if (spectateInput.checked || currentIndex === playerIndex)
+        li.textContent = CardChar(card)
+      else
+        li.textContent = '🂠'
+    }
+  }
+})
+
+socket.on('appendLog', entry => {
+  const li = document.createElement('li')
+  if (typeof entry ===  'string')
+    li.textContent = entry
+  else
+    li.textContent = 'Error: unhandled log entry'
+  log.appendChild(li)
+  li.scrollIntoView(false)
   errorMsg.innerHTML = ''
 })
 
