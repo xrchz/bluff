@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang=en>
+  <head>
+    <title>50six</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel=stylesheet href="50six.css" type="text/css" />
+    <script src="socket.io/socket.io.js"></script>
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <form class=inline>
+      <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+      <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+      <input id=join type=submit value="Join" />
+      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+      <input id=start type=button value="Start!" hidden />
+      <input id=undo type=button value="Undo" hidden />
+    </form>
+    <ul id=games hidden></ul>
+    <script src="50six.js"></script>
+  </body>
+</html>
