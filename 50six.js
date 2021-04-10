@@ -93,7 +93,6 @@ const Jack = 5
 
 function setValidBids(game) {
   const nextN = 'lastBidder' in game ? game.winningBid.n + 1 : 28
-  console.log(`nextN is ${nextN}`)
   for (let playerIndex = 0; playerIndex < game.players.length; playerIndex++) {
     const teamSuits = game.bidSuits[playerIndex % 2]
     if (!teamSuits) continue
@@ -319,19 +318,16 @@ io.on('connection', socket => {
       if (player.validBids && Number.isInteger(bidIndex) &&
           0 <= bidIndex && bidIndex < player.validBids.length) {
         // TODO: appendUndo(gameName)
-        console.log(`Processing the bid request`)
         delete player.current
         const teamIndex = playerIndex % 2
         player.lastBid = player.validBids[bidIndex]
         if (player.lastBid.n) {
-          console.log(`Received as a non-pass, namely ${player.lastBid.n}`)
           appendLog(gameName, {name: player.name, bid: player.lastBid})
           game.lastBidder = playerIndex
           game.winningBid = player.lastBid
           game.bidSuits[teamIndex][player.lastBid.s] = true
         }
         else {
-          console.log(`Received as a pass`)
           appendLog(gameName, `${player.name} passes.`)
           player.passed = true
         }
