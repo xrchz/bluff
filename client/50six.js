@@ -240,6 +240,7 @@ socket.on('updatePlayers', players => {
         break
       }
       const bids = playerDiv.appendChild(document.createElement('ul'))
+      bids.classList.add('inline')
       for (let bidIndex = 0; bidIndex < player.validBids.length; bidIndex++) {
         const vb = player.validBids[bidIndex]
         const li = bids.appendChild(document.createElement('li'))

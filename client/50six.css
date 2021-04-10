@@ -18,3 +18,34 @@ ul.inline > li {
   display: inline;
   padding: 0.5em;
 }
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  max-width: 40em;
+  margin: auto;
+}
+#playArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#playArea[hidden] {
+  display: none;
+}
+#playArea > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+#playArea > div > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
