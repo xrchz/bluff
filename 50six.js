@@ -91,38 +91,39 @@ const cardCmp = (a, b) =>
 
 const Jack = 5
 
-function validBids(lastBid, players, playerIndex) {
-  const player = players[playerIndex]
-  const hand = player.hand
-  const hasSuit = Array(4).fill(false)
-  const hasJack = Array(4).fill(false)
-  for (const c of hand) {
-    hasSuit[c.s] = true
-    if (c.r === Jack)
-      hasJack[c.s] = true
-  }
-  const teamBidSuit = Array(4).fill(false)
-  for (let otherIndex = playerIndex % 2; otherIndex < 6; otherIndex += 2) {
-    const other = players[otherIndex]
-    if (other.lastBid && other.lastBid.n)
-      teamBidSuit[other.lastBid.s] = true
-  }
-  const bids = [{}]
-  const nextN = lastBid ? (lastBid.n === 56 ? null : lastBid.n + 1) : 28
-  for (let s = 0; s < 4; s++) {
-    if (player.lastBid && !player.lastBid.n && !teamBidSuit[s]) continue
-    if (hasSuit[s]) {
+function setValidBids(game) {
+  const nextN = 'lastBidder' in game ? game.winningBid.n + 1 : 28
+  console.log(`nextN is ${nextN}`)
+  for (let playerIndex = 0; playerIndex < game.players.length; playerIndex++) {
+    const teamSuits = game.bidSuits[playerIndex % 2]
+    if (!teamSuits) continue
+    const player = game.players[playerIndex]
+    const hand = player.hand
+    const hasSuit = Array(4).fill(false)
+    const hasJack = Array(4).fill(false)
+    for (const c of hand) {
+      hasSuit[c.s] = true
+      if (c.r === Jack)
+        hasJack[c.s] = true
+    }
+    player.validBids = [{}]
+    if (nextN > 56) continue
+    const passed = game.forcedBid ?
+      'lastBidder' in game && game.lastBidder !== playerIndex :
+      player.passed
+    for (let s = 0; s < 4; s++) {
+      if (passed && !teamSuits[s]) continue
+      if (!hasSuit[s]) continue
       const bid = {s: s, n: nextN}
       if (!hasJack[s]) bid.p = true
-      bids.push(bid)
+      player.validBids.push(bid)
       if (nextN < 40) {
         const bid = {s: s, n: 40}
         if (!hasJack[s]) bid.p = true
-        bids.push(bid)
+        player.validBids.push(bid)
       }
     }
   }
-  return bids
 }
 
 io.on('connection', socket => {
@@ -294,16 +295,92 @@ io.on('connection', socket => {
       }
       game.players.forEach(player => player.hand.sort(cardCmp))
       appendLog(gameName, `${game.players[game.dealer].name} deals.`)
+      // TODO: check no team has no jacks, redeal if so
+      game.bidSuits = []
+      for (const teamIndex of [0, 1])
+        game.bidSuits.push(Array(4).fill(false))
       const currentIndex = (game.dealer + 1) % game.players.length
       game.players[currentIndex].current = true
       game.bidding = true
-      game.players.forEach(player =>
-        player.validBids = validBids(game.lastBid, player.hand))
+      setValidBids(game)
       io.in(gameName).emit('updatePlayers', game.players)
     }
     else {
       console.log(`${socket.playerName} tried to start ${gameName} incorrectly`)
       socket.emit('errorMsg', 'Error: need exactly 6 players to start.')
+    }
+  }))
+
+  socket.on('bidRequest', bidIndex => inGame((gameName, game) => {
+    console.log(`Received bidRequest with ${bidIndex} from ${socket.playerName}`)
+    const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+    const player = game.players[playerIndex]
+    if (0 <= playerIndex && game.bidding && player.current) {
+      if (player.validBids && Number.isInteger(bidIndex) &&
+          0 <= bidIndex && bidIndex < player.validBids.length) {
+        // TODO: appendUndo(gameName)
+        console.log(`Processing the bid request`)
+        delete player.current
+        const teamIndex = playerIndex % 2
+        player.lastBid = player.validBids[bidIndex]
+        if (player.lastBid.n) {
+          console.log(`Received as a non-pass, namely ${player.lastBid.n}`)
+          appendLog(gameName, {name: player.name, bid: player.lastBid})
+          game.lastBidder = playerIndex
+          game.winningBid = player.lastBid
+          game.bidSuits[teamIndex][player.lastBid.s] = true
+        }
+        else {
+          console.log(`Received as a pass`)
+          appendLog(gameName, `${player.name} passes.`)
+          player.passed = true
+        }
+        if (game.players.every(player => player.lastBid && !player.lastBid.n)) {
+          if ('lastBidder' in game) {
+            appendLog(gameName, {name: game.players[game.lastBidder].name,
+                                 winningBid: game.winningBid})
+            delete game.bidding
+            game.players.forEach(player => delete player.validBids)
+            // TODO: check the other team has a trump, otherwise start a new round
+            const nextIndex = game.lastBidder + 1
+            game.players[nextIndex % game.players.length].current = true
+            game.playing = true
+            // TODO: add valid plays to the players
+            io.in(gameName).emit('updatePlayers', game.players)
+          }
+          else if (!game.forcedBid) {
+            const nextIndex = game.dealer + 1
+            const biddingTeam = nextIndex % 2
+            game.bidSuits[1 - biddingTeam] = false
+            game.players.forEach((player, index) => {
+              if (index % 2 !== biddingTeam) delete player.validBids })
+            game.forcedBid = true
+            game.players[nextIndex % game.players.length].current = true
+            setValidBids(game)
+            io.in(gameName).emit('updatePlayers', game.players)
+          }
+          else {
+            game.players[(playerIndex + 2) % game.players.length].current = true
+            setValidBids(game)
+            io.in(gameName).emit('updatePlayers', game.players)
+          }
+        }
+        else {
+          const nextIndex = playerIndex + (game.forcedBid ? 2 : 1)
+          game.players[nextIndex % game.players.length].current = true
+          setValidBids(game)
+          // TODO: (client side) if the next player can only pass do it automatically
+          io.in(gameName).emit('updatePlayers', game.players)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} tried bidding in ${gameName} with bad index ${bidIndex}`)
+        socket.emit('errorMsg', 'That is not a valid bid.')
+      }
+    }
+    else {
+      console.log(`${socket.playerName} tried bidding in ${gameName} out of phase`)
+      socket.emit('errorMsg', 'Player not current, or game not in bidding phase.')
     }
   }))
 

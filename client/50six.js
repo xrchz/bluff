@@ -26,6 +26,9 @@ String.fromCodePoint(0x1F0A0 +
 
 const SuitChar = ['♠', '♥', '♦', '♣']
 
+const formatBid = bid =>
+  bid.n ? `${bid.p ? '+' : ''}${bid.n}${SuitChar[bid.s]}` : 'Pass'
+
 joinButton.parentElement.onsubmit = () => {
   socket.emit('joinRequest', {
     gameName: gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
@@ -229,7 +232,7 @@ socket.on('updatePlayers', players => {
         const li = bids.appendChild(document.createElement('li'))
         const button = li.appendChild(document.createElement('input'))
         button.type = 'button'
-        button.value = vb.n ? `${vb.p ? '+' : ''}${vb.n}${SuitChar[vb.s]}` : 'Pass'
+        button.value = formatBid(vb)
         button.onclick = () => socket.emit('bidRequest', bidIndex)
       }
     }
@@ -240,6 +243,10 @@ socket.on('appendLog', entry => {
   const li = document.createElement('li')
   if (typeof entry ===  'string')
     li.textContent = entry
+  else if ('bid' in entry)
+    li.textContent = `${entry.name} bids ${formatBid(entry.bid)}.`
+  else if ('winningBid' in entry)
+    li.textContent = `${entry.name} wins the bidding with ${formatBid(entry.winningBid)}.`
   else
     li.textContent = 'Error: unhandled log entry'
   log.appendChild(li)
