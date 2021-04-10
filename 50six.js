@@ -167,6 +167,7 @@ io.on('connection', socket => {
         else {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
+          game.log.forEach(entry => socket.emit('appendLog', entry))
           // TODO: update the game situation for the spectator
         }
       }
