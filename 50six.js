@@ -91,36 +91,34 @@ const cardCmp = (a, b) =>
 
 const Jack = 5
 
-function setValidBids(game) {
+function setValidBids(game, playerIndex) {
+  const teamSuits = game.bidSuits[playerIndex % 2]
+  if (!teamSuits) return
+  const player = game.players[playerIndex]
+  const hand = player.hand
+  const hasSuit = Array(4).fill(false)
+  const hasJack = Array(4).fill(false)
+  for (const c of hand) {
+    hasSuit[c.s] = true
+    if (c.r === Jack)
+      hasJack[c.s] = true
+  }
+  player.validBids = [{}]
   const nextN = 'lastBidder' in game ? game.winningBid.n + 1 : 28
-  for (let playerIndex = 0; playerIndex < game.players.length; playerIndex++) {
-    const teamSuits = game.bidSuits[playerIndex % 2]
-    if (!teamSuits) continue
-    const player = game.players[playerIndex]
-    const hand = player.hand
-    const hasSuit = Array(4).fill(false)
-    const hasJack = Array(4).fill(false)
-    for (const c of hand) {
-      hasSuit[c.s] = true
-      if (c.r === Jack)
-        hasJack[c.s] = true
-    }
-    player.validBids = [{}]
-    if (nextN > 56) continue
-    const passed = game.forcedBid ?
-      'lastBidder' in game && game.lastBidder !== playerIndex :
-      player.passed
-    for (let s = 0; s < 4; s++) {
-      if (passed && !teamSuits[s]) continue
-      if (!hasSuit[s]) continue
-      const bid = {s: s, n: nextN}
+  if (nextN > 56) return
+  const passed = game.forcedBid ?
+    'lastBidder' in game && game.lastBidder !== playerIndex :
+    player.passed
+  for (let s = 0; s < 4; s++) {
+    if (passed && !teamSuits[s]) continue
+    if (!hasSuit[s]) continue
+    const bid = {s: s, n: nextN}
+    if (!hasJack[s]) bid.p = true
+    player.validBids.push(bid)
+    if (nextN < 40) {
+      const bid = {s: s, n: 40}
       if (!hasJack[s]) bid.p = true
       player.validBids.push(bid)
-      if (nextN < 40) {
-        const bid = {s: s, n: 40}
-        if (!hasJack[s]) bid.p = true
-        player.validBids.push(bid)
-      }
     }
   }
 }
@@ -301,7 +299,7 @@ io.on('connection', socket => {
       const currentIndex = (game.dealer + 1) % game.players.length
       game.players[currentIndex].current = true
       game.bidding = true
-      setValidBids(game)
+      setValidBids(game, currentIndex)
       io.in(gameName).emit('updatePlayers', game.players)
     }
     else {
@@ -345,26 +343,27 @@ io.on('connection', socket => {
             io.in(gameName).emit('updatePlayers', game.players)
           }
           else if (!game.forcedBid) {
-            const nextIndex = game.dealer + 1
+            const nextIndex = (game.dealer + 1) % game.players.length
             const biddingTeam = nextIndex % 2
             game.bidSuits[1 - biddingTeam] = false
             game.players.forEach((player, index) => {
               if (index % 2 !== biddingTeam) delete player.validBids })
             game.forcedBid = true
-            game.players[nextIndex % game.players.length].current = true
-            setValidBids(game)
+            game.players[nextIndex].current = true
+            setValidBids(game, nextIndex)
             io.in(gameName).emit('updatePlayers', game.players)
           }
           else {
-            game.players[(playerIndex + 2) % game.players.length].current = true
-            setValidBids(game)
+            const nextIndex = (playerIndex + 2) % game.players.length
+            game.players[nextIndex].current = true
+            setValidBids(game, nextIndex)
             io.in(gameName).emit('updatePlayers', game.players)
           }
         }
         else {
-          const nextIndex = playerIndex + (game.forcedBid ? 2 : 1)
-          game.players[nextIndex % game.players.length].current = true
-          setValidBids(game)
+          const nextIndex = (playerIndex + (game.forcedBid ? 2 : 1)) % game.players.length
+          game.players[nextIndex].current = true
+          setValidBids(game, nextIndex)
           io.in(gameName).emit('updatePlayers', game.players)
         }
       }
