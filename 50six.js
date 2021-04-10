@@ -369,7 +369,6 @@ io.on('connection', socket => {
           const nextIndex = playerIndex + (game.forcedBid ? 2 : 1)
           game.players[nextIndex % game.players.length].current = true
           setValidBids(game)
-          // TODO: (client side) if the next player can only pass do it automatically
           io.in(gameName).emit('updatePlayers', game.players)
         }
       }

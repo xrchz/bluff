@@ -226,6 +226,10 @@ socket.on('updatePlayers', players => {
     }
     if (!spectateInput.checked && currentIndex === playerIndex &&
         player.validBids && player.current) {
+      if (player.validBids.length === 1) {
+        socket.emit('bidRequest', 0)
+        break
+      }
       const bids = playerDiv.appendChild(document.createElement('ul'))
       for (let bidIndex = 0; bidIndex < player.validBids.length; bidIndex++) {
         const vb = player.validBids[bidIndex]
