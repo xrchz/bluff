@@ -50,6 +50,7 @@ socket.on('ensureLobby', () => {
   startButton.disabled = false
   unseatedList.innerHTML = ''
   spectatorsList.innerHTML = ''
+  log.innerHTML = ''
   log.hidden = true
   playArea.hidden = true
   playerDivs.forEach(div => div.replaceChildren())
