@@ -409,8 +409,11 @@ io.on('connection', socket => {
       appendLog(gameName, 'The game begins!')
       game.deck = makeDeck()
       shuffleInPlace(game.deck)
-      game.players.forEach(player => player.hand = [])
-      game.players.forEach(player => player.tricks = [])
+      game.players.forEach(player => {
+        player.hand = []
+        player.tricks = []
+        player.trickOpen = []
+      })
       for (let round = 0; round < 2; round++) {
         let i = game.dealer + 1
         while (true) {
@@ -518,6 +521,7 @@ io.on('connection', socket => {
     const player = game.players[playerIndex]
     if (0 <= playerIndex && game.playing && player.current) {
       if (player.validPlays && player.validPlays.includes(cardIndex)) {
+        game.players.forEach(player => player.trickOpen.fill(false))
         appendUndo(gameName)
         delete player.current
         const card = player.hand.splice(cardIndex, 1)[0]
@@ -531,6 +535,7 @@ io.on('connection', socket => {
           const winner = game.players[winnerIndex]
           appendLog(gameName, `${winner.name} wins the trick.`)
           winner.tricks.push(game.trick)
+          winner.trickOpen.push(false)
           if (!winner.hand.length) {
             delete game.playing
             const round = game.rounds[game.rounds.length - 1]
@@ -552,7 +557,7 @@ io.on('connection', socket => {
             round.teamPoints[1 - biddingTeam] -= delta
             appendLog(gameName, {biddingTeam: biddingTeam, bidWon: bidWon, delta: delta})
             io.in(gameName).emit('updateRound', round)
-            // TODO: open all tricks
+            game.players.forEach(player => player.trickOpen.fill(true))
             // TODO: check for end of game, or prepare for startRoundRequest
           }
           else {
@@ -582,7 +587,21 @@ io.on('connection', socket => {
       console.log(`${socket.playerName} tried playing in ${gameName} out of phase`)
       socket.emit('errorMsg', 'Player not current, or game not in playing phase.')
     }
+  }))
 
+  socket.on('trickRequest', data => inGame((gameName, game) => {
+    if (Number.isInteger(data.playerIndex) && 0 <= data.playerIndex &&
+        data.playerIndex < game.players.length && Number.isInteger(data.trickIndex) &&
+        game.players[data.playerIndex].tricks && 0 <= data.trickIndex &&
+        data.trickIndex < game.players[data.playerIndex].tricks.length) {
+      const player = game.players[data.playerIndex]
+      player.trickOpen[data.trickIndex] = !player.trickOpen[data.trickIndex]
+      io.in(gameName).emit('updatePlayers', game.players)
+    }
+    else {
+      console.log(`${socket.playerName} tried toggling invalid trick ${data.playerIndex} ${data.trickIndex}`)
+      socket.emit('errorMsg', 'Invalid trick request.')
+    }
   }))
 
   socket.on('disconnecting', () => {

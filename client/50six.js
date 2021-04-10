@@ -255,7 +255,21 @@ socket.on('updatePlayers', players => {
         button.onclick = () => socket.emit('bidRequest', bidIndex)
       }
     }
-    // TODO: show the trick piles
+    if (player.tricks) {
+      const tricks = playerDiv.appendChild(document.createElement('ul'))
+      tricks.classList.add('inline')
+      for (let trickIndex = 0; trickIndex < player.tricks.length; trickIndex++) {
+        const trick = player.tricks[trickIndex]
+        const li = tricks.appendChild(document.createElement('li'))
+        li.classList.add('clickable')
+        li.onclick = () => socket.emit('trickRequest',
+          { playerIndex: playerIndex, trickIndex: trickIndex })
+        if (player.trickOpen[trickIndex])
+          li.textContent = trick.map(CardChar).join('')
+        else
+          li.textContent = '🂠'
+      }
+    }
   }
   errorMsg.innerHTML = ''
 })
