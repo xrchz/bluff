@@ -250,6 +250,7 @@ socket.on('updatePlayers', players => {
         button.onclick = () => socket.emit('bidRequest', bidIndex)
       }
     }
+    // TODO: show the trick piles
   }
   errorMsg.innerHTML = ''
 })

@@ -76,9 +76,13 @@ function appendLog(gameName, entry) {
 const stateKeys = {
   game: [
     'players', 'started', 'deck', 'trick',
-    'winningBid', 'lastBidder', 'bidding', 'playing'
+    'winningBid', 'lastBidder', 'bidding', 'playing',
+    'rounds'
   ],
   deck: true, trick: true, winningBid: true,
+  rounds: 'round',
+  round: ['contract', 'contractor', 'cardPoints', 'teamPoints'],
+  contract: true, cardPoints: true, teamPoints: true,
   players: 'player',
   player: [ 'current', 'lastBid', 'hand', 'tricks' ],
   lastBid: true, hand: true, tricks: true
@@ -133,6 +137,9 @@ const cardCmp = (a, b) =>
     a.s - b.s
 
 const Jack = 5
+
+const rankPoints = r =>
+  r === Jack ? 3 : Math.floor(r / 2)
 
 function setValidBids(game, playerIndex) {
   const teamSuits = game.bidSuits[playerIndex % 2]
@@ -250,6 +257,7 @@ io.on('connection', socket => {
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
+          // TODO: add rounds to score table
           // TODO: update the game situation for the spectator
         }
       }
@@ -273,6 +281,7 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
+          // TODO: add rounds to score table
           // TODO: update the game situation for a rejoined player
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
@@ -377,6 +386,7 @@ io.on('connection', socket => {
       game.started = true
       game.log = []
       game.undoLog = []
+      game.rounds = []
       game.dealer = Math.floor(Math.random() * game.players.length)
       io.in(gameName).emit('gameStarted')
       appendLog(gameName, 'The game begins!')
@@ -443,6 +453,8 @@ io.on('connection', socket => {
             // TODO: make sure the winning bid appears below the winning bidder
             const nextPlayer = game.players[(game.lastBidder + 1) % game.players.length]
             nextPlayer.current = true
+            game.rounds.push({ contractor: game.lastBidder, contract: game.winningBid })
+            // TODO: add new (partial) round to score table
             game.playing = true
             game.trick = []
             setValidPlays(nextPlayer)
@@ -503,13 +515,34 @@ io.on('connection', socket => {
           appendLog(gameName, `${winner.name} wins the trick.`)
           winner.tricks.push(game.trick)
           if (!winner.hand.length) {
-            // TODO: end of round
+            delete game.playing
+            const round = game.rounds[game.rounds.length - 1]
+            round.cardPoints = [0, 0]
+            game.players.forEach((player, index) => {
+              round.cardPoints[index % 2] += player.tricks.reduce(
+                (trick, n) => trick.reduce((c, n) => n + rankPoints(c.r), n),
+              0)
+            })
+            const biddingTeam = round.contractor % 2
+            const bidWon = (round.contract.c ? 56 : round.contract.n) <=
+              round.cardPoints[biddingTeam]
+            round.teamPoints = game.rounds.length - 1 ? [6, 6] :
+                               Array.from(game.rounds[game.rounds.length - 2].teamPoints)
+            const points = (round.contract.n < 40 ? 1 : 2) + (round.contract.c ? 0 : 1)
+            const delta = bidWon ? -points : points+1
+            round.teamPoints[biddingTeam] += delta
+            round.teamPoints[1 - biddingTeam] -= delta
+            // TODO: appendLog(gameName, end of round data)
+            // TODO: update last round in score table, open tricks
+            // TODO: check for end of game, or prepare for startRoundRequest
           }
           else {
             game.trick = []
             winner.current = true
             setValidPlays(winner)
             io.in(gameName).emit('updatePlayers', game.players)
+            // TODO: delay before closing the trick
+            // TODO: check for court scenario
             updateTrick(gameName)
           }
         }
