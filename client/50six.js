@@ -14,8 +14,11 @@ const log = document.getElementById('log')
 const playArea = document.getElementById('playArea')
 
 const playerDivs = []
-for (let i = 0; i < 6; i++)
+const playedDivs = []
+for (let i = 0; i < 6; i++) {
   playerDivs.push(document.getElementById(`player${i}`))
+  playedDivs.push(document.getElementById(`played${i}`))
+}
 
 const fragment = document.createDocumentFragment()
 
@@ -217,10 +220,16 @@ socket.on('updatePlayers', players => {
     if (!player.socketId) setDisconnected(nameDiv)
     const hand = playerDiv.appendChild(document.createElement('ul'))
     hand.classList.add('inline')
-    for (const card of player.hand) {
+    for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
+      const card = player.hand[cardIndex]
       const li = hand.appendChild(document.createElement('li'))
-      if (spectateInput.checked || currentIndex === playerIndex)
+      if (spectateInput.checked || currentIndex === playerIndex) {
         li.textContent = CardChar(card)
+        if (player.current && player.validPlays && player.validPlays.includes(cardIndex)) {
+          li.classList.add('clickable')
+          li.onclick = () => socket.emit('playRequest', cardIndex)
+        }
+      }
       else
         li.textContent = '🂠'
     }
@@ -241,6 +250,21 @@ socket.on('updatePlayers', players => {
       }
     }
   }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('updateTrick', data => {
+  if (data.trick.length) {
+    let i = data.nextIndex
+    for (let j = data.trick.length - 1; 0 <= j; j--) {
+      if (i) i--
+      else i = playedDivs.length - 1
+      playedDivs[i].textContent = CardChar(data.trick[j])
+    }
+  }
+  else
+    playedDivs.forEach(div => div.textContent = '')
+  errorMsg.innerHTML = ''
 })
 
 socket.on('appendLog', entry => {
@@ -251,6 +275,8 @@ socket.on('appendLog', entry => {
     li.textContent = `${entry.name} bids ${formatBid(entry.bid)}.`
   else if ('winningBid' in entry)
     li.textContent = `${entry.name} wins the bidding with ${formatBid(entry.winningBid)}.`
+  else if ('card' in entry)
+    li.textContent = `${entry.name} plays ${CardChar(entry.card)}.`
   else
     li.textContent = 'Error: unhandled log entry'
   log.appendChild(li)

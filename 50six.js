@@ -75,13 +75,13 @@ function appendLog(gameName, entry) {
 
 const stateKeys = {
   game: [
-    'players', 'started', 'deck',
+    'players', 'started', 'deck', 'trick',
     'winningBid', 'lastBidder', 'bidding', 'playing'
   ],
-  deck: true, winningBid: true,
+  deck: true, trick: true, winningBid: true,
   players: 'player',
-  player: [ 'current', 'lastBid', 'hand' ],
-  lastBid: true, hand: true
+  player: [ 'current', 'lastBid', 'hand', 'tricks' ],
+  lastBid: true, hand: true, tricks: true
 }
 
 function copy(keys, from, to, restore) {
@@ -166,6 +166,46 @@ function setValidBids(game, playerIndex) {
   }
 }
 
+function setValidPlays(player, callingSuit) {
+  player.validPlays = []
+  let canPlayOffsuit = true
+  for (const card of player.hand)
+    if (card.s === callingSuit) {
+      canPlayOffsuit = false
+      break
+    }
+  for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
+    const suit = player.hand[cardIndex].s
+    if (suit === callingSuit || canPlayOffsuit)
+      player.validPlays.push(cardIndex)
+  }
+}
+
+function trickWinningIndex(trick, trump) {
+  let suit = trick[0].s
+  let winningIndex = 0
+  for (let i = 0; i < trick.length; i++) {
+    if (suit !== trump && trick[i].s === trump) {
+      suit = trump
+      winningIndex = i
+    }
+    if (trick[i].s === suit && trick[i].r > trick[winningIndex].r)
+      winningIndex = i
+  }
+  return winningIndex
+}
+
+function updateTrick(gameName, roomName) {
+  if (!roomName) roomName = gameName
+  const game = games[gameName]
+  if (game.trick) {
+    io.in(gameName).emit('updateTrick', {
+      trick: game.trick,
+      nextIndex: game.players.findIndex(player => player.current)
+    })
+  }
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -208,6 +248,7 @@ io.on('connection', socket => {
         else {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
+          updateTrick(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
           // TODO: update the game situation for the spectator
         }
@@ -231,6 +272,7 @@ io.on('connection', socket => {
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
+          updateTrick(gameName, socket.id)
           // TODO: update the game situation for a rejoined player
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
@@ -319,6 +361,7 @@ io.on('connection', socket => {
       io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
       game.log.length = entry.logLength
       io.in(gameName).emit('updatePlayers', game.players)
+      updateTrick(gameName)
       if (!game.undoLog.length)
         io.in(gameName).emit('showUndo', false)
       io.in(gameName).emit('errorMsg', `${socket.playerName} pressed Undo.`)
@@ -340,6 +383,7 @@ io.on('connection', socket => {
       game.deck = makeDeck()
       shuffleInPlace(game.deck)
       game.players.forEach(player => player.hand = [])
+      game.players.forEach(player => player.tricks = [])
       for (let round = 0; round < 2; round++) {
         let i = game.dealer + 1
         while (true) {
@@ -396,10 +440,12 @@ io.on('connection', socket => {
             delete game.bidding
             game.players.forEach(player => delete player.validBids)
             // TODO: check the other team has a trump, otherwise start a new round
-            const nextIndex = game.lastBidder + 1
-            game.players[nextIndex % game.players.length].current = true
+            // TODO: make sure the winning bid appears below the winning bidder
+            const nextPlayer = game.players[(game.lastBidder + 1) % game.players.length]
+            nextPlayer.current = true
             game.playing = true
-            // TODO: add valid plays to the players
+            game.trick = []
+            setValidPlays(nextPlayer)
             io.in(gameName).emit('updatePlayers', game.players)
           }
           else if (!game.forcedBid) {
@@ -436,6 +482,55 @@ io.on('connection', socket => {
       console.log(`${socket.playerName} tried bidding in ${gameName} out of phase`)
       socket.emit('errorMsg', 'Player not current, or game not in bidding phase.')
     }
+  }))
+
+  socket.on('playRequest', cardIndex => inGame((gameName, game) => {
+    const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+    const player = game.players[playerIndex]
+    if (0 <= playerIndex && game.playing && player.current) {
+      if (player.validPlays && player.validPlays.includes(cardIndex)) {
+        appendUndo(gameName)
+        delete player.current
+        const card = player.hand.splice(cardIndex, 1)[0]
+        appendLog(gameName, {name: player.name, card: card})
+        game.trick.push(card)
+        if (game.trick.length === game.players.length) {
+          const winningIndex = trickWinningIndex(game.trick, game.winningBid.s)
+          const winnerIndex =
+            (game.players.length + playerIndex -
+             (game.trick.length - 1 - winningIndex)) % game.players.length
+          const winner = game.players[winnerIndex]
+          appendLog(gameName, `${winner.name} wins the trick.`)
+          winner.tricks.push(game.trick)
+          if (!winner.hand.length) {
+            // TODO: end of round
+          }
+          else {
+            game.trick = []
+            winner.current = true
+            setValidPlays(winner)
+            io.in(gameName).emit('updatePlayers', game.players)
+            updateTrick(gameName)
+          }
+        }
+        else {
+          const nextPlayer = game.players[(playerIndex + 1) % game.players.length]
+          nextPlayer.current = true
+          setValidPlays(nextPlayer, game.trick[0].s)
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateTrick(gameName)
+        }
+      }
+      else {
+        console.log(`${socket.playerName} tried playing in ${gameName} with bad index ${cardIndex}`)
+        socket.emit('errorMsg', 'That is not a valid play.')
+      }
+    }
+    else {
+      console.log(`${socket.playerName} tried playing in ${gameName} out of phase`)
+      socket.emit('errorMsg', 'Player not current, or game not in playing phase.')
+    }
+
   }))
 
   socket.on('disconnecting', () => {
