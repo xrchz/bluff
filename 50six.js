@@ -219,15 +219,9 @@ function appendRound(gameName, round, roomName) {
   const data = {
     number: game.rounds.length,
     contract: round.contract,
-    contractorName: game.players[round.contractor].name
-  }
-  if (round.cardPoints) {
-    data.yellowPoints = round.cardPoints[0]
-    data.purplePoints = round.cardPoints[1]
-  }
-  if (round.teamPoints) {
-    data.yellowScore = round.teamPoints[0]
-    data.purpleScore = round.teamPoints[1]
+    contractorName: game.players[round.contractor].name,
+    cardPoints: round.cardPoints,
+    teamPoints: round.teamPoints
   }
   io.in(roomName).emit('appendRound', data)
 }
@@ -556,7 +550,7 @@ io.on('connection', socket => {
             const delta = bidWon ? -points : points+1
             round.teamPoints[biddingTeam] += delta
             round.teamPoints[1 - biddingTeam] -= delta
-            // TODO: appendLog(gameName, end of round info)
+            appendLog(gameName, {biddingTeam: biddingTeam, bidWon: bidWon, delta: delta})
             io.in(gameName).emit('updateRound', round)
             // TODO: open all tricks
             // TODO: check for end of game, or prepare for startRoundRequest

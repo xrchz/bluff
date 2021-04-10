@@ -284,6 +284,9 @@ socket.on('appendLog', entry => {
     li.textContent = `${entry.name} wins the bidding with ${formatBid(entry.winningBid)}.`
   else if ('card' in entry)
     li.textContent = `${entry.name} plays ${CardChar(entry.card)}.`
+  else if ('bidWon' in entry)
+    li.textContent = `${TeamName[entry.biddingTeam]} ${entry.bidWon ? 'makes' : 'fails'} their bid,` +
+                     ` ${entry.bidWon ? 'gaining' : 'losing'} ${entry.delta} points.`
   else
     li.textContent = 'Error: unhandled log entry'
   log.appendChild(li)
@@ -300,14 +303,16 @@ function fillRoundRow(round, tr) {
   tr.appendChild(document.createElement('td')).textContent = round.number
   tr.appendChild(document.createElement('td')).textContent = round.contractorName
   tr.appendChild(document.createElement('td')).textContent = formatBid(round.contract)
-  if (!('yellowPoints' in round)) round.yellowPoints = ''
-  if (!('purplePoints' in round)) round.purplePoints = ''
-  if (!('yellowScore' in round)) round.yellowScore = ''
-  if (!('purpleScore' in round)) round.purpleScore = ''
-  tr.appendChild(document.createElement('td')).textContent = round.yellowPoints
-  tr.appendChild(document.createElement('td')).textContent = round.purplePoints
-  tr.appendChild(document.createElement('td')).textContent = round.yellowScore
-  tr.appendChild(document.createElement('td')).textContent = round.purpleScore
+  if (round.cardPoints) {
+    tr.appendChild(document.createElement('td')).textContent = round.cardPoints[0]
+    tr.appendChild(document.createElement('td')).textContent = round.cardPoints[1]
+    tr.appendChild(document.createElement('td')).textContent = round.teamPoints[0]
+    tr.appendChild(document.createElement('td')).textContent = round.teamPoints[1]
+  }
+  else {
+    let n = 4
+    while (n--) tr.appendChild(document.createElement('td'))
+  }
 }
 
 socket.on('appendRound', round => {
