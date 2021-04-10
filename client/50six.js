@@ -258,4 +258,17 @@ socket.on('appendLog', entry => {
   errorMsg.innerHTML = ''
 })
 
+socket.on('removeLog', n => {
+  while (n-- > 0) log.removeChild(log.lastElementChild)
+  errorMsg.innerHTML = ''
+})
+
+socket.on('showUndo', show =>
+  undoButton.hidden = spectateInput.checked || !show)
+
+undoButton.onclick = () => {
+  socket.emit('undoRequest')
+  errorMsg.innerHTML = ''
+}
+
 socket.on('errorMsg', msg => errorMsg.textContent = msg)
