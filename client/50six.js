@@ -12,6 +12,7 @@ const unseatedList = document.getElementById('unseated')
 const spectatorsList = document.getElementById('spectators')
 const log = document.getElementById('log')
 const playArea = document.getElementById('playArea')
+const roundTable = document.getElementById('round')
 
 const playerDivs = []
 const playedDivs = []
@@ -25,7 +26,7 @@ const fragment = document.createDocumentFragment()
 const CardChar = c =>
 String.fromCodePoint(0x1F0A0 +
   (0x10 * c.s) +
-  [0xE, 0xD, 0xA, 0x1, 0x9, 0xB][c.r])
+  [0xD, 0xE, 0xA, 0x1, 0x9, 0xB][c.r])
 
 const SuitChar = ['♠', '♥', '♦', '♣']
 
@@ -58,6 +59,8 @@ socket.on('ensureLobby', () => {
   spectatorsList.innerHTML = ''
   log.innerHTML = ''
   log.hidden = true
+  roundTable.hidden = true
+  roundTable.replaceChildren(roundTable.firstElementChild)
   playArea.hidden = true
   playerDivs.forEach(div => div.replaceChildren())
   history.replaceState('lobby', 'Lobby')
@@ -160,6 +163,7 @@ socket.on('updateSeats', players => {
       fragment.appendChild(elem)
     }
   }
+  // TODO: show Empty for empty seats
   unseatedList.appendChild(fragment)
   for (let i = 0; i < playerDivs.length; i++) {
     if (!filledSeats[i])
@@ -202,6 +206,7 @@ socket.on('gameStarted', () => {
     button.parentElement.removeChild(button)
   )
   log.hidden = false
+  roundTable.hidden = false
   errorMsg.innerHTML = ''
 })
 
@@ -288,6 +293,40 @@ socket.on('appendLog', entry => {
 
 socket.on('removeLog', n => {
   while (n-- > 0) log.removeChild(log.lastElementChild)
+  errorMsg.innerHTML = ''
+})
+
+function fillRoundRow(round, tr) {
+  tr.appendChild(document.createElement('td')).textContent = round.number
+  tr.appendChild(document.createElement('td')).textContent = round.contractorName
+  tr.appendChild(document.createElement('td')).textContent = formatBid(round.contract)
+  if (!('yellowPoints' in round)) round.yellowPoints = ''
+  if (!('purplePoints' in round)) round.purplePoints = ''
+  if (!('yellowScore' in round)) round.yellowScore = ''
+  if (!('purpleScore' in round)) round.purpleScore = ''
+  tr.appendChild(document.createElement('td')).textContent = round.yellowPoints
+  tr.appendChild(document.createElement('td')).textContent = round.purplePoints
+  tr.appendChild(document.createElement('td')).textContent = round.yellowScore
+  tr.appendChild(document.createElement('td')).textContent = round.purpleScore
+}
+
+socket.on('appendRound', round => {
+  const tr = document.createElement('tr')
+  fillRoundRow(round, tr)
+  roundTable.insertBefore(tr, roundTable.firstElementChild.nextElementSibling)
+  errorMsg.innerHTML = ''
+})
+
+socket.on('updateRound', round => {
+  const tr = roundTable.firstElementChild.nextElementSibling
+  tr.replaceChildren()
+  fillRoundRow(round, tr)
+  errorMsg.innerHTML = ''
+})
+
+socket.on('removeRound', n => {
+  while (n-- > 0)
+    roundTable.removeChild(roundTable.firstElementChild.nextElementSibling)
   errorMsg.innerHTML = ''
 })
 

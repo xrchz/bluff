@@ -213,6 +213,25 @@ function updateTrick(gameName, roomName) {
   }
 }
 
+function appendRound(gameName, round, roomName) {
+  if (!roomName) roomName = gameName
+  const game = games[gameName]
+  const data = {
+    number: game.rounds.length,
+    contract: round.contract,
+    contractorName: game.players[round.contractor].name
+  }
+  if (round.cardPoints) {
+    data.yellowPoints = round.cardPoints[0]
+    data.purplePoints = round.cardPoints[1]
+  }
+  if (round.teamPoints) {
+    data.yellowScore = round.teamPoints[0]
+    data.purpleScore = round.teamPoints[1]
+  }
+  io.in(roomName).emit('appendRound', data)
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -257,7 +276,7 @@ io.on('connection', socket => {
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
-          // TODO: add rounds to score table
+          game.rounds.forEach(round => appendRound(gameName, round, socket.id))
           // TODO: update the game situation for the spectator
         }
       }
@@ -281,7 +300,7 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
-          // TODO: add rounds to score table
+          game.rounds.forEach(round => appendRound(gameName, round, socket.id))
           // TODO: update the game situation for a rejoined player
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
@@ -366,9 +385,13 @@ io.on('connection', socket => {
   socket.on('undoRequest', () => inGame((gameName, game) => {
     if (game.started && game.undoLog.length) {
       const entry = game.undoLog.pop()
+      const roundsLength = game.rounds.length
       copy(stateKeys.game, entry, game, true)
       io.in(gameName).emit('removeLog', game.log.length - entry.logLength)
       game.log.length = entry.logLength
+      io.in(gameName).emit('removeRound', roundsLength - game.rounds.length)
+      if (game.rounds.length)
+        io.in(gameName).emit('updateRound', game.rounds[game.rounds.length - 1])
       io.in(gameName).emit('updatePlayers', game.players)
       updateTrick(gameName)
       if (!game.undoLog.length)
@@ -450,11 +473,11 @@ io.on('connection', socket => {
             delete game.bidding
             game.players.forEach(player => delete player.validBids)
             // TODO: check the other team has a trump, otherwise start a new round
-            // TODO: make sure the winning bid appears below the winning bidder
             const nextPlayer = game.players[(game.lastBidder + 1) % game.players.length]
             nextPlayer.current = true
-            game.rounds.push({ contractor: game.lastBidder, contract: game.winningBid })
-            // TODO: add new (partial) round to score table
+            const round = { contractor: game.lastBidder, contract: game.winningBid }
+            game.rounds.push(round)
+            appendRound(gameName, round)
             game.playing = true
             game.trick = []
             setValidPlays(nextPlayer)
@@ -520,20 +543,22 @@ io.on('connection', socket => {
             round.cardPoints = [0, 0]
             game.players.forEach((player, index) => {
               round.cardPoints[index % 2] += player.tricks.reduce(
-                (trick, n) => trick.reduce((c, n) => n + rankPoints(c.r), n),
+                (n, trick) => trick.reduce((n, c) => n + rankPoints(c.r), n),
               0)
             })
             const biddingTeam = round.contractor % 2
             const bidWon = (round.contract.c ? 56 : round.contract.n) <=
               round.cardPoints[biddingTeam]
-            round.teamPoints = game.rounds.length - 1 ? [6, 6] :
-                               Array.from(game.rounds[game.rounds.length - 2].teamPoints)
+            round.teamPoints = game.rounds.length - 1 ?
+                                 Array.from(game.rounds[game.rounds.length - 2].teamPoints) :
+                                 [6, 6]
             const points = (round.contract.n < 40 ? 1 : 2) + (round.contract.c ? 0 : 1)
             const delta = bidWon ? -points : points+1
             round.teamPoints[biddingTeam] += delta
             round.teamPoints[1 - biddingTeam] -= delta
-            // TODO: appendLog(gameName, end of round data)
-            // TODO: update last round in score table, open tricks
+            // TODO: appendLog(gameName, end of round info)
+            io.in(gameName).emit('updateRound', round)
+            // TODO: open all tricks
             // TODO: check for end of game, or prepare for startRoundRequest
           }
           else {
