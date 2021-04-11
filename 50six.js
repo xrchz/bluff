@@ -294,7 +294,6 @@ io.on('connection', socket => {
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
-        socket.emit('updateSeats', game.players)
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (!game.started)
           socket.emit('updateSeats', game.players)

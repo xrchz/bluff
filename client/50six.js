@@ -150,11 +150,10 @@ socket.on('updateSeats', players => {
   for (player of players) {
     if ('seat' in player) {
       const playerDiv = playerDivs[player.seat]
-      if (!playerDiv.querySelector('h3')) {
-        const h3 = playerDiv.appendChild(document.createElement('h3'))
-        h3.textContent = player.name
-        if (!player.socketId) setDisconnected(h3)
-      }
+      const h3 = document.createElement('h3')
+      h3.textContent = player.name
+      playerDiv.replaceChildren(h3)
+      if (!player.socketId) setDisconnected(h3)
       filledSeats[player.seat] = true
     }
     else {
@@ -171,26 +170,22 @@ socket.on('updateSeats', players => {
       playerDivs[i].replaceChildren(h4)
     }
   }
-  if (!startButton.disabled) {
-    startButton.hidden = players.length < 6 || elem
-    const current = players.find(player => player.name === nameInput.value)
-    if (current && !spectateInput.checked) {
-      playArea.querySelectorAll('input[type=button]').forEach(button =>
-        button.parentElement.removeChild(button))
-      if ('seat' in current) {
-        const button = playerDivs[current.seat].appendChild(document.createElement('input'))
+  startButton.hidden = players.length < 6 || elem
+  const current = players.find(player => player.name === nameInput.value)
+  if (current && !spectateInput.checked) {
+    if ('seat' in current) {
+      const button = playerDivs[current.seat].appendChild(document.createElement('input'))
+      button.type = 'button'
+      button.value = 'Leave Seat'
+      button.onclick = () => socket.emit('leaveSeat')
+    }
+    else {
+      for (let i = 0; i < playerDivs.length; i++) {
+        if (players.find(player => player.seat === i)) continue
+        const button = playerDivs[i].appendChild(document.createElement('input'))
         button.type = 'button'
-        button.value = 'Leave Seat'
-        button.onclick = () => socket.emit('leaveSeat')
-      }
-      else {
-        for (let i = 0; i < playerDivs.length; i++) {
-          if (players.find(player => player.seat === i)) continue
-          const button = playerDivs[i].appendChild(document.createElement('input'))
-          button.type = 'button'
-          button.value = 'Sit Here'
-          button.onclick = () => socket.emit('joinSeat', i)
-        }
+        button.value = 'Sit Here'
+        button.onclick = () => socket.emit('joinSeat', i)
       }
     }
   }
