@@ -711,5 +711,9 @@ io.on('connection', socket => {
   socket.on('saveGames', saveGames)
 })
 
-process.on('SIGINT', () => { saveGames(); fs.unlinkSync(port); process.exit() })
+process.on('SIGINT', () => {
+  saveGames()
+  if (unix) fs.unlinkSync(port)
+  process.exit()
+})
 process.on('uncaughtExceptionMonitor', saveGames)
