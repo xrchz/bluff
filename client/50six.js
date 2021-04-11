@@ -163,11 +163,13 @@ socket.on('updateSeats', players => {
       fragment.appendChild(elem)
     }
   }
-  // TODO: show Empty for empty seats
   unseatedList.appendChild(fragment)
   for (let i = 0; i < playerDivs.length; i++) {
-    if (!filledSeats[i])
-      playerDivs[i].querySelectorAll('h3').forEach(h3 => h3.parentElement.removeChild(h3))
+    if (!filledSeats[i]) {
+      const h4 = document.createElement('h4')
+      h4.textContent = 'Empty Seat'
+      playerDivs[i].replaceChildren(h4)
+    }
   }
   if (!startButton.disabled) {
     startButton.hidden = players.length < 6 || elem
