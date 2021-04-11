@@ -328,6 +328,8 @@ io.on('connection', socket => {
           updateTrick(gameName, socket.id)
           game.rounds.forEach(round => appendRound(gameName, round, socket.id))
           // TODO: update the game situation for a rejoined player
+          if (!game.playing && !game.bidding)
+            socket.emit('showNext', true)
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
             socket.emit('showUndo', true)

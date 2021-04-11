@@ -7,6 +7,7 @@ const gamesList = document.getElementById('games')
 const joinButton = document.getElementById('join')
 const startButton = document.getElementById('start')
 const undoButton = document.getElementById('undo')
+const nextButton = document.getElementById('next')
 const spectateInput = document.getElementById('spectate')
 const unseatedList = document.getElementById('unseated')
 const spectatorsList = document.getElementById('spectators')
@@ -55,6 +56,7 @@ socket.on('ensureLobby', () => {
   spectateInput.disabled = false
   spectateInput.previousElementSibling.hidden = false
   undoButton.hidden = true
+  nextButton.hidden = true
   startButton.hidden = true
   startButton.disabled = false
   unseatedList.innerHTML = ''
@@ -353,6 +355,14 @@ socket.on('showUndo', show =>
 
 undoButton.onclick = () => {
   socket.emit('undoRequest')
+  errorMsg.innerHTML = ''
+}
+
+socket.on('showNext', show =>
+  nextButton.hidden = spectateInput.checked || !show)
+
+nextButton.onclick = () => {
+  socket.emit('nextRequest')
   errorMsg.innerHTML = ''
 }
 
