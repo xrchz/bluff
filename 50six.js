@@ -75,11 +75,11 @@ function appendLog(gameName, entry) {
 
 const stateKeys = {
   game: [
-    'players', 'started', 'deck', 'trick',
+    'players', 'started', 'trick',
     'winningBid', 'lastBidder', 'bidding', 'playing',
     'rounds'
   ],
-  deck: true, trick: true, winningBid: true,
+  trick: true, winningBid: true,
   rounds: 'round',
   round: ['contract', 'contractor', 'cardPoints', 'teamPoints'],
   contract: true, cardPoints: true, teamPoints: true,
@@ -224,6 +224,39 @@ function appendRound(gameName, round, roomName) {
     teamPoints: round.teamPoints
   }
   io.in(roomName).emit('appendRound', data)
+}
+
+function startRound(gameName) {
+  const game = games[gameName]
+  const deck = makeDeck()
+  shuffleInPlace(deck)
+  game.players.forEach(player => {
+    player.hand = []
+    player.tricks = []
+    player.trickOpen = []
+  })
+  for (let round = 0; round < 2; round++) {
+    let i = game.dealer + 1
+    while (true) {
+      if (i === game.players.length) i = 0
+      for (let cards = 0; cards < 4; cards++)
+        game.players[i].hand.push(deck.pop())
+      if (i === game.dealer) break
+      else i++
+    }
+  }
+  game.players.forEach(player => player.hand.sort(cardCmp))
+  appendLog(gameName, `${game.players[game.dealer].name} deals.`)
+  // TODO: check no team has no jacks, redeal if so
+  game.bidSuits = []
+  for (const teamIndex of [0, 1])
+    game.bidSuits.push(Array(4).fill(false))
+  const currentIndex = (game.dealer + 1) % game.players.length
+  game.players[currentIndex].current = true
+  game.bidding = true
+  setValidBids(game, currentIndex)
+  io.in(gameName).emit('updatePlayers', game.players)
+  io.in(gameName).emit('showNext', false)
 }
 
 io.on('connection', socket => {
@@ -407,34 +440,7 @@ io.on('connection', socket => {
       game.dealer = Math.floor(Math.random() * game.players.length)
       io.in(gameName).emit('gameStarted')
       appendLog(gameName, 'The game begins!')
-      game.deck = makeDeck()
-      shuffleInPlace(game.deck)
-      game.players.forEach(player => {
-        player.hand = []
-        player.tricks = []
-        player.trickOpen = []
-      })
-      for (let round = 0; round < 2; round++) {
-        let i = game.dealer + 1
-        while (true) {
-          if (i === game.players.length) i = 0
-          for (let cards = 0; cards < 4; cards++)
-            game.players[i].hand.push(game.deck.pop())
-          if (i === game.dealer) break
-          else i++
-        }
-      }
-      game.players.forEach(player => player.hand.sort(cardCmp))
-      appendLog(gameName, `${game.players[game.dealer].name} deals.`)
-      // TODO: check no team has no jacks, redeal if so
-      game.bidSuits = []
-      for (const teamIndex of [0, 1])
-        game.bidSuits.push(Array(4).fill(false))
-      const currentIndex = (game.dealer + 1) % game.players.length
-      game.players[currentIndex].current = true
-      game.bidding = true
-      setValidBids(game, currentIndex)
-      io.in(gameName).emit('updatePlayers', game.players)
+      startRound(gameName)
     }
     else {
       console.log(`${socket.playerName} tried to start ${gameName} incorrectly`)
@@ -536,6 +542,7 @@ io.on('connection', socket => {
           appendLog(gameName, `${winner.name} wins the trick.`)
           winner.tricks.push(game.trick)
           winner.trickOpen.push(false)
+          game.trick = []
           if (!winner.hand.length) {
             delete game.playing
             const round = game.rounds[game.rounds.length - 1]
@@ -555,13 +562,24 @@ io.on('connection', socket => {
             const delta = bidWon ? -points : points+1
             round.teamPoints[biddingTeam] += delta
             round.teamPoints[1 - biddingTeam] -= delta
-            appendLog(gameName, {biddingTeam: biddingTeam, bidWon: bidWon, delta: delta})
+            appendLog(gameName, { biddingTeam: biddingTeam, bidWon: bidWon, delta: delta })
             io.in(gameName).emit('updateRound', round)
             game.players.forEach(player => player.trickOpen.fill(true))
-            // TODO: check for end of game, or prepare for startRoundRequest
+            game.players.forEach(player => delete player.validPlays)
+            io.in(gameName).emit('updatePlayers', game.players)
+            updateTrick(gameName)
+            const winningTeam = round.teamPoints.findIndex(points => points <= -1)
+            if (0 <= winningTeam) {
+              game.ended = true
+              appendLog(gameName, { winningTeam: winningTeam })
+            }
+            else {
+              game.dealer++
+              if (game.dealer === game.players.length) game.dealer = 0
+              io.in(gameName).emit('showNext', true)
+            }
           }
           else {
-            game.trick = []
             winner.current = true
             setValidPlays(winner)
             io.in(gameName).emit('updatePlayers', game.players)
@@ -601,6 +619,17 @@ io.on('connection', socket => {
     else {
       console.log(`${socket.playerName} tried toggling invalid trick ${data.playerIndex} ${data.trickIndex}`)
       socket.emit('errorMsg', 'Invalid trick request.')
+    }
+  }))
+
+  socket.on('nextRequest', () => inGame((gameName, game) => {
+    if (game.started && !game.ended && !game.bidding && !game.playing) {
+      appendUndo(gameName)
+      startRound(gameName)
+    }
+    else {
+      console.log(`${socket.playerName} tried to advance ${gameName} incorrectly`)
+      socket.emit('errorMsg', 'Wrong phase for starting a new round.')
     }
   }))
 
