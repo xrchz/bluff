@@ -564,7 +564,7 @@ io.on('connection', socket => {
             round.teamPoints = game.rounds.length - 1 ?
                                  Array.from(game.rounds[game.rounds.length - 2].teamPoints) :
                                  [6, 6]
-            const points = (round.contract.n < 40 ? 1 : 2) + (round.contract.c ? 0 : 1)
+            const points = (round.contract.n < 40 ? 1 : 2) + (round.contract.c ? 1 : 0)
             const delta = bidWon ? -points : points+1
             round.teamPoints[biddingTeam] += delta
             round.teamPoints[1 - biddingTeam] -= delta
