@@ -23,6 +23,8 @@ for (let i = 0; i < 6; i++) {
 
 const fragment = document.createDocumentFragment()
 
+const TeamName = ['Yellow', 'Purple']
+
 const CardChar = c =>
 String.fromCodePoint(0x1F0A0 +
   (0x10 * c.s) +
