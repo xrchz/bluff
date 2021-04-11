@@ -75,7 +75,7 @@ function appendLog(gameName, entry) {
 
 const stateKeys = {
   game: [
-    'players', 'started', 'trick',
+    'players', 'started', 'trick', 'ended',
     'winningBid', 'lastBidder', 'bidding', 'playing',
     'rounds'
   ],
@@ -84,7 +84,7 @@ const stateKeys = {
   round: ['contract', 'contractor', 'cardPoints', 'teamPoints'],
   contract: true, cardPoints: true, teamPoints: true,
   players: 'player',
-  player: [ 'current', 'lastBid', 'hand', 'tricks' ],
+  player: [ 'current', 'lastBid', 'passed', 'hand', 'tricks' ],
   lastBid: true, hand: true, tricks: true
 }
 
@@ -474,13 +474,19 @@ io.on('connection', socket => {
             appendLog(gameName, {name: game.players[game.lastBidder].name,
                                  winningBid: game.winningBid})
             delete game.bidding
-            game.players.forEach(player => delete player.validBids)
+            game.players.forEach(player => {
+              delete player.validBids
+              delete player.lastBid
+              delete player.passed
+            })
             // TODO: check the other team has a trump, otherwise start a new round
             const nextPlayer = game.players[(game.lastBidder + 1) % game.players.length]
             nextPlayer.current = true
             const round = { contractor: game.lastBidder, contract: game.winningBid }
             game.rounds.push(round)
             appendRound(gameName, round)
+            delete game.lastBidder
+            delete game.winningBid
             game.playing = true
             game.trick = []
             setValidPlays(nextPlayer)
@@ -534,7 +540,8 @@ io.on('connection', socket => {
         appendLog(gameName, {name: player.name, card: card})
         game.trick.push(card)
         if (game.trick.length === game.players.length) {
-          const winningIndex = trickWinningIndex(game.trick, game.winningBid.s)
+          const winningIndex = trickWinningIndex(game.trick,
+            game.rounds[game.rounds.length - 1].contract.s)
           const winnerIndex =
             (game.players.length + playerIndex -
              (game.trick.length - 1 - winningIndex)) % game.players.length
