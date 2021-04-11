@@ -34,7 +34,8 @@ String.fromCodePoint(0x1F0A0 +
 const SuitChar = ['♠', '♥', '♦', '♣']
 
 const formatBid = bid =>
-  bid.n ? `${bid.p ? '+' : ''}${bid.n}${SuitChar[bid.s]}` : 'Pass'
+  bid.n ? `${bid.p ? '+' : ''}${bid.n}${SuitChar[bid.s]}${bid.c ? '*' : ''}`
+        : 'Pass'
 
 joinButton.parentElement.onsubmit = () => {
   socket.emit('joinRequest', {
@@ -238,6 +239,14 @@ socket.on('updatePlayers', players => {
       }
       else
         li.textContent = '🂠'
+    }
+    if (!spectateInput.checked && currentIndex === playerIndex &&
+        player.current && player.courtOption) {
+      const li = hand.appendChild(document.createElement('li'))
+      const button = li.appendChild(document.createElement('input'))
+      button.type = 'button'
+      button.value = 'Court'
+      button.onclick = () => socket.emit('courtRequest')
     }
     if (!spectateInput.checked && currentIndex === playerIndex &&
         player.validBids && player.current) {

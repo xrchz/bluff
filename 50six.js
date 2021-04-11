@@ -537,12 +537,13 @@ io.on('connection', socket => {
         game.players.forEach(player => player.trickOpen.fill(false))
         appendUndo(gameName)
         delete player.current
+        delete player.courtOption
         const card = player.hand.splice(cardIndex, 1)[0]
         appendLog(gameName, {name: player.name, card: card})
         game.trick.push(card)
         if (game.trick.length === game.players.length) {
-          const winningIndex = trickWinningIndex(game.trick,
-            game.rounds[game.rounds.length - 1].contract.s)
+          const round = game.rounds[game.rounds.length - 1]
+          const winningIndex = trickWinningIndex(game.trick, round.contract.s)
           const winnerIndex =
             (game.players.length + playerIndex -
              (game.trick.length - 1 - winningIndex)) % game.players.length
@@ -551,7 +552,8 @@ io.on('connection', socket => {
           winner.tricks.push(game.trick)
           winner.trickOpen.push(false)
           game.trick = []
-          if (!winner.hand.length) {
+          const failedCourt = round.contract.c && (winnerIndex % 2 !== round.contractor % 2)
+          if (!winner.hand.length || failedCourt) {
             delete game.playing
             const round = game.rounds[game.rounds.length - 1]
             round.cardPoints = [0, 0]
@@ -591,8 +593,14 @@ io.on('connection', socket => {
             winner.current = true
             setValidPlays(winner)
             io.in(gameName).emit('updatePlayers', game.players)
+            const teamTricks = [0, 0]
+            game.players.forEach((player, index) =>
+              teamTricks[index % 2] += player.tricks.length)
+            const winnerTeam = winnerIndex % 2
+            if (teamTricks[1 - winnerTeam] === 0 &&
+                teamTricks[winnerTeam] === 5)
+              winner.courtOption = true
             // TODO: delay before closing the trick
-            // TODO: check for court scenario
             updateTrick(gameName)
           }
         }
@@ -612,6 +620,26 @@ io.on('connection', socket => {
     else {
       console.log(`${socket.playerName} tried playing in ${gameName} out of phase`)
       socket.emit('errorMsg', 'Player not current, or game not in playing phase.')
+    }
+  }))
+
+  socket.on('courtRequest', () => inGame((gameName, game) => {
+    const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+    const player = game.players[playerIndex]
+    if (0 <= playerIndex && game.playing && player.current &&
+        player.courtOption &&
+        !game.rounds[game.rounds.length - 1].contract.c) {
+      appendUndo(gameName)
+      delete player.courtOption
+      const round = game.rounds[game.rounds.length - 1]
+      round.contract.c = true
+      appendLog(gameName, `${player.name} declares court.`)
+      socket.emit('updatePlayers', game.players)
+      io.in(gameName).emit('updateRound', round)
+    }
+    else {
+      console.log(`${socket.playerName} made invalid court request in ${gameName}`)
+      socket.emit('errorMsg', 'Cannot court currently.')
     }
   }))
 
