@@ -95,9 +95,11 @@ h3 {
 h3.disconnected::after {
   content: ' (d/c)';
 }
-.bidbutton {
-  width: 45px;
-  background-color: SlateGray;
+input[type=button].bid {
+  width: 4em;
+  font-size: large;
+  color: Thistle;
+  background-color: #300;
 }
 
 #round {

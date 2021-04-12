@@ -296,7 +296,7 @@ socket.on('updatePlayers', players => {
         button.type = 'button'
         button.value = formatBid(vb)
         button.classList.add(SuitClass[vb.s])
-        button.classList.add('bidbutton')
+        button.classList.add('bid')
         button.onclick = () => socket.emit('bidRequest', bidIndex)
       }
     }
