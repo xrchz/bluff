@@ -446,7 +446,7 @@ io.on('connection', socket => {
       updateTrick(gameName)
       if (!game.undoLog.length)
         io.in(gameName).emit('showUndo', false)
-      appendCheat(gameName, `${socket.playerName} presses Undo.`)
+      appendCheat(gameName, `${socket.playerName} pressed Undo.`)
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
@@ -688,7 +688,7 @@ io.on('connection', socket => {
       const player = game.players[data.playerIndex]
       const alreadyOpen = player.trickOpen[data.trickIndex]
       player.trickOpen[data.trickIndex] = !alreadyOpen
-      if (!alreadyOpen) appendCheat(gameName, `${socket.playerName} opens a trick.`)
+      if (!alreadyOpen) appendCheat(gameName, `${socket.playerName} opened a trick.`)
       io.in(gameName).emit('updatePlayers', game.players)
     }
     else {
