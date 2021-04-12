@@ -265,6 +265,7 @@ socket.on('updatePlayers', players => {
         const button = li.appendChild(document.createElement('input'))
         button.type = 'button'
         button.value = formatBid(vb)
+        button.classList.add(SuitClass[vb.s])
         button.onclick = () => socket.emit('bidRequest', bidIndex)
       }
     }
@@ -313,10 +314,20 @@ socket.on('appendLog', entry => {
   const li = document.createElement('li')
   if (typeof entry ===  'string')
     li.textContent = entry
-  else if ('bid' in entry)
-    li.textContent = `${entry.name} bids ${formatBid(entry.bid)}.`
-  else if ('winningBid' in entry)
-    li.textContent = `${entry.name} wins the bidding with ${formatBid(entry.winningBid)}.`
+  else if ('bid' in entry) {
+    li.appendChild(document.createElement('span')).textContent = `${entry.name} bids `
+    const span = li.appendChild(document.createElement('span'))
+    span.textContent = formatBid(entry.bid)
+    span.classList.add(SuitClass[entry.bid.s])
+    li.appendChild(document.createElement('span')).textContent = '.'
+  }
+  else if ('winningBid' in entry) {
+    li.appendChild(document.createElement('span')).textContent = `${entry.name} wins the bidding with `
+    const span = li.appendChild(document.createElement('span'))
+    span.textContent = formatBid(entry.winningBid)
+    span.classList.add(SuitClass[entry.winningBid.s])
+    li.appendChild(document.createElement('span')).textContent = '.'
+  }
   else if ('card' in entry) {
     li.appendChild(document.createElement('span')).textContent = `${entry.name} plays `
     const span = li.appendChild(document.createElement('span'))
@@ -342,7 +353,9 @@ socket.on('removeLog', n => {
 function fillRoundRow(round, tr) {
   tr.appendChild(document.createElement('td')).textContent = round.number
   tr.appendChild(document.createElement('td')).textContent = round.contractorName
-  tr.appendChild(document.createElement('td')).textContent = formatBid(round.contract)
+  const td = tr.appendChild(document.createElement('td'))
+  td.textContent = formatBid(round.contract)
+  td.classList.add(SuitClass[round.contract.s])
   if (round.cardPoints) {
     tr.appendChild(document.createElement('td')).textContent = round.cardPoints[0]
     tr.appendChild(document.createElement('td')).textContent = round.cardPoints[1]
