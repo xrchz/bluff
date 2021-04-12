@@ -79,20 +79,6 @@ h3 {
   display: none;
 }
 
-#board {
-  display: flex;
-  width: 50%;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-#playedCenter {
-  display: flex;
-  width: 50%;
-  align-items: center;
-}
-
 #playArea > div {
   width: 100%;
   display: flex;
