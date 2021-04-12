@@ -233,26 +233,33 @@ function appendRound(gameName, roundIndex, roomName) {
 
 function startRound(gameName) {
   const game = games[gameName]
-  const deck = makeDeck()
-  shuffleInPlace(deck)
   game.players.forEach(player => {
-    player.hand = []
     player.tricks = []
     player.trickOpen = []
   })
-  for (let round = 0; round < 2; round++) {
-    let i = game.dealer + 1
-    while (true) {
-      if (i === game.players.length) i = 0
-      for (let cards = 0; cards < 4; cards++)
-        game.players[i].hand.push(deck.pop())
-      if (i === game.dealer) break
-      else i++
+  function deal() {
+    const deck = makeDeck()
+    shuffleInPlace(deck)
+    game.players.forEach(player => player.hand = [])
+    for (let round = 0; round < 2; round++) {
+      let i = game.dealer + 1
+      while (true) {
+        if (i === game.players.length) i = 0
+        for (let cards = 0; cards < 4; cards++)
+          game.players[i].hand.push(deck.pop())
+        if (i === game.dealer) break
+        else i++
+      }
     }
   }
+  deal()
+  while ([0, 1].some(team =>
+           game.players.every((player, index) =>
+             index % 2 !== team || player.hand.every(card => card.r !== Jack))))
+    deal()
+  const dealerName = game.players[game.dealer].name
+  appendLog(gameName, `${dealerName} deals.`)
   game.players.forEach(player => player.hand.sort(cardCmp))
-  appendLog(gameName, `${game.players[game.dealer].name} deals.`)
-  // TODO: check no team has no jacks, redeal if so
   game.bidSuits = []
   for (const teamIndex of [0, 1])
     game.bidSuits.push(Array(4).fill(false))
