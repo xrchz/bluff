@@ -21,6 +21,7 @@ for (let i = 0; i < 6; i++) {
   playerDivs.push(document.getElementById(`player${i}`))
   playedDivs.push(document.getElementById(`played${i}`))
 }
+playedDivs.forEach(div => div.classList.add('cards'))
 
 const fragment = document.createDocumentFragment()
 
@@ -226,7 +227,7 @@ socket.on('updatePlayers', players => {
     }
     if (!player.socketId) setDisconnected(nameDiv)
     const hand = playerDiv.appendChild(document.createElement('ul'))
-    hand.classList.add('inline')
+    hand.classList.add('inline', 'cards')
     for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
       const card = player.hand[cardIndex]
       const li = hand.appendChild(document.createElement('li'))
@@ -267,7 +268,7 @@ socket.on('updatePlayers', players => {
     }
     if (player.tricks) {
       const tricks = playerDiv.appendChild(document.createElement('ul'))
-      tricks.classList.add('inline')
+      tricks.classList.add('inline', 'cards')
       for (let trickIndex = 0; trickIndex < player.tricks.length; trickIndex++) {
         const trick = player.tricks[trickIndex]
         const li = tricks.appendChild(document.createElement('li'))

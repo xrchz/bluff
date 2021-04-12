@@ -5,7 +5,7 @@
 body {
   font-family: 'DejaVu Sans', sans-serif;
   font-size: large;
-  background-color: DarkRed;
+  background-color: #200;
   color: Lavender;
   margin-left: 2vw;
   width: 96vw;
@@ -17,6 +17,10 @@ ul.inline {
 ul.inline > li {
   display: inline;
   padding: 0.5em;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
 }
 #log {
   height: 13ex;
@@ -30,6 +34,31 @@ ul.inline > li {
   border-color: OldLace;
   max-width: 40em;
   margin: auto;
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover, .clickable:hover {
+  cursor: pointer;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.disconnected {
+  color: Pink;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
 }
 #playArea {
   display: flex;
@@ -48,4 +77,26 @@ ul.inline > li {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+#round {
+  margin: auto;
+  border-style: solid;
+  border-color: OldLace;
+  border-collapse: collapse;
+}
+th, td {
+  text-align: center;
+  padding: 0.5em;
+}
+th {
+  border-bottom: solid;
+}
+tr:nth-child(odd) {
+  background-color: #300;
+}
+tr:nth-child(even) {
+  background-color: #400;
+}
+.cards {
+  font-size: xx-large;
 }
