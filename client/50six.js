@@ -102,6 +102,7 @@ socket.on('ensureLobby', () => {
   roundTable.replaceChildren(roundTable.firstElementChild)
   playArea.hidden = true
   playerDivs.forEach(div => div.replaceChildren())
+  playedDivs.forEach(div => div.replaceChildren())
   history.replaceState('lobby', 'Lobby')
 })
 
