@@ -220,6 +220,8 @@ function updateTrick(gameName, roomName, currentIndex) {
 function appendRound(gameName, roundIndex, roomName) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
+  const msg = roundIndex < 0 ? 'updateRound' : 'appendRound'
+  if (roundIndex < 0) roundIndex = game.rounds.length - 1
   const round = game.rounds[roundIndex]
   const data = {
     number: roundIndex+1,
@@ -228,7 +230,7 @@ function appendRound(gameName, roundIndex, roomName) {
     cardPoints: round.cardPoints,
     teamPoints: round.teamPoints
   }
-  io.in(roomName).emit('appendRound', data)
+  io.in(roomName).emit(msg, data)
 }
 
 function startRound(gameName) {
@@ -431,7 +433,7 @@ io.on('connection', socket => {
       game.log.length = entry.logLength
       io.in(gameName).emit('removeRound', roundsLength - game.rounds.length)
       if (game.rounds.length)
-        io.in(gameName).emit('updateRound', game.rounds[game.rounds.length - 1])
+        appendRound(gameName, -1)
       io.in(gameName).emit('updatePlayers', game.players)
       updateTrick(gameName)
       if (!game.undoLog.length)
@@ -597,7 +599,7 @@ io.on('connection', socket => {
             round.teamPoints[biddingTeam] += delta
             round.teamPoints[1 - biddingTeam] -= delta
             appendLog(gameName, { biddingTeam: biddingTeam, bidWon: bidWon, delta: delta })
-            io.in(gameName).emit('updateRound', round)
+            appendRound(gameName, -1)
             game.players.forEach(player => player.trickOpen.fill(true))
             game.players.forEach(player => delete player.validPlays)
             io.in(gameName).emit('updatePlayers', game.players)
@@ -661,7 +663,7 @@ io.on('connection', socket => {
       round.contract.c = true
       appendLog(gameName, `${player.name} declares court.`)
       socket.emit('updatePlayers', game.players)
-      io.in(gameName).emit('updateRound', round)
+      appendRound(gameName, -1)
     }
     else {
       console.log(`${socket.playerName} made invalid court request in ${gameName}`)
