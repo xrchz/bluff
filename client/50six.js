@@ -12,6 +12,8 @@ const spectateInput = document.getElementById('spectate')
 const unseatedList = document.getElementById('unseated')
 const spectatorsList = document.getElementById('spectators')
 const log = document.getElementById('log')
+const rotateClockwise = document.getElementById('rotateClockwise')
+const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 const playArea = document.getElementById('playArea')
 const roundTable = document.getElementById('round')
 
@@ -24,6 +26,36 @@ for (let i = 0; i < 6; i++) {
 playedDivs.forEach(div => div.classList.add('cards'))
 
 const fragment = document.createDocumentFragment()
+
+function moveContents(fromNode, toNode) {
+  while (fromNode.firstChild) { toNode.appendChild(fromNode.firstChild) }
+}
+
+function rotateDivsClockwise(divs) {
+  divs.unshift(divs.pop())
+  moveContents(divs[0], fragment)
+  for (let i = 1; i < divs.length; i++)
+    moveContents(divs[i], divs[i-1])
+  divs[divs.length - 1].appendChild(fragment)
+}
+
+function rotateDivsAnticlockwise(divs) {
+  divs.push(divs.shift())
+  let i = divs.length
+  moveContents(divs[--i], fragment)
+  while (i-- > 0) moveContents(divs[i], divs[i+1])
+  divs[0].appendChild(fragment)
+}
+
+rotateClockwise.onclick = () => {
+  rotateDivsClockwise(playerDivs)
+  rotateDivsClockwise(playedDivs)
+}
+
+rotateAnticlockwise.onclick = () => {
+  rotateDivsAnticlockwise(playerDivs)
+  rotateDivsAnticlockwise(playedDivs)
+}
 
 const TeamName = ['Yellow', 'Purple']
 
