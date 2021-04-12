@@ -202,13 +202,17 @@ function trickWinningIndex(trick, trump) {
   return winningIndex
 }
 
-function updateTrick(gameName, roomName) {
+function updateTrick(gameName, roomName, currentIndex) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
+  currentIndex++
+  const nextIndex = currentIndex ?
+    currentIndex % game.players.length :
+    game.players.findIndex(player => player.current)
   if (game.trick) {
     io.in(gameName).emit('updateTrick', {
       trick: game.trick,
-      nextIndex: game.players.findIndex(player => player.current)
+      nextIndex: nextIndex
     })
   }
 }
@@ -550,6 +554,9 @@ io.on('connection', socket => {
              (game.trick.length - 1 - winningIndex)) % game.players.length
           const winner = game.players[winnerIndex]
           appendLog(gameName, `${winner.name} wins the trick.`)
+          delete winner.validPlays
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateTrick(gameName, gameName, playerIndex)
           winner.tricks.push(game.trick)
           winner.trickOpen.push(false)
           game.trick = []
@@ -593,7 +600,6 @@ io.on('connection', socket => {
           else {
             winner.current = true
             setValidPlays(winner)
-            io.in(gameName).emit('updatePlayers', game.players)
             const teamTricks = [0, 0]
             game.players.forEach((player, index) =>
               teamTricks[index % 2] += player.tricks.length)
@@ -601,8 +607,11 @@ io.on('connection', socket => {
             if (teamTricks[1 - winnerTeam] === 0 &&
                 teamTricks[winnerTeam] === 5)
               winner.courtOption = true
-            // TODO: delay before closing the trick
-            updateTrick(gameName)
+            const promise = new Promise(resolve => setTimeout(resolve, 1500))
+            promise.then(() => {
+              updateTrick(gameName)
+              io.in(gameName).emit('updatePlayers', game.players)
+            })
           }
         }
         else {
