@@ -73,16 +73,33 @@ h3 {
   display: flex;
   flex-direction: column;
   align-items: center;
+
 }
 #playArea[hidden] {
   display: none;
 }
+
+#board {
+  display: flex;
+  width: 50%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#playedCenter {
+  display: flex;
+  width: 50%;
+  align-items: center;
+}
+
 #playArea > div {
   width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
 }
+
 #playArea > div > div {
   display: flex;
   flex-direction: column;
