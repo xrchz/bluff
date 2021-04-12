@@ -100,3 +100,31 @@ tr:nth-child(even) {
 .cards {
   font-size: xx-large;
 }
+.hearts {
+  color: LightPink;
+}
+.diamonds {
+  color: Moccasin;
+}
+.clubs {
+  color: PaleGreen;
+}
+.spades {
+  color: PowderBlue;
+}
+.hearts.clickable:hover {
+  color: #800;
+  background-color: Pink;
+}
+.diamonds.clickable:hover {
+  color: #430;
+  background-color: Pink;
+}
+.clubs.clickable:hover {
+  color: #050;
+  background-color: Pink;
+}
+.spades.clickable:hover {
+  color: #005;
+  background-color: Pink;
+}

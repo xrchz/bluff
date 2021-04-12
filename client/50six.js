@@ -33,6 +33,7 @@ String.fromCodePoint(0x1F0A0 +
   [0xD, 0xE, 0xA, 0x1, 0x9, 0xB][c.r])
 
 const SuitChar = ['♠', '♥', '♦', '♣']
+const SuitClass = ['spades', 'hearts', 'diamonds', 'clubs']
 
 const formatBid = bid =>
   bid.n ? `${bid.p ? '+' : ''}${bid.n}${SuitChar[bid.s]}${bid.c ? '*' : ''}`
@@ -233,6 +234,7 @@ socket.on('updatePlayers', players => {
       const li = hand.appendChild(document.createElement('li'))
       if (spectateInput.checked || currentIndex === playerIndex) {
         li.textContent = CardChar(card)
+        li.classList.add(SuitClass[card.s])
         if (player.current && player.validPlays && player.validPlays.includes(cardIndex)) {
           li.classList.add('clickable')
           li.onclick = () => socket.emit('playRequest', cardIndex)
@@ -275,8 +277,13 @@ socket.on('updatePlayers', players => {
         li.classList.add('clickable')
         li.onclick = () => socket.emit('trickRequest',
           { playerIndex: playerIndex, trickIndex: trickIndex })
-        if (player.trickOpen[trickIndex])
-          li.textContent = trick.map(CardChar).join('')
+        if (player.trickOpen[trickIndex]) {
+          for (const card of trick) {
+            const span = li.appendChild(document.createElement('span'))
+            span.textContent = CardChar(card)
+            span.classList.add(SuitClass[card.s])
+          }
+        }
         else
           li.textContent = '🂠'
       }
@@ -291,7 +298,10 @@ socket.on('updateTrick', data => {
     for (let j = data.trick.length - 1; 0 <= j; j--) {
       if (i) i--
       else i = playedDivs.length - 1
-      playedDivs[i].textContent = CardChar(data.trick[j])
+      const card = data.trick[j]
+      playedDivs[i].textContent = CardChar(card)
+      playedDivs[i].classList.remove(...SuitClass)
+      playedDivs[i].classList.add(SuitClass[card.s])
     }
   }
   else
