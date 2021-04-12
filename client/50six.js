@@ -319,8 +319,10 @@ socket.on('updatePlayers', players => {
             span.classList.add(SuitClass[card.s])
           }
         }
-        else
+        else {
           li.textContent = '🂠'
+          li.classList.add('trick')
+        }
       }
     }
   }

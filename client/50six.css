@@ -120,6 +120,9 @@ input[type=button].bid {
   color: Thistle;
   background-color: #300;
 }
+li.trick {
+  color: Plum;
+}
 
 #rotateButtons {
   display: flex;
