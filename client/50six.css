@@ -114,7 +114,10 @@ h3 {
 h3.disconnected::after {
   content: ' (d/c)';
 }
-input[type=button].bid {
+#playArea > div > div > ul.inline {
+  max-width: 15em;
+}
+.bid {
   width: 4em;
   font-size: large;
   color: Thistle;
