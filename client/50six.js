@@ -317,8 +317,13 @@ socket.on('appendLog', entry => {
     li.textContent = `${entry.name} bids ${formatBid(entry.bid)}.`
   else if ('winningBid' in entry)
     li.textContent = `${entry.name} wins the bidding with ${formatBid(entry.winningBid)}.`
-  else if ('card' in entry)
-    li.textContent = `${entry.name} plays ${CardChar(entry.card)}.`
+  else if ('card' in entry) {
+    li.appendChild(document.createElement('span')).textContent = `${entry.name} plays `
+    const span = li.appendChild(document.createElement('span'))
+    span.textContent = CardChar(entry.card)
+    span.classList.add(SuitClass[entry.card.s])
+    li.appendChild(document.createElement('span')).textContent = '.'
+  }
   else if ('bidWon' in entry)
     li.textContent = `${TeamName[entry.biddingTeam]} ${entry.bidWon ? 'makes' : 'fails'} their bid,` +
                      ` ${entry.bidWon ? 'gaining' : 'losing'} ${entry.delta} points.`
