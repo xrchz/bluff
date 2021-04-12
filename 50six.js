@@ -317,18 +317,20 @@ io.on('connection', socket => {
       }
     }
     else if (game.started) {
-      if (game.players.find(player => player.name === socket.playerName && !player.socketId)) {
+      const playerIndex = game.players.findIndex(player => player.name === socket.playerName)
+      const player = game.players[playerIndex]
+      if (0 <= playerIndex && !player.socketId) {
         const rooms = Object.keys(socket.rooms)
         if (rooms.length === 2 && rooms.includes(socket.id) && rooms.includes('lobby')) {
           console.log(`${socket.playerName} rejoining ${gameName}`)
           socket.gameName = gameName
           socket.leave('lobby'); socket.emit('updateGames', [])
           socket.join(gameName)
-          const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
+          io.in(gameName).emit('setConnected', playerIndex)
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
           game.rounds.forEach((_, index) => appendRound(gameName, index, socket.id))

@@ -56,6 +56,9 @@ a:hover, .clickable:hover {
 .disconnected {
   color: Pink;
 }
+h3.disconnected::after {
+  content: ' (d/c)';
+}
 .current.disconnected {
   background-color: NavajoWhite;
   color: DarkRed;

@@ -143,13 +143,6 @@ socket.on('updateSpectators', spectators => {
   }
 })
 
-function setDisconnected(h3) {
-  if (!h3.classList.contains('disconnected')) {
-    h3.textContent += ' (d/c)'
-    h3.classList.add('disconnected')
-  }
-}
-
 socket.on('updateSeats', players => {
   unseatedList.innerHTML = ''
   const filledSeats = Array(playerDivs.length).fill(false)
@@ -160,7 +153,7 @@ socket.on('updateSeats', players => {
       const h3 = document.createElement('h3')
       h3.textContent = player.name
       playerDiv.replaceChildren(h3)
-      if (!player.socketId) setDisconnected(h3)
+      if (!player.socketId) h3.classList.add('disconnected')
       filledSeats[player.seat] = true
     }
     else {
@@ -200,7 +193,11 @@ socket.on('updateSeats', players => {
 })
 
 socket.on('setDisconnected', playerIndex => {
-  playerDivs[playerIndex].querySelectorAll('h3').forEach(setDisconnected)
+  playerDivs[playerIndex].querySelectorAll('h3').forEach(h3 => h3.classList.add('disconnected'))
+})
+
+socket.on('setConnected', playerIndex => {
+  playerDivs[playerIndex].querySelectorAll('h3').forEach(h3 => h3.classList.remove('disconnected'))
 })
 
 socket.on('gameStarted', () => {
@@ -226,7 +223,7 @@ socket.on('updatePlayers', players => {
       nameDiv.textContent += ' (*)'
       nameDiv.classList.add('current')
     }
-    if (!player.socketId) setDisconnected(nameDiv)
+    if (!player.socketId) nameDiv.classList.add('disconnected')
     const hand = playerDiv.appendChild(document.createElement('ul'))
     hand.classList.add('inline', 'cards')
     for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
