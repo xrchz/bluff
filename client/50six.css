@@ -152,6 +152,7 @@ th, td {
 }
 th {
   border-bottom: solid;
+  border-color: OldLace;
 }
 tr:nth-child(odd) {
   background-color: #300;
@@ -197,4 +198,23 @@ ul.cards.inline {
 .spades.clickable:hover {
   color: #005;
   background-color: Pink;
+}
+
+.Yellow {
+  color: PaleGoldenRod;
+}
+.Purple {
+  color: Violet;
+}
+.Purple.current {
+  color: DarkViolet;
+}
+.Yellow.current {
+  color: DarkGoldenRod;
+}
+.Purple.current.disconnected {
+  color: RebeccaPurple;
+}
+.Yellow.current.disconnected {
+  color: Brown;
 }

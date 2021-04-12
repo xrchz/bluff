@@ -255,6 +255,7 @@ socket.on('updatePlayers', players => {
     playerDiv.replaceChildren()
     const nameDiv = playerDiv.appendChild(document.createElement('h3'))
     nameDiv.textContent = player.name
+    nameDiv.classList.add(TeamName[playerIndex % 2])
     if (player.current) {
       nameDiv.textContent += ' (*)'
       nameDiv.classList.add('current')
