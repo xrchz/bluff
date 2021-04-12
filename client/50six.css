@@ -5,7 +5,7 @@
 body {
   font-family: 'DejaVu Sans', sans-serif;
   font-size: large;
-  background-color: #200;
+  background-color: DarkGreen;
   color: Lavender;
   margin-left: 2vw;
   width: 96vw;
@@ -16,7 +16,7 @@ ul.inline {
 }
 ul.inline > li {
   display: inline;
-  padding: 0.5em;
+  padding: 0.2em;
 }
 #game {
   width: 2em;
@@ -81,6 +81,12 @@ h3.disconnected::after {
   flex-direction: column;
   align-items: center;
 }
+
+.bidbutton {
+  width: 50px;
+  background-color: SlateGray;
+}
+
 #round {
   margin: auto;
   border-style: solid;
@@ -95,7 +101,7 @@ th {
   border-bottom: solid;
 }
 tr:nth-child(odd) {
-  background-color: #300;
+  background-color: #033;
 }
 tr:nth-child(even) {
   background-color: #400;
