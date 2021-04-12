@@ -330,9 +330,10 @@ socket.on('updateTrick', data => {
       if (i) i--
       else i = playedDivs.length - 1
       const card = data.trick[j]
-      playedDivs[i].textContent = CardChar(card)
-      playedDivs[i].classList.remove(...SuitClass)
-      playedDivs[i].classList.add(SuitClass[card.s])
+      const span = document.createElement('span')
+      playedDivs[i].replaceChildren(span)
+      span.textContent = CardChar(card)
+      span.classList.add(SuitClass[card.s])
     }
   }
   else
