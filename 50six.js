@@ -73,6 +73,12 @@ function appendLog(gameName, entry) {
   io.in(gameName).emit('appendLog', entry)
 }
 
+function appendCheat(gameName, entry) {
+  const game = games[gameName]
+  game.cheatLog.push(entry)
+  io.in(gameName).emit('appendCheat', entry)
+}
+
 const stateKeys = {
   game: [
     'players', 'started', 'trick', 'ended',
@@ -316,6 +322,7 @@ io.on('connection', socket => {
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
+          game.cheatLog.forEach(entry => socket.emit('appendCheat', entry))
           game.rounds.forEach((_, index) => appendRound(gameName, index, socket.id))
         }
       }
@@ -343,6 +350,7 @@ io.on('connection', socket => {
           updateTrick(gameName, socket.id)
           game.rounds.forEach((_, index) => appendRound(gameName, index, socket.id))
           game.log.forEach(entry => socket.emit('appendLog', entry))
+          game.cheatLog.forEach(entry => socket.emit('appendCheat', entry))
           if (!game.playing && !game.bidding)
             socket.emit('showNext', true)
           if (game.undoLog.length)
@@ -438,7 +446,7 @@ io.on('connection', socket => {
       updateTrick(gameName)
       if (!game.undoLog.length)
         io.in(gameName).emit('showUndo', false)
-      io.in(gameName).emit('errorMsg', `${socket.playerName} pressed Undo.`)
+      appendCheat(gameName, `${socket.playerName} presses Undo.`)
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried to undo nothing`)
@@ -451,6 +459,7 @@ io.on('connection', socket => {
       game.started = true
       game.log = []
       game.undoLog = []
+      game.cheatLog = []
       game.rounds = []
       game.dealer = Math.floor(Math.random() * game.players.length)
       io.in(gameName).emit('gameStarted')
@@ -677,7 +686,9 @@ io.on('connection', socket => {
         game.players[data.playerIndex].tricks && 0 <= data.trickIndex &&
         data.trickIndex < game.players[data.playerIndex].tricks.length) {
       const player = game.players[data.playerIndex]
-      player.trickOpen[data.trickIndex] = !player.trickOpen[data.trickIndex]
+      const alreadyOpen = player.trickOpen[data.trickIndex]
+      player.trickOpen[data.trickIndex] = !alreadyOpen
+      if (!alreadyOpen) appendCheat(gameName, `${socket.playerName} opens a trick.`)
       io.in(gameName).emit('updatePlayers', game.players)
     }
     else {

@@ -12,6 +12,7 @@ const spectateInput = document.getElementById('spectate')
 const unseatedList = document.getElementById('unseated')
 const spectatorsList = document.getElementById('spectators')
 const log = document.getElementById('log')
+const cheatLog = document.getElementById('cheat')
 const rotateClockwise = document.getElementById('rotateClockwise')
 const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 const playArea = document.getElementById('playArea')
@@ -99,6 +100,8 @@ socket.on('ensureLobby', () => {
   spectatorsList.innerHTML = ''
   log.innerHTML = ''
   log.hidden = true
+  cheatLog.innerHTML = ''
+  cheatLog.hidden = true
   roundTable.hidden = true
   roundTable.replaceChildren(roundTable.firstElementChild)
   playArea.hidden = true
@@ -244,6 +247,7 @@ socket.on('gameStarted', () => {
     button.parentElement.removeChild(button)
   )
   log.hidden = false
+  cheatLog.hidden = false
   roundTable.hidden = false
   errorMsg.innerHTML = ''
 })
@@ -385,6 +389,10 @@ socket.on('appendLog', entry => {
   li.scrollIntoView(false)
   errorMsg.innerHTML = ''
 })
+
+socket.on('appendCheat', entry =>
+  cheatLog.appendChild(document.createElement('li')).textContent = entry
+)
 
 socket.on('removeLog', n => {
   while (n-- > 0) log.removeChild(log.lastElementChild)

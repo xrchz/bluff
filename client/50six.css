@@ -218,3 +218,18 @@ ul.cards.inline {
 .Yellow.current.disconnected {
   color: Brown;
 }
+
+ul#cheat {
+  display: flex;
+  flex-direction: column-reverse;
+  list-style-type: none;
+  padding: 0;
+  margin: auto;
+  max-width: 40em;
+  background-color: #100;
+  text-align: center;
+  margin-top: 2ex;
+}
+ul#cheat[hidden] {
+  display: none;
+}
