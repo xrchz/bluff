@@ -301,7 +301,7 @@ socket.on('updatePlayers', players => {
     }
     if (player.tricks) {
       const tricks = playerDiv.appendChild(document.createElement('ul'))
-      tricks.classList.add('inline', 'cards')
+      tricks.classList.add('cards', 'inline')
       for (let trickIndex = 0; trickIndex < player.tricks.length; trickIndex++) {
         const trick = player.tricks[trickIndex]
         const li = tricks.appendChild(document.createElement('li'))

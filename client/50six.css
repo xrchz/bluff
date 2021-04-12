@@ -123,6 +123,9 @@ tr:nth-child(even) {
 .cards {
   font-size: xx-large;
 }
+ul.cards.inline {
+  margin: 0.2em;
+}
 .cards.inline > li {
   padding: 0.1em;
 }
