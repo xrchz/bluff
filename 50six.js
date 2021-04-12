@@ -492,18 +492,27 @@ io.on('connection', socket => {
               delete player.lastBid
               delete player.passed
             })
-            // TODO: check the other team has a trump, otherwise start a new round
-            const nextPlayer = game.players[(game.lastBidder + 1) % game.players.length]
-            nextPlayer.current = true
-            const round = { contractor: game.lastBidder, contract: game.winningBid }
-            game.rounds.push(round)
-            appendRound(gameName, game.rounds.length - 1)
-            delete game.lastBidder
-            delete game.winningBid
-            game.playing = true
-            game.trick = []
-            setValidPlays(nextPlayer)
-            io.in(gameName).emit('updatePlayers', game.players)
+            const biddingTeam = game.lastBidder % 2
+            if (game.players.every((player, index) =>
+                  index % 2 === biddingTeam || player.hand.every(card => card.s !== game.winningBid.s))) {
+              appendLog(gameName, {allTrumps: biddingTeam})
+              delete game.lastBidder
+              delete game.winningBid
+              startRound(gameName)
+            }
+            else {
+              const nextPlayer = game.players[(game.lastBidder + 1) % game.players.length]
+              nextPlayer.current = true
+              const round = { contractor: game.lastBidder, contract: game.winningBid }
+              game.rounds.push(round)
+              appendRound(gameName, game.rounds.length - 1)
+              delete game.lastBidder
+              delete game.winningBid
+              game.playing = true
+              game.trick = []
+              setValidPlays(nextPlayer)
+              io.in(gameName).emit('updatePlayers', game.players)
+            }
           }
           else if (!game.forcedBid) {
             const nextIndex = (game.dealer + 1) % game.players.length
