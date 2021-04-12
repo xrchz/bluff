@@ -23,34 +23,37 @@
     <ul id=spectators class=inline></ul>
     <ul id=log hidden></ul>
     <div id=playArea hidden>
-      <!--
-          0
-      1 1 0 5 5
-      2 2 3 4 4
-          3
-      -->
-      <div>
-        <div id=player0></div>
-      </div>
       <div>
         <div id=player1></div>
-        <div id=played1></div>
-        <div id=played0></div>
-        <div id=played5></div>
-        <div id=player5></div>
+        <div id=player2></div>
       </div>
       <div>
-        <div id=player2></div>
-        <div id=played2></div>
-        <div id=played3></div>
-        <div id=played4></div>
+        <div id=player0></div>
+        <div id=table>
+          <div>
+            <div id=played1></div>
+            <div id=played2></div>
+          </div>
+          <div>
+            <div id=played0></div>
+            <div></div>
+            <div id=played3></div>
+          </div>
+          <div>
+            <div id=played5></div>
+            <div id=played4></div>
+          </div>
+        </div>
+        <div id=player3></div>
+      </div>
+      <div>
+        <div id=player5></div>
         <div id=player4></div>
       </div>
-      <div>
-        <a id=rotateClockwise>↻</a>
-        <div id=player3></div>
-        <a id=rotateAnticlockwise>↺</a>
-      </div>
+    </div>
+    <div id=rotateButtons hidden>
+      <a id=rotateClockwise>↻</a>
+      <a id=rotateAnticlockwise>↺</a>
     </div>
     <input id=next type=button value=Next hidden></input>
     <table id=round hidden>

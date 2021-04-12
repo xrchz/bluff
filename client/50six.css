@@ -69,24 +69,43 @@ a:hover, .clickable:hover {
 
 #playArea {
   display: flex;
-  flex-direction: column;
+  width: 80%;
+  margin: auto;
+  flex-direction: row;
+  justify-content: space-around;
   align-items: center;
 }
 #playArea[hidden] {
   display: none;
 }
 
-#playArea > div {
-  width: 100%;
+#playArea > div, #table > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+#playArea > div > div#table {
   display: flex;
   flex-direction: row;
+  align-items: center;
   justify-content: space-around;
+}
+
+#playArea > div > div#table > div > div {
+  width: 2em;
+  height: 4ex;
+  text-align: center;
+  line-height: 4ex;
+  font-size: xx-large;
 }
 
 #playArea > div > div {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-around;
 }
 h3 {
   font-size: large;
@@ -102,8 +121,24 @@ input[type=button].bid {
   background-color: #300;
 }
 
+#rotateButtons {
+  display: flex;
+  width: 50%;
+  margin: auto;
+  justify-content: space-around;
+}
+#rotateButtons[hidden] {
+  display: none;
+}
+
+#next {
+  margin: auto;
+  width: 4em;
+}
+
 #round {
   margin: auto;
+  margin-top: 2em;
   border-style: solid;
   border-color: OldLace;
   border-collapse: collapse;

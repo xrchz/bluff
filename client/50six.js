@@ -15,6 +15,7 @@ const log = document.getElementById('log')
 const rotateClockwise = document.getElementById('rotateClockwise')
 const rotateAnticlockwise = document.getElementById('rotateAnticlockwise')
 const playArea = document.getElementById('playArea')
+const rotateButtons = document.getElementById('rotateButtons')
 const roundTable = document.getElementById('round')
 
 const playerDivs = []
@@ -101,6 +102,7 @@ socket.on('ensureLobby', () => {
   roundTable.hidden = true
   roundTable.replaceChildren(roundTable.firstElementChild)
   playArea.hidden = true
+  rotateButtons.hidden = true
   playerDivs.forEach(div => div.replaceChildren())
   playedDivs.forEach(div => div.replaceChildren())
   history.replaceState('lobby', 'Lobby')
@@ -160,6 +162,7 @@ socket.on('joinedGame', data => {
   }
   joinButton.hidden = true
   playArea.hidden = false
+  rotateButtons.hidden = false
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
     history.pushState(data, `Game ${data.gameName}`)
