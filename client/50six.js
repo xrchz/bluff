@@ -225,7 +225,7 @@ socket.on('updatePlayers', players => {
     }
     if (!player.socketId) nameDiv.classList.add('disconnected')
     const hand = playerDiv.appendChild(document.createElement('ul'))
-    hand.classList.add('inline', 'cards')
+    hand.classList.add('cards','inline')
     for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
       const card = player.hand[cardIndex]
       const li = hand.appendChild(document.createElement('li'))

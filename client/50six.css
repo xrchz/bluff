@@ -16,8 +16,10 @@ ul.inline {
 }
 ul.inline > li {
   display: inline;
-  padding: 0.2em;
+  padding: 0.5em;
 }
+
+
 #game {
   width: 2em;
   text-transform: uppercase;
@@ -72,9 +74,10 @@ h3.disconnected::after {
   display: none;
 }
 #playArea > div {
+  width: 96vw;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 #playArea > div > div {
   display: flex;
@@ -83,7 +86,7 @@ h3.disconnected::after {
 }
 
 .bidbutton {
-  width: 50px;
+  width: 45px;
   background-color: SlateGray;
 }
 
@@ -108,6 +111,7 @@ tr:nth-child(even) {
 }
 .cards {
   font-size: xx-large;
+  padding: 0.1em;
 }
 .hearts {
   color: LightPink;
