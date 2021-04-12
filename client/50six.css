@@ -2,6 +2,7 @@
   font-family: 'DejaVu Sans';
   src: url('DejaVuSans.ttf') format('truetype');
 }
+
 body {
   font-family: 'DejaVu Sans', sans-serif;
   font-size: large;
@@ -10,6 +11,7 @@ body {
   margin-left: 2vw;
   width: 96vw;
 }
+
 ul.inline {
   list-style-type: none;
   padding: 0;
@@ -18,10 +20,39 @@ ul.inline > li {
   display: inline;
   padding: 0.5em;
 }
+
+a:hover, .clickable:hover {
+  cursor: pointer;
+}
+
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.disconnected {
+  color: Pink;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+
 #game {
   width: 2em;
   text-transform: uppercase;
 }
+
 #log {
   height: 13ex;
   resize: both;
@@ -35,45 +66,11 @@ ul.inline > li {
   max-width: 40em;
   margin: auto;
 }
-#games {
-  list-style-type: none;
-  display: flex;
-  flex-direction: column-reverse;
-}
-#games[hidden] {
-  display: none;
-}
-#games > li > ul {
-  display: inline;
-}
-a:hover, .clickable:hover {
-  cursor: pointer;
-}
-.current {
-  background-color: NavajoWhite;
-  color: #004;
-}
-.disconnected {
-  color: Pink;
-}
-h3.disconnected::after {
-  content: ' (d/c)';
-}
 
-h3 {
-  font-size: large;
-  font-weight: normal;
-}
-
-.current.disconnected {
-  background-color: NavajoWhite;
-  color: DarkRed;
-}
 #playArea {
   display: flex;
   flex-direction: column;
   align-items: center;
-
 }
 #playArea[hidden] {
   display: none;
@@ -90,6 +87,13 @@ h3 {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+h3 {
+  font-size: large;
+  font-weight: normal;
+}
+h3.disconnected::after {
+  content: ' (d/c)';
 }
 .bidbutton {
   width: 45px;
@@ -115,10 +119,10 @@ tr:nth-child(odd) {
 tr:nth-child(even) {
   background-color: #400;
 }
+
 .cards {
   font-size: xx-large;
 }
-
 .cards.inline > li {
   padding: 0.1em;
 }
