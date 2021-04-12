@@ -213,11 +213,12 @@ function updateTrick(gameName, roomName) {
   }
 }
 
-function appendRound(gameName, round, roomName) {
+function appendRound(gameName, roundIndex, roomName) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
+  const round = game.rounds[roundIndex]
   const data = {
-    number: game.rounds.length,
+    number: roundIndex+1,
     contract: round.contract,
     contractorName: game.players[round.contractor].name,
     cardPoints: round.cardPoints,
@@ -302,7 +303,7 @@ io.on('connection', socket => {
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
           game.log.forEach(entry => socket.emit('appendLog', entry))
-          game.rounds.forEach(round => appendRound(gameName, round, socket.id))
+          game.rounds.forEach((_, index) => appendRound(gameName, index, socket.id))
           // TODO: update the game situation for the spectator
         }
       }
@@ -326,7 +327,7 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('updatePlayers', game.players)
           updateTrick(gameName, socket.id)
-          game.rounds.forEach(round => appendRound(gameName, round, socket.id))
+          game.rounds.forEach((_, index) => appendRound(gameName, index, socket.id))
           // TODO: update the game situation for a rejoined player
           if (!game.playing && !game.bidding)
             socket.emit('showNext', true)
@@ -485,7 +486,7 @@ io.on('connection', socket => {
             nextPlayer.current = true
             const round = { contractor: game.lastBidder, contract: game.winningBid }
             game.rounds.push(round)
-            appendRound(gameName, round)
+            appendRound(gameName, game.rounds.length - 1)
             delete game.lastBidder
             delete game.winningBid
             game.playing = true
