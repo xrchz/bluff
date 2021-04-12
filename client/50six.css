@@ -6,7 +6,7 @@ body {
   font-family: 'DejaVu Sans', sans-serif;
   font-size: large;
   background-color: #200;
-  color: Lavender;
+  color: Thistle;
   margin-left: 2vw;
   width: 96vw;
 }
@@ -59,6 +59,12 @@ a:hover, .clickable:hover {
 h3.disconnected::after {
   content: ' (d/c)';
 }
+
+h3 {
+  font-size: large;
+  font-weight: normal;
+}
+
 .current.disconnected {
   background-color: NavajoWhite;
   color: DarkRed;
@@ -72,7 +78,7 @@ h3.disconnected::after {
   display: none;
 }
 #playArea > div {
-  width: 96vw;
+  width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
@@ -86,6 +92,7 @@ h3.disconnected::after {
   width: 45px;
   background-color: SlateGray;
 }
+
 #round {
   margin: auto;
   border-style: solid;
@@ -107,8 +114,12 @@ tr:nth-child(even) {
 }
 .cards {
   font-size: xx-large;
+}
+
+.cards.inline > li {
   padding: 0.1em;
 }
+
 .hearts {
   color: LightPink;
 }
