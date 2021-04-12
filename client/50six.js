@@ -183,11 +183,12 @@ socket.on('updateSeats', players => {
   unseatedList.innerHTML = ''
   const filledSeats = Array(playerDivs.length).fill(false)
   let elem
-  for (player of players) {
+  for (const player of players) {
     if ('seat' in player) {
       const playerDiv = playerDivs[player.seat]
       const h3 = document.createElement('h3')
       h3.textContent = player.name
+      h3.classList.add(TeamName[player.seat % 2])
       playerDiv.replaceChildren(h3)
       if (!player.socketId) h3.classList.add('disconnected')
       filledSeats[player.seat] = true
