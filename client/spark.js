@@ -79,7 +79,7 @@ socket.on('updateGames', games => {
     ul.classList.add('inline')
     for (const player of game.players) {
       a = ul.appendChild(document.createElement('li'))
-      if (player.disconnected) {
+      if (!player.socketId) {
         a = a.appendChild(document.createElement('a'))
         a.classList.add('disconnected')
         a.onclick = () => {
@@ -164,7 +164,7 @@ socket.on('updatePlayers', data => {
       name.textContent += ' (*)'
       name.classList.add('current')
     }
-    if (player.disconnected) {
+    if (!player.socketId) {
       name.textContent += ' (d/c)'
       name.classList.add('disconnected')
     }
