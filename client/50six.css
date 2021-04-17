@@ -236,3 +236,11 @@ ul#cheat {
 ul#cheat[hidden] {
   display: none;
 }
+#next {
+  margin: auto;
+  width: 6em;
+  display: flex;
+}
+#next[hidden] {
+  display: none;
+}
