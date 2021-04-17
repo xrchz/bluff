@@ -383,6 +383,8 @@ socket.on('appendLog', entry => {
                      ` ${entry.bidWon ? 'gaining' : 'losing'} ${entry.delta} points.`
   else if ('allTrumps' in entry)
     li.textContent = `${TeamName[entry.allTrumps]} has all the trumps, so this deal is void.`
+  else if ('winningTeam' in entry)
+    li.textContent = `${TeamName[entry.winningTeam]} wins the game.`
   else
     li.textContent = 'Error: unhandled log entry'
   log.appendChild(li)
