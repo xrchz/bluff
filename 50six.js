@@ -442,6 +442,12 @@ io.on('connection', socket => {
       io.in(gameName).emit('removeRound', roundsLength - game.rounds.length)
       if (game.rounds.length)
         appendRound(gameName, -1)
+      if (game.bidding)
+        setValidBids(game, game.players.findIndex(player => player.current))
+      if (game.playing) {
+        const calling = game.trick.length ? game.trick[0].s : null
+        setValidPlays(game.players.find(player => player.current), calling)
+      }
       io.in(gameName).emit('updatePlayers', game.players)
       updateTrick(gameName)
       if (!game.undoLog.length)
