@@ -463,6 +463,8 @@ io.on('connection', socket => {
       game.rounds = []
       game.dealer = Math.floor(Math.random() * game.players.length)
       io.in(gameName).emit('gameStarted')
+      game.players.sort((p, q) => p.seat - q.seat)
+      game.players.forEach(player => delete player.seat)
       appendLog(gameName, 'The game begins!')
       startRound(gameName)
     }
