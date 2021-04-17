@@ -336,20 +336,21 @@ socket.on('updatePlayers', players => {
 })
 
 socket.on('updateTrick', data => {
-  if (data.trick.length) {
-    let i = data.nextIndex
-    for (let j = data.trick.length - 1; 0 <= j; j--) {
-      if (i) i--
-      else i = playedDivs.length - 1
-      const card = data.trick[j]
+  let i = data.nextIndex
+  while (true) {
+    if (i) i--
+    else i = playedDivs.length - 1
+    if (data.trick.length) {
+      const card = data.trick.pop()
       const span = document.createElement('span')
       playedDivs[i].replaceChildren(span)
       span.textContent = CardChar(card)
       span.classList.add(SuitClass[card.s])
     }
+    else
+      playedDivs[i].innerHTML = ''
+    if (i === data.nextIndex) break
   }
-  else
-    playedDivs.forEach(div => div.textContent = '')
   errorMsg.innerHTML = ''
 })
 
