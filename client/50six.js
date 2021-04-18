@@ -103,11 +103,13 @@ socket.on('ensureLobby', () => {
   cheatLog.innerHTML = ''
   cheatLog.hidden = true
   roundTable.hidden = true
-  roundTable.replaceChildren(roundTable.firstElementChild)
+  const headerRow = roundTable.firstElementChild
+  roundTable.innerHTML = ''
+  roundTable.appendChild(headerRow)
   playArea.hidden = true
   rotateButtons.hidden = true
-  playerDivs.forEach(div => div.replaceChildren())
-  playedDivs.forEach(div => div.replaceChildren())
+  playerDivs.forEach(div => div.innerHTML = '')
+  playedDivs.forEach(div => div.innerHTML = '')
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -189,10 +191,10 @@ socket.on('updateSeats', players => {
   for (const player of players) {
     if ('seat' in player) {
       const playerDiv = playerDivs[player.seat]
-      const h3 = document.createElement('h3')
+      playerDiv.innerHTML = ''
+      const h3 = playerDiv.appendChild(document.createElement('h3'))
       h3.textContent = player.name
       h3.classList.add(TeamName[player.seat % 2])
-      playerDiv.replaceChildren(h3)
       if (!player.socketId) h3.classList.add('disconnected')
       filledSeats[player.seat] = true
     }
@@ -205,9 +207,8 @@ socket.on('updateSeats', players => {
   unseatedList.appendChild(fragment)
   for (let i = 0; i < playerDivs.length; i++) {
     if (!filledSeats[i]) {
-      const h4 = document.createElement('h4')
-      h4.textContent = 'Empty Seat'
-      playerDivs[i].replaceChildren(h4)
+      playerDivs[i].innerHTML = ''
+      playerDivs[i].appendChild(document.createElement('h4')).textContent = 'Empty Seat'
     }
   }
   startButton.hidden = players.length < 6 || elem
@@ -257,7 +258,7 @@ socket.on('updatePlayers', players => {
   for (let playerIndex = 0; playerIndex < players.length; playerIndex++) {
     const player = players[playerIndex]
     const playerDiv = playerDivs[playerIndex]
-    playerDiv.replaceChildren()
+    playerDiv.innerHTML = ''
     const nameDiv = playerDiv.appendChild(document.createElement('h3'))
     nameDiv.textContent = player.name
     nameDiv.classList.add(TeamName[playerIndex % 2])
@@ -342,8 +343,8 @@ socket.on('updateTrick', data => {
     else i = playedDivs.length - 1
     if (data.trick.length) {
       const card = data.trick.pop()
-      const span = document.createElement('span')
-      playedDivs[i].replaceChildren(span)
+      playedDivs[i].innerHTML = ''
+      const span = playedDivs[i].appendChild(document.createElement('span'))
       span.textContent = CardChar(card)
       span.classList.add(SuitClass[card.s])
     }
@@ -429,7 +430,7 @@ socket.on('appendRound', round => {
 
 socket.on('updateRound', round => {
   const tr = roundTable.firstElementChild.nextElementSibling
-  tr.replaceChildren()
+  tr.innerHTML = ''
   fillRoundRow(round, tr)
   errorMsg.innerHTML = ''
 })
