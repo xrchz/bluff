@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang=en>
+  <head>
+    <title>Count</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <link rel=stylesheet href="count.css" type="text/css" />
+    <script src="socket.io/socket.io.js"></script>
+    <script src="config.js"></script>
+  </head>
+  <body>
+    <p id=errorMsg></p>
+    <form class=inline>
+      <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+      <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+      <input id=join type=submit value="Join" />
+      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+      <input id=start type=button value="Start!" hidden />
+      <input id=undo type=button value="Undo" hidden />
+    </form>
+    <ul id=games hidden></ul>
+    <ul id=spectators class=inline></ul>
+    <ul id=log hidden></ul>
+    <div id=board hidden></div>
+    <div id=players hidden></div>
+    <script src="count.js"></script>
+  </body>
+</html>

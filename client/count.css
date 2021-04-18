@@ -1,0 +1,96 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: #220;
+  color: Thistle;
+  margin-left: 2vw;
+  width: 96vw;
+}
+
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding: 0.5em;
+}
+
+a:hover, .clickable:hover {
+  cursor: pointer;
+}
+
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.disconnected {
+  color: Pink;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkRed;
+}
+
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+
+#log {
+  height: 13ex;
+  resize: both;
+  overflow-y: scroll;
+  list-style-type: none;
+  padding-left: 0;
+  background-color: Black;
+  color: White;
+  border-style: solid;
+  border-color: OldLace;
+  max-width: 40em;
+  margin: auto;
+}
+
+#board {
+  display: flex;
+  font-size: larger;
+  width: 8;
+  margin: auto;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+#board[hidden] {
+  display: none;
+}
+
+#players {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: auto;
+  justify-content: space-around;
+  align-items: center;
+}
+#players[hidden] {
+  display: none;
+}
+
+h3 {
+  font-size: large;
+  font-weight: normal;
+}
+h3.disconnected::after {
+  content: ' (d/c)';
+}
