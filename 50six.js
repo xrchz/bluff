@@ -448,6 +448,9 @@ io.on('connection', socket => {
         const calling = game.trick.length ? game.trick[0].s : null
         setValidPlays(game.players.find(player => player.current), calling)
       }
+      const showNext = !game.playing && !game.bidding
+      io.in(gameName).emit('showNext', showNext)
+      game.players.forEach(player => player.trickOpen.fill(showNext))
       io.in(gameName).emit('updatePlayers', game.players)
       updateTrick(gameName)
       if (!game.undoLog.length)
