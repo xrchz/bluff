@@ -619,18 +619,21 @@ io.on('connection', socket => {
             appendRound(gameName, -1)
             game.players.forEach(player => player.trickOpen.fill(true))
             game.players.forEach(player => delete player.validPlays)
-            io.in(gameName).emit('updatePlayers', game.players)
-            updateTrick(gameName)
-            const winningTeam = round.teamPoints.findIndex(points => points <= -1)
-            if (0 <= winningTeam) {
-              game.ended = true
-              appendLog(gameName, { winningTeam: winningTeam })
-            }
-            else {
-              game.dealer++
-              if (game.dealer === game.players.length) game.dealer = 0
-              io.in(gameName).emit('showNext', true)
-            }
+            const promise = new Promise(resolve => setTimeout(resolve, 1500))
+            promise.then(() => {
+              updateTrick(gameName, gameName, playerIndex)
+              io.in(gameName).emit('updatePlayers', game.players)
+              const winningTeam = round.teamPoints.findIndex(points => points <= -1)
+              if (0 <= winningTeam) {
+                game.ended = true
+                appendLog(gameName, { winningTeam: winningTeam })
+              }
+              else {
+                game.dealer++
+                if (game.dealer === game.players.length) game.dealer = 0
+                io.in(gameName).emit('showNext', true)
+              }
+            })
           }
           else {
             winner.current = true
