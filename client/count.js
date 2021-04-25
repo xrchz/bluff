@@ -96,8 +96,10 @@ socket.on('joinedGame', data => {
   if (!spectateInput.checked) {
     spectateInput.previousElementSibling.hidden = true
     spectateInput.hidden = true
+    startButton.hidden = false
   }
   joinButton.hidden = true
+  playersDiv.hidden = false
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
     history.pushState(data, `Game ${data.gameName}`)
@@ -115,23 +117,34 @@ socket.on('updateSpectators', spectators => {
 })
 
 socket.on('setDisconnected', playerIndex => {
-  playerDivs[playerIndex].querySelectorAll('h3').forEach(h3 => h3.classList.add('disconnected'))
+  playersDiv.children[playerIndex].querySelectorAll('h3').forEach(h3 => h3.classList.add('disconnected'))
 })
 
 socket.on('setConnected', playerIndex => {
-  playerDivs[playerIndex].querySelectorAll('h3').forEach(h3 => h3.classList.remove('disconnected'))
+  playersDiv.children[playerIndex].querySelectorAll('h3').forEach(h3 => h3.classList.remove('disconnected'))
 })
 
 socket.on('updatePlayers', players => {
   playersDiv.innerHTML = ''
+  const currentIndex = players.findIndex(player => player.current)
   for (let playerIndex = 0; playerIndex < players.length; playerIndex++) {
     const player = players[playerIndex]
     const div = fragment.appendChild(document.createElement('div'))
     const h3 = div.appendChild(document.createElement('h3'))
     h3.textContent = player.name
     // TODO: show player current/disconnected
-    // TODO: show player button to start if appropriate
-    // TODO: show player hand if appropriate
+    if (player.hand && (spectateInput.checked || player.name === nameInput.value)) {
+      const ul = div.appendChild(document.createElement('ul'))
+      player.hand.forEach(n => {
+        ul.appendChild(document.createElement('li')).textContent = n
+      })
+    }
+    if (currentIndex < 0 && !spectateInput.checked && player.name === nameInput.value) {
+      const button = div.appendChild(document.createElement('input'))
+      button.type = 'button'
+      button.value = 'Me 1st!'
+      button.onclick = () => socket.emit('firstRequest', playerIndex)
+    }
   }
   playersDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
@@ -151,12 +164,8 @@ socket.on('updateBoard', data => {
 socket.on('gameStarted', () => {
   startButton.hidden = true
   startButton.disabled = true
-  playArea.querySelectorAll('input[type=button]').forEach(button =>
-    button.parentElement.removeChild(button)
-  )
   log.hidden = false
-  cheatLog.hidden = false
-  roundTable.hidden = false
+  boardDiv.hidden = false
   errorMsg.innerHTML = ''
 })
 

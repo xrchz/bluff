@@ -152,8 +152,8 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          io.in(gameName).emit('setConnected', playerIndex)
           io.in(gameName).emit('updatePlayers', game.players)
+          io.in(gameName).emit('setConnected', playerIndex)
           updateBoard(gameName, socket.id)
           // TODO: what to do if a player joins and the game has started
           game.log.forEach(entry => socket.emit('appendLog', entry))
@@ -223,11 +223,64 @@ io.on('connection', socket => {
       updateBoard(gameName)
     }
     else {
-      console.log(`${socket.playerName} tried to start ${gameName} incorrectly`)
+      console.log(`${socket.playerName} tried to start ${gameName} incorrectly with ${game.players.length}`)
       socket.emit('errorMsg', 'Error: need between 1-5 players to start.')
     }
   }))
 
+  socket.on('firstRequest', playerIndex => inGame((gameName, game) => {
+    if (game.started && game.players.every(player => !player.current) &&
+        Number.isInteger(playerIndex) && 0 <= playerIndex && playerIndex < game.players.length) {
+      // TODO: appendUndo
+      const player = game.players[playerIndex]
+      player.current = true
+      appendLog(gameName, `${player.name} elects to go first.`)
+      io.in(gameName).emit('updatePlayers', game.players)
+    }
+    else {
+      console.log(`${socket.playerName} tried to set first player incorrectly`)
+      socket.emit('errorMsg', 'Error: already have a current player.')
+    }
+  }))
+
+  socket.on('disconnecting', () => {
+    console.log(`${socket.playerName} exiting ${socket.gameName}`)
+    const gameName = socket.gameName
+    const game = games[gameName]
+    if (game) {
+      if (!game.started) {
+        game.players = game.players.filter(player => player.socketId !== socket.id)
+        game.spectators = game.spectators.filter(player => player.socketId !== socket.id)
+        io.in(gameName).emit('updateSpectators', game.spectators)
+        if (game.players.length === 0 && game.spectators.length === 0) {
+          console.log(`removing empty game ${gameName}`)
+          delete games[gameName]
+        }
+      }
+      else {
+        const spectators = game.spectators.filter(player => player.socketId !== socket.id)
+        if (spectators.length < game.spectators.length) {
+          game.spectators = spectators
+          io.in(gameName).emit('updateSpectators', game.spectators)
+        }
+        else {
+          const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+          if (0 <= playerIndex) {
+            game.players[playerIndex].socketId = null
+            io.in(gameName).emit('setDisconnected', playerIndex)
+          }
+        }
+      }
+      updateGames()
+    }
+  })
+
+  socket.on('deleteGame', gameName => {
+    delete games[gameName]
+    updateGames()
+  })
+
+  socket.on('saveGames', saveGames)
 })
 
 process.on('SIGINT', () => {
