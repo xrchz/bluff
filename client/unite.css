@@ -81,6 +81,9 @@ ul.inline > li {
 .disconnected {
   color: Pink;
 }
+#games .winner {
+  text-decoration: underline;
+}
 #players > li.disconnected::after {
   content: ' (d/c)';
 }

@@ -100,6 +100,8 @@ socket.on('updateGames', games => {
           }
         }
       }
+      if (player.winner)
+        a.classList.add('winner')
       a.textContent = player.name
     }
   }
