@@ -94,3 +94,15 @@ h3 {
 h3.disconnected::after {
   content: ' (d/c)';
 }
+h3.current {
+  background-color: NavajoWhite;
+}
+h3.current::after {
+  content: ' (*)';
+}
+/* TODO: h3.current.disconnected */
+
+li.selected {
+  background-color: Pink;
+  color: DarkRed;
+}

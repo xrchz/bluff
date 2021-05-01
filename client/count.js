@@ -132,11 +132,39 @@ socket.on('updatePlayers', players => {
     const div = fragment.appendChild(document.createElement('div'))
     const h3 = div.appendChild(document.createElement('h3'))
     h3.textContent = player.name
-    // TODO: show player current/disconnected
+    // TODO: show player disconnected
+    if (player.current)
+      h3.classList.add('current')
     if (player.hand && (spectateInput.checked || player.name === nameInput.value)) {
       const ul = div.appendChild(document.createElement('ul'))
-      player.hand.forEach(n => {
-        ul.appendChild(document.createElement('li')).textContent = n
+      player.hand.forEach((n, cardIndex) => {
+        const li = ul.appendChild(document.createElement('li'))
+        li.textContent = n
+        if (!spectateInput.checked) {
+          li.classList.add('clickable')
+          li.onclick = () => {
+            const selected = ul.querySelector('li.selected')
+            if (selected) {
+              selected.classList.remove('selected')
+              boardDiv.querySelectorAll('p').forEach(p => {
+                p.classList.remove('clickable')
+                p.onclick = null
+              })
+            }
+            if (selected !== li) {
+              li.classList.add('selected')
+              for (let deckIndex = 0; deckIndex < 4; deckIndex++) {
+                const deckp = boardDiv.children[deckIndex+1]
+                if ((deckIndex < 2 && deckp.theNumber < n) ||
+                    (deckIndex >= 2 && deckp.theNumber > n)) {
+                  deckp.classList.add('clickable')
+                  deckp.onclick = () => socket.emit('playRequest',
+                    { deckIndex: deckIndex, cardIndex: cardIndex })
+                }
+              }
+            }
+          }
+        }
       })
     }
     if (currentIndex < 0 && !spectateInput.checked && player.name === nameInput.value) {
@@ -153,10 +181,14 @@ socket.on('updatePlayers', players => {
 socket.on('updateBoard', data => {
   boardDiv.innerHTML = ''
   fragment.appendChild(document.createElement('p')).textContent = `Deck: ${data.deckSize}`
-  fragment.appendChild(document.createElement('p')).textContent = `↑ ${data.board[0]}`
-  fragment.appendChild(document.createElement('p')).textContent = `↑ ${data.board[1]}`
-  fragment.appendChild(document.createElement('p')).textContent = `↓ ${data.board[2]}`
-  fragment.appendChild(document.createElement('p')).textContent = `↓ ${data.board[3]}`
+  for (let i = 0; i < 4; i++) {
+    const p = fragment.appendChild(document.createElement('p'))
+    p.theNumber = data.board[i]
+    const span = p.appendChild(document.createElement('span'))
+    span.textContent = i < 2 ? '↑' : '↓'
+    p.appendChild(document.createElement('span')).textContent =
+      `${p.theNumber}`
+  }
   boardDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
 })

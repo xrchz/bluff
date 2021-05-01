@@ -212,7 +212,7 @@ io.on('connection', socket => {
       game.undoLog = []
       game.deck = makeDeck()
       shuffleInPlace(game.deck)
-      game.board = [[1], [1], [100], [100]]
+      game.board = [1, 1, 100, 100]
       const handSize = HandSize(game.players.length)
       game.players.forEach(player => {
         player.hand = []
@@ -241,6 +241,37 @@ io.on('connection', socket => {
       console.log(`${socket.playerName} tried to set first player incorrectly`)
       socket.emit('errorMsg', 'Error: already have a current player.')
     }
+  }))
+
+  socket.on('playRequest', data => inGame((gameName, game) => {
+    if (game.started) {
+      const currentIndex = game.players.findIndex(player => player.current)
+      const player = game.players[currentIndex]
+      if (0 <= currentIndex && player.current) {
+        if (Number.isInteger(data.deckIndex) &&
+            0 <= data.deckIndex && data.deckIndex < 4 &&
+            Number.isInteger(data.cardIndex) &&
+            0 <= data.cardIndex && data.cardIndex < player.hand.length) {
+          const card = player.hand[data.cardIndex]
+          const deck = game.board[data.deckIndex]
+          if ((data.deckIndex < 2 && deck < card) ||
+              (data.deckIndex >= 2 && deck > card)) {
+            // TODO: appendUndo
+            game.board[data.deckIndex] = card
+            if (game.deck.length) {
+              player.hand.splice(data.cardIndex, 1, game.deck.pop())
+            }
+            else {
+              player.hand.splice(data.cardIndex, 1)
+            }
+            appendLog(gameName, `${player.name} plays ${card} on ${data.deckIndex}`)
+            io.in(gameName).emit('updatePlayers', game.players)
+            updateBoard(gameName)
+          }
+        }
+      }
+    }
+    // TODO: error messages
   }))
 
   socket.on('disconnecting', () => {
