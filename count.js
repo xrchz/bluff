@@ -219,8 +219,11 @@ io.on('connection', socket => {
         for (let i = 0; i < handSize; i++)
           player.hand.push(game.deck.pop())
       })
+      io.in(gameName).emit('gameStarted')
       io.in(gameName).emit('updatePlayers', game.players)
       updateBoard(gameName)
+      appendLog(gameName, 'The game begins!')
+      updateGames()
     }
     else {
       console.log(`${socket.playerName} tried to start ${gameName} incorrectly with ${game.players.length}`)
