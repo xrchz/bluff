@@ -140,7 +140,7 @@ socket.on('updatePlayers', players => {
       player.hand.forEach((n, cardIndex) => {
         const li = ul.appendChild(document.createElement('li'))
         li.textContent = n
-        if (!spectateInput.checked) {
+        if (!spectateInput.checked && player.validPiles) {
           li.classList.add('clickable')
           li.onclick = () => {
             const selected = ul.querySelector('li.selected')
@@ -153,14 +153,11 @@ socket.on('updatePlayers', players => {
             }
             if (selected !== li) {
               li.classList.add('selected')
-              for (let deckIndex = 0; deckIndex < 4; deckIndex++) {
-                const deckp = boardDiv.children[deckIndex+1]
-                if ((deckIndex < 2 && deckp.theNumber < n) ||
-                    (deckIndex >= 2 && deckp.theNumber > n)) {
-                  deckp.classList.add('clickable')
-                  deckp.onclick = () => socket.emit('playRequest',
-                    { deckIndex: deckIndex, cardIndex: cardIndex })
-                }
+              for (const pileIndex of player.validPiles[cardIndex]) {
+                const deckp = boardDiv.children[pileIndex+1]
+                deckp.classList.add('clickable')
+                deckp.onclick = () => socket.emit('playRequest',
+                  { pileIndex: pileIndex, cardIndex: cardIndex })
               }
             }
           }

@@ -84,6 +84,16 @@ const HandSize = n =>
   n === 1 ? 8 :
   n === 2 ? 7 : 6
 
+function validPiles(hand, board) {
+  return hand.map(n =>
+    board.flatMap((p, i) =>
+      ((i < 2 && (n > p || n === p - 10)) ||
+       (i >= 2 && (n < p || n === p + 10)))
+      ? [i] : []
+    )
+  )
+}
+
 function updateBoard(gameName, roomName) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
@@ -237,6 +247,7 @@ io.on('connection', socket => {
       // TODO: appendUndo
       const player = game.players[playerIndex]
       player.current = true
+      player.validPiles = validPiles(player.hand, game.board)
       appendLog(gameName, `${player.name} elects to go first.`)
       io.in(gameName).emit('updatePlayers', game.players)
     }
@@ -251,27 +262,24 @@ io.on('connection', socket => {
       const currentIndex = game.players.findIndex(player => player.current)
       const player = game.players[currentIndex]
       if (0 <= currentIndex && player.current) {
-        if (Number.isInteger(data.deckIndex) &&
-            0 <= data.deckIndex && data.deckIndex < 4 &&
+        if (Number.isInteger(data.pileIndex) &&
+            0 <= data.pileIndex && data.pileIndex < 4 &&
             Number.isInteger(data.cardIndex) &&
-            0 <= data.cardIndex && data.cardIndex < player.hand.length) {
+            0 <= data.cardIndex && data.cardIndex < player.hand.length &&
+            player.validPiles[data.cardIndex].includes(data.pileIndex)) {
+          // TODO: appendUndo
           const card = player.hand[data.cardIndex]
-          const deck = game.board[data.deckIndex]
-          if ((data.deckIndex < 2 && deck < card) ||
-              (data.deckIndex >= 2 && deck > card)) {
-            // TODO: appendUndo
-            game.board[data.deckIndex] = card
-            if (game.deck.length) {
-              player.hand.splice(data.cardIndex, 1, game.deck.pop())
-            }
-            else {
-              player.hand.splice(data.cardIndex, 1)
-            }
-            appendLog(gameName,
-              {name: player.name, card: card, pileIndex: data.pileIndex})
-            io.in(gameName).emit('updatePlayers', game.players)
-            updateBoard(gameName)
+          game.board[data.pileIndex] = card
+          if (game.deck.length) {
+            player.hand.splice(data.cardIndex, 1, game.deck.pop())
           }
+          else {
+            player.hand.splice(data.cardIndex, 1)
+          }
+          appendLog(gameName,
+            {name: player.name, card: card, pileIndex: data.pileIndex})
+          io.in(gameName).emit('updatePlayers', game.players)
+          updateBoard(gameName)
         }
       }
     }
