@@ -270,12 +270,7 @@ io.on('connection', socket => {
           // TODO: appendUndo
           const card = player.hand[data.cardIndex]
           game.board[data.pileIndex] = card
-          if (game.deck.length) {
-            player.hand.splice(data.cardIndex, 1, game.deck.pop())
-          }
-          else {
-            player.hand.splice(data.cardIndex, 1)
-          }
+          player.hand.splice(data.cardIndex, 1)
           appendLog(gameName,
             {name: player.name, card: card, pileIndex: data.pileIndex})
           player.current--
@@ -284,7 +279,10 @@ io.on('connection', socket => {
           if (!player.current) {
             delete player.current
             delete player.validPiles
-            nextPlayer.current = 2
+            const handSize = HandSize(game.players.length)
+            while (game.deck.length && player.hand.length < handSize)
+              player.hand.push(game.deck.pop())
+            nextPlayer.current = game.deck.length ? 2 : 1
           }
           nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
           // TODO: check if nextPlayer.validPiles.every(is empty), i.e., cannot move (game over)
