@@ -183,11 +183,10 @@ socket.on('updateBoard', data => {
   fragment.appendChild(document.createElement('p')).textContent = `Deck: ${data.deckSize}`
   for (let i = 0; i < 4; i++) {
     const p = fragment.appendChild(document.createElement('p'))
-    p.theNumber = data.board[i]
     const span = p.appendChild(document.createElement('span'))
     span.textContent = i < 2 ? '↑' : '↓'
     p.appendChild(document.createElement('span')).textContent =
-      `${p.theNumber}`
+      `${data.board[i]}`
   }
   boardDiv.appendChild(fragment)
   errorMsg.innerHTML = ''
@@ -201,10 +200,18 @@ socket.on('gameStarted', () => {
   errorMsg.innerHTML = ''
 })
 
+const ordinal = n =>
+  n < 1 ? '1st' :
+  n < 2 ? '2nd' :
+  n < 3 ? '3rd' : `${n+1}th`
+
 socket.on('appendLog', entry => {
   const li = document.createElement('li')
   if (typeof entry ===  'string')
     li.textContent = entry
+  else if ('pileIndex' in entry) {
+    li.textContent = `${entry.name} plays ${entry.card} on the ${ordinal(entry.pileIndex)} pile.`
+  }
   else
     li.textContent = 'Error: unhandled log entry'
   log.appendChild(li)

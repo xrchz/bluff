@@ -267,7 +267,8 @@ io.on('connection', socket => {
             else {
               player.hand.splice(data.cardIndex, 1)
             }
-            appendLog(gameName, `${player.name} plays ${card} on ${data.deckIndex}`)
+            appendLog(gameName,
+              {name: player.name, card: card, pileIndex: data.pileIndex})
             io.in(gameName).emit('updatePlayers', game.players)
             updateBoard(gameName)
           }
