@@ -246,7 +246,7 @@ io.on('connection', socket => {
         Number.isInteger(playerIndex) && 0 <= playerIndex && playerIndex < game.players.length) {
       // TODO: appendUndo
       const player = game.players[playerIndex]
-      player.current = true
+      player.current = 2
       player.validPiles = validPiles(player.hand, game.board)
       appendLog(gameName, `${player.name} elects to go first.`)
       io.in(gameName).emit('updatePlayers', game.players)
@@ -278,6 +278,16 @@ io.on('connection', socket => {
           }
           appendLog(gameName,
             {name: player.name, card: card, pileIndex: data.pileIndex})
+          player.current--
+          const nextPlayer = player.current ? player :
+            game.players[(currentIndex + 1) % game.players.length]
+          if (!player.current) {
+            delete player.current
+            delete player.validPiles
+            nextPlayer.current = 2
+          }
+          nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
+          // TODO: check if nextPlayer.validPiles.every(is empty), i.e., cannot move (game over)
           io.in(gameName).emit('updatePlayers', game.players)
           updateBoard(gameName)
         }
