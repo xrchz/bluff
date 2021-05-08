@@ -228,6 +228,7 @@ io.on('connection', socket => {
         player.hand = []
         for (let i = 0; i < handSize; i++)
           player.hand.push(game.deck.pop())
+        player.hand.sort()
       })
       io.in(gameName).emit('gameStarted')
       io.in(gameName).emit('updatePlayers', game.players)
@@ -282,6 +283,7 @@ io.on('connection', socket => {
             const handSize = HandSize(game.players.length)
             while (game.deck.length && player.hand.length < handSize)
               player.hand.push(game.deck.pop())
+            player.hand.sort()
             nextPlayer.current = game.deck.length ? 2 : 1
           }
           nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
