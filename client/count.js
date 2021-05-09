@@ -163,6 +163,12 @@ socket.on('updatePlayers', players => {
           }
         }
       })
+      if (!player.minPlays && !spectateInput.checked && player.validPiles) {
+        const button = div.appendChild(document.createElement('input'))
+        button.type = 'button'
+        button.value = 'Done'
+        button.onclick = () => socket.emit('doneRequest')
+      }
     }
     if (currentIndex < 0 && startButton.disabled && !spectateInput.checked && player.name === nameInput.value) {
       const button = div.appendChild(document.createElement('input'))

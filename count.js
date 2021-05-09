@@ -247,7 +247,8 @@ io.on('connection', socket => {
         Number.isInteger(playerIndex) && 0 <= playerIndex && playerIndex < game.players.length) {
       // TODO: appendUndo
       const player = game.players[playerIndex]
-      player.current = 2
+      player.current = true
+      player.minPlays = 2
       player.validPiles = validPiles(player.hand, game.board)
       appendLog(gameName, `${player.name} elects to go first.`)
       io.in(gameName).emit('updatePlayers', game.players)
@@ -274,23 +275,35 @@ io.on('connection', socket => {
           player.hand.splice(data.cardIndex, 1)
           appendLog(gameName,
             {name: player.name, card: card, pileIndex: data.pileIndex})
-          player.current--
-          const nextPlayer = player.current ? player :
-            game.players[(currentIndex + 1) % game.players.length]
-          if (!player.current) {
-            delete player.current
-            delete player.validPiles
-            const handSize = HandSize(game.players.length)
-            while (game.deck.length && player.hand.length < handSize)
-              player.hand.push(game.deck.pop())
-            player.hand.sort()
-            nextPlayer.current = game.deck.length ? 2 : 1
-          }
-          nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
+          if (player.minPlays) player.minPlays--
+          player.validPiles = validPiles(player.hand, game.board)
           // TODO: check if nextPlayer.validPiles.every(is empty), i.e., cannot move (game over)
           io.in(gameName).emit('updatePlayers', game.players)
           updateBoard(gameName)
         }
+      }
+    }
+    // TODO: error messages
+  }))
+
+  socket.on('doneRequest', () => inGame((gameName, game) => {
+    if (game.started) {
+      const currentIndex = game.players.findIndex(player => player.current)
+      const player = game.players[currentIndex]
+      if (0 <= currentIndex && player.current && !player.minPlays) {
+        // TODO: appendUndo
+        delete player.current
+        delete player.minPlays
+        delete player.validPiles
+        const handSize = HandSize(game.players.length)
+        while (game.deck.length && player.hand.length < handSize)
+          player.hand.push(game.deck.pop())
+        player.hand.sort()
+        const nextPlayer = game.players[(currentIndex + 1) % game.players.length]
+        nextPlayer.current = true
+        nextPlayer.minPlays = game.deck.length ? 2 : 1
+        nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
+        io.in(gameName).emit('updatePlayers', game.players)
       }
     }
     // TODO: error messages
