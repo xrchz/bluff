@@ -132,7 +132,8 @@ socket.on('updatePlayers', players => {
     const div = fragment.appendChild(document.createElement('div'))
     const h3 = div.appendChild(document.createElement('h3'))
     h3.textContent = player.name
-    // TODO: show player disconnected
+    if (!player.socketId)
+      h3.classList.add('disconnected')
     if (player.current)
       h3.classList.add('current')
     if (player.hand && (spectateInput.checked || player.name === nameInput.value)) {

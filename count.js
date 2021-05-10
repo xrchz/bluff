@@ -145,10 +145,10 @@ io.on('connection', socket => {
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
         io.in(gameName).emit('updateSpectators', game.spectators)
-        // TODO: what to do if a spectator joins and the game hasn't started
+        socket.emit('updatePlayers', game.players)
         if (game.started) {
           socket.emit('gameStarted')
-          // TODO: what to do if a spectator joins and the game has started
+          updateBoard(gameName, socket.id)
         }
       }
       else {
@@ -173,7 +173,6 @@ io.on('connection', socket => {
           io.in(gameName).emit('updatePlayers', game.players)
           io.in(gameName).emit('setConnected', playerIndex)
           updateBoard(gameName, socket.id)
-          // TODO: what to do if a player joins and the game has started
           game.log.forEach(entry => socket.emit('appendLog', entry))
           if (game.undoLog.length)
             socket.emit('showUndo', true)
@@ -289,9 +288,20 @@ io.on('connection', socket => {
           io.in(gameName).emit('updatePlayers', game.players)
           updateBoard(gameName)
         }
+        else {
+          console.log(`${socket.playerName} tried to play with bad data: ${data.pileIndex} ${data.cardIndex}`)
+          socket.emit('errorMsg', 'Error: invalid play request.')
+        }
+      }
+      else {
+        console.log(`${socket.playerName} tried to play but not current`)
+        socket.emit('errorMsg', 'Error: you are not the current player.')
       }
     }
-    // TODO: error messages
+    else {
+      console.log(`${socket.playerName} tried to play in wrong game state`)
+      socket.emit('errorMsg', 'Error: game not accepting plays.')
+    }
   }))
 
   socket.on('doneRequest', () => inGame((gameName, game) => {
@@ -322,8 +332,15 @@ io.on('connection', socket => {
         io.in(gameName).emit('updatePlayers', game.players)
         updateBoard(gameName)
       }
+      else {
+        console.log(`${socket.playerName} tried to end turn but not current`)
+        socket.emit('errorMsg', 'Error: you are not the current player.')
+      }
     }
-    // TODO: error messages
+    else {
+      console.log(`${socket.playerName} tried to end turn in wrong game state`)
+      socket.emit('errorMsg', 'Error: game not accepting end of turn.')
+    }
   }))
 
   socket.on('disconnecting', () => {
