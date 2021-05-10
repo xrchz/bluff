@@ -94,6 +94,14 @@ function validPiles(hand, board) {
   )
 }
 
+function checkDefeat(gameName, currentPlayer) {
+  const game = games[gameName]
+  if (currentPlayer.minPlays && !currentPlayer.validPiles.some(a => a.length)) {
+    game.ended = true
+    appendLog(gameName, `The game ends in defeat.`)
+  }
+}
+
 function updateBoard(gameName, roomName) {
   if (!roomName) roomName = gameName
   const game = games[gameName]
@@ -243,7 +251,7 @@ io.on('connection', socket => {
   }))
 
   socket.on('firstRequest', playerIndex => inGame((gameName, game) => {
-    if (game.started && game.players.every(player => !player.current) &&
+    if (game.started && !game.ended && game.players.every(player => !player.current) &&
         Number.isInteger(playerIndex) && 0 <= playerIndex && playerIndex < game.players.length) {
       // TODO: appendUndo
       const player = game.players[playerIndex]
@@ -260,7 +268,7 @@ io.on('connection', socket => {
   }))
 
   socket.on('playRequest', data => inGame((gameName, game) => {
-    if (game.started) {
+    if (game.started && !game.ended) {
       const currentIndex = game.players.findIndex(player => player.current)
       const player = game.players[currentIndex]
       if (0 <= currentIndex && player.current) {
@@ -277,7 +285,7 @@ io.on('connection', socket => {
             {name: player.name, card: card, pileIndex: data.pileIndex})
           if (player.minPlays) player.minPlays--
           player.validPiles = validPiles(player.hand, game.board)
-          // TODO: check if nextPlayer.validPiles.every(is empty), i.e., cannot move (game over)
+          checkDefeat(gameName, player)
           io.in(gameName).emit('updatePlayers', game.players)
           updateBoard(gameName)
         }
@@ -287,7 +295,7 @@ io.on('connection', socket => {
   }))
 
   socket.on('doneRequest', () => inGame((gameName, game) => {
-    if (game.started) {
+    if (game.started && !game.ended) {
       const currentIndex = game.players.findIndex(player => player.current)
       const player = game.players[currentIndex]
       if (0 <= currentIndex && player.current && !player.minPlays) {
@@ -299,10 +307,18 @@ io.on('connection', socket => {
         while (game.deck.length && player.hand.length < handSize)
           player.hand.push(game.deck.pop())
         player.hand.sort()
-        const nextPlayer = game.players[(currentIndex + 1) % game.players.length]
-        nextPlayer.current = true
-        nextPlayer.minPlays = game.deck.length ? 2 : 1
-        nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
+        if (!game.deck.length && !game.players.some(player => player.hand.length)) {
+          game.ended = true
+          game.players.forEach(player => player.winner = true)
+          appendLog(gameName, `The game ends in victory!`)
+        }
+        else {
+          const nextPlayer = game.players[(currentIndex + 1) % game.players.length]
+          nextPlayer.current = true
+          nextPlayer.minPlays = game.deck.length ? 2 : 1
+          nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
+          checkDefeat(gameName, nextPlayer)
+        }
         io.in(gameName).emit('updatePlayers', game.players)
         updateBoard(gameName)
       }
