@@ -140,7 +140,7 @@ socket.on('updatePlayers', players => {
       player.hand.forEach((n, cardIndex) => {
         const li = ul.appendChild(document.createElement('li'))
         li.textContent = n
-        if (!spectateInput.checked && player.validPiles) {
+        if (!spectateInput.checked && player.validPiles && player.validPiles[cardIndex].length) {
           li.classList.add('clickable')
           li.onclick = () => {
             const selected = ul.querySelector('li.selected')
