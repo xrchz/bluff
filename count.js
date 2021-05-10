@@ -304,6 +304,7 @@ io.on('connection', socket => {
         nextPlayer.minPlays = game.deck.length ? 2 : 1
         nextPlayer.validPiles = validPiles(nextPlayer.hand, game.board)
         io.in(gameName).emit('updatePlayers', game.players)
+        updateBoard(gameName)
       }
     }
     // TODO: error messages
