@@ -235,7 +235,7 @@ io.on('connection', socket => {
         player.hand = []
         for (let i = 0; i < handSize; i++)
           player.hand.push(game.deck.pop())
-        player.hand.sort()
+        player.hand.sort((a, b) => a - b)
       })
       io.in(gameName).emit('gameStarted')
       io.in(gameName).emit('updatePlayers', game.players)
@@ -316,7 +316,7 @@ io.on('connection', socket => {
         const handSize = HandSize(game.players.length)
         while (game.deck.length && player.hand.length < handSize)
           player.hand.push(game.deck.pop())
-        player.hand.sort()
+        player.hand.sort((a, b) => a - b)
         if (!game.deck.length && !game.players.some(player => player.hand.length)) {
           game.ended = true
           game.players.forEach(player => player.winner = true)
