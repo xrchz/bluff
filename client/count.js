@@ -136,39 +136,44 @@ socket.on('updatePlayers', players => {
       h3.classList.add('disconnected')
     if (player.current)
       h3.classList.add('current')
-    if (player.hand && (spectateInput.checked || player.name === nameInput.value)) {
-      const ul = div.appendChild(document.createElement('ul'))
-      player.hand.forEach((n, cardIndex) => {
-        const li = ul.appendChild(document.createElement('li'))
-        li.textContent = n
-        if (!spectateInput.checked && player.validPiles && player.validPiles[cardIndex].length) {
-          li.classList.add('clickable')
-          li.onclick = () => {
-            const selected = ul.querySelector('li.selected')
-            if (selected) {
-              selected.classList.remove('selected')
-              boardDiv.querySelectorAll('p').forEach(p => {
-                p.classList.remove('clickable')
-                p.onclick = null
-              })
-            }
-            if (selected !== li) {
-              li.classList.add('selected')
-              for (const pileIndex of player.validPiles[cardIndex]) {
-                const deckp = boardDiv.children[pileIndex+1]
-                deckp.classList.add('clickable')
-                deckp.onclick = () => socket.emit('playRequest',
-                  { pileIndex: pileIndex, cardIndex: cardIndex })
+    if (player.hand) {
+      if (spectateInput.checked || player.name === nameInput.value) {
+        const ul = div.appendChild(document.createElement('ul'))
+        player.hand.forEach((n, cardIndex) => {
+          const li = ul.appendChild(document.createElement('li'))
+          li.textContent = n
+          if (!spectateInput.checked && player.validPiles && player.validPiles[cardIndex].length) {
+            li.classList.add('clickable')
+            li.onclick = () => {
+              const selected = ul.querySelector('li.selected')
+              if (selected) {
+                selected.classList.remove('selected')
+                boardDiv.querySelectorAll('p').forEach(p => {
+                  p.classList.remove('clickable')
+                  p.onclick = null
+                })
+              }
+              if (selected !== li) {
+                li.classList.add('selected')
+                for (const pileIndex of player.validPiles[cardIndex]) {
+                  const deckp = boardDiv.children[pileIndex+1]
+                  deckp.classList.add('clickable')
+                  deckp.onclick = () => socket.emit('playRequest',
+                    { pileIndex: pileIndex, cardIndex: cardIndex })
+                }
               }
             }
           }
+        })
+        if (!player.minPlays && !spectateInput.checked && player.current) {
+          const button = div.appendChild(document.createElement('input'))
+          button.type = 'button'
+          button.value = 'Done'
+          button.onclick = () => socket.emit('doneRequest')
         }
-      })
-      if (!player.minPlays && !spectateInput.checked && player.current) {
-        const button = div.appendChild(document.createElement('input'))
-        button.type = 'button'
-        button.value = 'Done'
-        button.onclick = () => socket.emit('doneRequest')
+      }
+      else {
+        div.appendChild(document.createElement('span')).textContent = `${player.hand.length}`
       }
     }
     if (currentIndex < 0 && startButton.disabled &&
