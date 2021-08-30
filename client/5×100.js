@@ -494,6 +494,15 @@ socket.on('appendLog', markup => {
   errorMsg.innerHTML = ''
 })
 
+socket.on('appendLogs', entries => {
+  for (const markup of entries)
+    fragment.appendChild(document.createElement('li')).innerHTML = markup
+  log.appendChild(fragment)
+  if (log.lastChild)
+    log.lastChild.scrollIntoView(false)
+  errorMsg.innerHTML = ''
+})
+
 socket.on('removeLog', n => {
   while(n-- > 0) {
     log.removeChild(log.lastElementChild)

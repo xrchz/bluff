@@ -474,7 +474,7 @@ io.on('connection', socket => {
           socket.emit('updateKitty', { kitty: game.kitty })
           if (game.trick)
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
-          game.log.forEach(entry => socket.emit('appendLog', entry))
+          socket.emit('appendLogs', game.log)
           restoreScore(socket.id, game.teamNames, game.rounds, game.players)
         }
       }
@@ -507,7 +507,7 @@ io.on('connection', socket => {
             socket.emit('showJoker', true)
           if (game.trick)
             socket.emit('updateTrick', { trick: game.trick, leader: game.leader })
-          game.log.forEach(entry => socket.emit('appendLog', entry))
+          socket.emit('appendLogs', game.log)
           restoreScore(socket.id, game.teamNames, game.rounds, game.players)
           if (game.undoLog.length)
             socket.emit('showUndo', true)
