@@ -273,6 +273,9 @@ socket.on('updatePlayers', players => {
           if (playable) { a.onclick = () => { socket.emit('playRequest', { index: i }) } }
         }
       }
+      if (player.validPlays === true && player.hand.length === 1 ||
+          player.validPlays && player.validPlays.length === 1)
+        setTimeout(elem.firstChild.onclick, 500)
     }
     else {
       elem.innerHTML = '<span>🂠</span>'.repeat(player.selecting ? 10 : player.hand.length)
