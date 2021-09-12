@@ -145,7 +145,7 @@ ul.inline > li {
 #resultsArea a.showPath:hover {
   text-decoration: underline;
 }
-#settingsHeading {
+#settingsHeading, #godWords {
   width: 100%;
   text-align: center;
 }

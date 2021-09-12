@@ -272,6 +272,8 @@ io.on('connection', socket => {
         notWordPenalty: 1,
         invalidWordPenalty: 2
       }
+      game.grid = randomGrid(hardDice)
+      game.words = findAllWords(game.grid)
       games[gameName] = game
     }
     else
@@ -293,7 +295,7 @@ io.on('connection', socket => {
         socket.join(`${gameName}spectators`)
         game.spectators.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame',
-          { gameName: gameName, playerName: socket.playerName, spectate: true })
+          { gameName: gameName, playerName: socket.playerName, godWords: game.words.size, spectate: true })
         updateSettings(game, socket.id)
         io.in(gameName).emit('updateSpectators', game.spectators)
         socket.emit('updatePlayers', game.players)
@@ -324,7 +326,7 @@ io.on('connection', socket => {
           socket.join(gameName)
           const player = game.players.find(player => player.name === socket.playerName)
           player.socketId = socket.id
-          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName, godWords: game.words.size })
           updateSettings(game, socket.id)
           socket.emit('updateSpectators', game.spectators)
           io.in(gameName).emit('updatePlayers', game.players)
@@ -358,7 +360,7 @@ io.on('connection', socket => {
         socket.join(gameName)
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
-        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName, godWords: game.words.size })
         updateSettings(game, socket.id)
         socket.emit('updateSpectators', game.spectators)
         io.in(gameName).emit('updatePlayers', game.players)
@@ -422,8 +424,6 @@ io.on('connection', socket => {
       if (game.players.length) {
         console.log(`starting ${gameName}`)
         game.started = true
-        game.grid = randomGrid(hardDice)
-        game.words = findAllWords(game.grid)
         game.players.forEach(player => player.words = [])
         io.in(gameName).emit('gameStarted', game.grid)
         io.in(`${gameName}spectators`).emit('setupLists', game.players.map(player => player.name))

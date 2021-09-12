@@ -25,6 +25,7 @@ const settingsDiv = document.getElementById('settings')
 const timeSetting = document.getElementById('timeSetting')
 const notWordPenalty = document.getElementById('notWordPenalty')
 const invalidWordPenalty = document.getElementById('invalidWordPenalty')
+const godWords = document.getElementById('godWords')
 
 const Colours = [
 '#e53935',
@@ -158,6 +159,7 @@ socket.on('ensureLobby', () => {
   resultsArea.hidden = true
   settingsDiv.hidden = true
   settingsDiv.previousElementSibling.hidden = true
+  godWords.innerHTML = ''
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -254,6 +256,8 @@ socket.on('joinedGame', data => {
     for (const label of settingsDiv.children)
       label.firstElementChild.disabled = true
   }
+  if (typeof data.godWords !== 'undefined')
+    godWords.innerHTML = `God anticipates ${Math.random() * 10 + data.godWords} words.`
   errorMsg.innerHTML = ''
   if (history.state === 'lobby')
     history.pushState(data, `Game ${data.gameName}`)
