@@ -53,7 +53,11 @@ function updateGames(room) {
   const data = []
   for (const [gameName, game] of Object.entries(games))
     data.push({ name: gameName,
-                players: game.players.map(player => ({ name: player.name, disconnected: !player.socketId }))
+                players: game.players.map(player => (
+                  { name: player.name,
+                    disconnected: !player.socketId,
+                    victorious: player.victorious
+                  }))
               })
   io.in(room).emit('updateGames', data)
 }
@@ -355,11 +359,17 @@ function checkEnd(gameName) {
   for (const i of [0, 1]) {
     if (game.total[i] >= 500 && game.lastBidder % 2 === i) {
       appendLog(gameName, `${game.teamNames[i]} win!`)
+      for (let j = 0; j < 4; j++) {
+        if (j % 2 === i) game.players[j].victorious = true
+      }
       game.ended = true
       return
     }
     if (game.total[i] <= -500) {
       appendLog(gameName, `${game.teamNames[i]} go out backwards!`)
+      for (let j = 0; j < 4; j++) {
+        if (j % 2 !== i) game.players[j].victorious = true
+      }
       game.ended = true
       return
     }
@@ -382,7 +392,8 @@ const stateKeys = {
     'current', 'open', 'dummy',
     'validBids', 'bidFilter', 'lastBid', 'contract',
     'selecting', 'nominating',
-    'validPlays', 'restrictJokers', 'hand', 'tricks'
+    'validPlays', 'restrictJokers', 'hand', 'tricks',
+    'victorious'
   ],
   validBids: true, lastBid: true, contract: true,
   validPlays: true, restrictJokers: true, hand: true
