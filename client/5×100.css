@@ -91,6 +91,9 @@ td.contractor {
 #games > li > ul {
   display: inline;
 }
+#games > li.unfinished > ul > li:last-child {
+  font-family: sans-serif;
+}
 #games a:hover {
   cursor: pointer;
 }

@@ -94,11 +94,16 @@ socket.on('updateGames', games => {
     }
     const ul = li.appendChild(document.createElement('ul'))
     ul.classList.add('inline')
+    let finished = false
+    let missing = false
     for (const player of game.players) {
       a = ul.appendChild(document.createElement('li'))
-      if (player.victorious)
+      if (player.victorious) {
         a.classList.add('victorious')
+        finished = true
+      }
       if (player.disconnected) {
+        missing = true
         a = a.appendChild(document.createElement('a'))
         a.classList.add('disconnected')
         a.onclick = () => {
@@ -111,6 +116,10 @@ socket.on('updateGames', games => {
         }
       }
       a.textContent = player.name
+    }
+    if (!finished && missing) {
+      ul.appendChild(document.createElement('li')).textContent = '😿'
+      li.classList.add('unfinished')
     }
   }
   gamesList.appendChild(fragment)
