@@ -7,6 +7,7 @@ const errorMsg = document.getElementById('errorMsg')
 const blameMsg = document.getElementById('blame')
 const log = document.getElementById('log')
 const gamesList = document.getElementById('games')
+const showFinished = document.getElementById('showFinished')
 const joinButton = document.getElementById('join')
 const startButton = document.getElementById('start')
 const undoButton = document.getElementById('undo')
@@ -83,10 +84,12 @@ for (let i = 0; i < jokerDiv.children.length; i++) {
   }
 }
 
-socket.on('updateGames', games => {
+let theGames = null
+
+function updateGames() {
   gamesList.innerHTML = ''
-  for (const game of games) {
-    const li = fragment.appendChild(document.createElement('li'))
+  for (const game of theGames) {
+    const li = document.createElement('li')
     let a = li.appendChild(document.createElement('a'))
     a.textContent = game.name
     a.onclick = () => {
@@ -121,9 +124,19 @@ socket.on('updateGames', games => {
       ul.appendChild(document.createElement('li')).textContent = '😿'
       li.classList.add('unfinished')
     }
+    if (!finished || showFinished.checked)
+      fragment.appendChild(li)
   }
   gamesList.appendChild(fragment)
-  gamesList.hidden = !games.length
+  gamesList.hidden = !theGames.length
+  showFinished.parentElement.hidden = gamesList.hidden
+}
+
+showFinished.onchange = updateGames
+
+socket.on('updateGames', games => {
+  theGames = games
+  updateGames()
 })
 
 socket.on('ensureLobby', () => {
@@ -134,6 +147,7 @@ socket.on('ensureLobby', () => {
   spectateInput.previousElementSibling.hidden = false
   spectateInput.hidden = false
   spectateInput.disabled = false
+  showFinished.parentElement.hidden = false
   undoButton.hidden = true
   unseated.innerHTML = ''
   startButton.hidden = true
