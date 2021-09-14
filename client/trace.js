@@ -350,6 +350,7 @@ socket.on('showScores', scores => {
       const a = li.appendChild(document.createElement(data.path ? 'a' : 'span'))
       li.keys = {
         time: time++,
+        word: data.word,
         misses: data.missedBy,
         score: data.points
       }
@@ -397,16 +398,25 @@ socket.on('showScores', scores => {
     const byTime = controls.appendChild(document.createElement('a'))
     const byMisses = controls.appendChild(document.createElement('a'))
     const byScore = controls.appendChild(document.createElement('a'))
+    const byAlpha = controls.appendChild(document.createElement('a'))
     byTime.textContent = 'time'
     byTime.classList.add('asc')
     byMisses.textContent = 'misses'
     byScore.textContent = 'score'
+    byAlpha.textContent = 'αβ'
     controls.querySelectorAll('a').forEach(a => {
       a.onclick = () => {
-        dir = a.classList.contains('des') ? +1 : -1
-        ul.replaceChildren(...
-          Array.from(ul.children).sort(
-            (x, y) => dir * (x.keys[a.textContent] - y.keys[a.textContent])))
+        dir = ['misses', 'score'].includes(a.textContent) ?
+          (a.classList.contains('des') ? +1 : -1) :
+          (a.classList.contains('asc') ? -1 : +1)
+        sorter = (x, y) => dir * (x.keys[a.textContent] - y.keys[a.textContent])
+        if (a.textContent === 'αβ') {
+          if (dir < 0)
+            sorter = (y, x) => x.keys['word'].localeCompare(y.keys['word'])
+          else
+            sorter = (x, y) => x.keys['word'].localeCompare(y.keys['word'])
+        }
+        ul.replaceChildren(... Array.from(ul.children).sort(sorter))
         controls.querySelectorAll('a').forEach(a => a.classList.remove('asc', 'des'))
         a.classList.add(dir < 0 ? 'des' : 'asc')
       }
