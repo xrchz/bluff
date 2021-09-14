@@ -149,6 +149,18 @@ ul.inline > li {
   width: 100%;
   text-align: center;
 }
+.sort a {
+  margin-left: 0.2em;
+}
+.sort a:hover {
+  text-decoration: underline;
+}
+.sort a.des::after {
+  content: '↑';
+}
+.sort a.asc::after {
+  content: '↓';
+}
 #settings {
   display: flex;
   align-items: center;

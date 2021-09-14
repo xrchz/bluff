@@ -341,11 +341,18 @@ socket.on('showScores', scores => {
     const div = fragment.appendChild(document.createElement('div'))
     div.appendChild(document.createElement('h3')).textContent = result.name
     div.appendChild(document.createElement('div')).textContent = `Total: ${result.score}`
+    const controls = div.appendChild(document.createElement('div'))
     const ul = div.appendChild(document.createElement('ul'))
     const showing = []
+    let time = 0
     for (const data of result.words) {
       const li = ul.appendChild(document.createElement('li'))
       const a = li.appendChild(document.createElement(data.path ? 'a' : 'span'))
+      li.keys = {
+        time: time++,
+        misses: data.missedBy,
+        score: data.points
+      }
       const ann = []
       if (data.missedBy !== undefined) ann.push(`missed by ${data.missedBy}`)
       if (data.invalidWord) ann.push('invalid')
@@ -386,6 +393,24 @@ socket.on('showScores', scores => {
         }
       }
     }
+    controls.classList.add('sort')
+    const byTime = controls.appendChild(document.createElement('a'))
+    const byMisses = controls.appendChild(document.createElement('a'))
+    const byScore = controls.appendChild(document.createElement('a'))
+    byTime.textContent = 'time'
+    byTime.classList.add('asc')
+    byMisses.textContent = 'misses'
+    byScore.textContent = 'score'
+    controls.querySelectorAll('a').forEach(a => {
+      a.onclick = () => {
+        dir = a.classList.contains('des') ? +1 : -1
+        ul.replaceChildren(...
+          Array.from(ul.children).sort(
+            (x, y) => dir * (x.keys[a.textContent] - y.keys[a.textContent])))
+        controls.querySelectorAll('a').forEach(a => a.classList.remove('asc', 'des'))
+        a.classList.add(dir < 0 ? 'des' : 'asc')
+      }
+    })
   }
   resultsArea.appendChild(fragment)
   errorMsg.innerHTML = ''
