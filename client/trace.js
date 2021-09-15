@@ -351,7 +351,7 @@ socket.on('showScores', scores => {
       li.keys = {
         time: time++,
         word: data.word,
-        misses: data.missedBy,
+        misses: Number.isInteger(data.missedBy) ? data.missedBy : -1,
         score: data.points
       }
       if (!missers.has(data.word))
