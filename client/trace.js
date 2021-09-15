@@ -337,14 +337,14 @@ socket.on('showScores', scores => {
   playSubmit.disabled = true
   resultsArea.hidden = false
   resultsArea.innerHTML = ''
-  missers = new Map()
+  const missers = new Map()
+  const showing = []
   for (const result of scores) {
     const div = fragment.appendChild(document.createElement('div'))
     div.appendChild(document.createElement('h3')).textContent = result.name
     div.appendChild(document.createElement('div')).textContent = `Total: ${result.score}`
     const controls = div.appendChild(document.createElement('div'))
     const ul = div.appendChild(document.createElement('ul'))
-    const showing = []
     let time = 0
     for (const data of result.words) {
       const li = ul.appendChild(document.createElement('li'))
@@ -391,10 +391,10 @@ socket.on('showScores', scores => {
             c.style.background = ''
             c.style.color = ''
           }
-          if (showing[0] === wordA) showing.pop()
+          if (showing[0] === data.word) showing.pop()
           else {
             showing.pop()
-            showing.push(wordA)
+            showing.push(data.word)
             const path = data.path.map(pos => {
               const col = pos % 4
               const row = (pos - col) / 4
