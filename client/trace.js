@@ -337,6 +337,7 @@ socket.on('showScores', scores => {
   playSubmit.disabled = true
   resultsArea.hidden = false
   resultsArea.innerHTML = ''
+  missers = new Map()
   for (const result of scores) {
     const div = fragment.appendChild(document.createElement('div'))
     div.appendChild(document.createElement('h3')).textContent = result.name
@@ -347,29 +348,53 @@ socket.on('showScores', scores => {
     let time = 0
     for (const data of result.words) {
       const li = ul.appendChild(document.createElement('li'))
-      const a = li.appendChild(document.createElement(data.path ? 'a' : 'span'))
       li.keys = {
         time: time++,
         word: data.word,
         misses: data.missedBy,
         score: data.points
       }
-      const ann = []
-      if (data.missedBy !== undefined) ann.push(`missed by ${data.missedBy}`)
-      if (data.invalidWord) ann.push('invalid')
-      if (data.notWord) ann.push('nonword')
-      a.textContent = `${data.word} (${data.points}) (${ann.join(', ')})`
+      if (!missers.has(data.word))
+        missers.set(data.word, new Set(scores.map(result => result.name)))
+      missers.get(data.word).delete(result.name)
+      const wordUl = li.appendChild(document.createElement('ul'))
+      wordUl.classList.add('inline', 'word')
+      const wordLi = wordUl.appendChild(document.createElement('li'))
+      const wordA = wordLi.appendChild(document.createElement(data.path ? 'a' : 'span'))
+      wordA.textContent = `${data.word} (${data.points})`
+      if (data.missedBy !== undefined) {
+        const missedBy = document.createElement(data.missedBy ? 'a' : 'span')
+        wordUl.appendChild(document.createElement('li')).appendChild(missedBy)
+        missedBy.textContent = `missed by ${data.missedBy}`
+        if (data.missedBy) {
+          missedBy.onclick = () => {
+            oldMissing = resultsArea.querySelector('a.missing')
+            if (oldMissing) oldMissing.classList.remove('missing')
+            resultsArea.querySelectorAll('h3.misser').forEach(h3 => h3.classList.remove('misser'))
+            if (oldMissing !== missedBy) {
+              missedBy.classList.add('missing')
+              misserNames = missers.get(data.word)
+              resultsArea.querySelectorAll('h3').forEach(h3 => {
+                if (misserNames.has(h3.textContent))
+                  h3.classList.add('misser')
+              })
+            }
+          }
+        }
+      }
+      if (data.invalidWord) wordUl.appendChild(document.createElement('li')).textContent = 'invalid'
+      if (data.notWord) wordUl.appendChild(document.createElement('li')).textContent = 'nonword'
       if (data.path) {
-        a.classList.add('showPath')
-        a.onclick = function () {
+        wordA.classList.add('showPath')
+        wordA.onclick = function () {
           for (const c of letterGrid.children) {
             c.style.background = ''
             c.style.color = ''
           }
-          if (showing[0] === a) showing.pop()
+          if (showing[0] === wordA) showing.pop()
           else {
             showing.pop()
-            showing.push(a)
+            showing.push(wordA)
             const path = data.path.map(pos => {
               const col = pos % 4
               const row = (pos - col) / 4

@@ -51,6 +51,7 @@ input[type=button], input[type=submit] {
 }
 a:hover {
   cursor: pointer;
+  text-decoration: underline;
 }
 form.inline {
   display:inline;
@@ -142,9 +143,6 @@ ul.inline > li {
 #resultsArea a.remove:hover {
   text-decoration: line-through;
 }
-#resultsArea a.showPath:hover {
-  text-decoration: underline;
-}
 #settingsHeading, #godWords {
   width: 100%;
   text-align: center;
@@ -152,14 +150,34 @@ ul.inline > li {
 .sort a {
   margin-left: 0.2em;
 }
-.sort a:hover {
-  text-decoration: underline;
-}
 .sort a.des::after {
   content: '↑';
 }
 .sort a.asc::after {
   content: '↓';
+}
+ul.word > li {
+  padding-left: 0.1em;
+}
+ul.word > li:first-child::after {
+  content: '';
+}
+ul.word > li:nth-child(2)::before {
+  content: ' (';
+}
+ul.word > li:last-child::after {
+  content: ')';
+}
+ul.word > li::after {
+  content: ', ';
+}
+h3.misser {
+  background-color: darkred;
+  color: lightyellow;
+}
+.missing {
+  background-color: lightgreen;
+  color: darkblue;
 }
 #settings {
   display: flex;
