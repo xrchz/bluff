@@ -242,6 +242,7 @@ const bidFilters = [
   {cls: [], chr: 'NT'}]
 
 socket.on('updatePlayers', players => {
+  let toclick = null
   for (let i = 0; i < 4; i++) {
     const div = seatDivs[i]
     const player = players[i]
@@ -298,9 +299,11 @@ socket.on('updatePlayers', players => {
           if (playable) { a.onclick = () => { socket.emit('playRequest', { index: i }) } }
         }
       }
-      if (player.validPlays === true && player.hand.length === 1 ||
-          player.validPlays && player.validPlays.length === 1)
-        setTimeout(elem.firstChild.onclick, 1000)
+      if (playableBase &&
+          (player.validPlays === true && player.hand.length === 1 ||
+           player.validPlays.length === 1)) {
+        toclick = elem.children[player.validPlays === true ? 0 : player.validPlays[0]]
+      }
     }
     else {
       elem.innerHTML = '<span>🂠</span>'.repeat(player.selecting ? 10 : player.hand.length)
@@ -366,6 +369,7 @@ socket.on('updatePlayers', players => {
     }
     div.appendChild(fragment)
   }
+  if (toclick) setTimeout(toclick.onclick, 1000)
   errorMsg.innerHTML = ''
 })
 
