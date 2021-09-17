@@ -935,7 +935,7 @@ io.on('connection', socket => {
           if (current.validPlays) {
             if ((current.validPlays === true &&
                  Number.isInteger(data.index) && 0 <= data.index && data.index < current.hand.length ||
-                 current.validPlays.includes(data.index)) &&
+                 current.validPlays && current.validPlays.includes(data.index)) &&
                 (current.hand[data.index].effectiveRank !== Joker || !current.restrictJokers ||
                  current.restrictJokers.find(j => j.suit === data.jsuit))) {
               appendUndo(gameName)
