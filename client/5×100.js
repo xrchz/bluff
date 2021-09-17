@@ -241,6 +241,8 @@ const bidFilters = [
   {cls: ['hearts'], chr: '♥'},
   {cls: [], chr: 'NT'}]
 
+let autoplay = null
+
 socket.on('updatePlayers', players => {
   let toclick = null
   for (let i = 0; i < 4; i++) {
@@ -281,7 +283,10 @@ socket.on('updatePlayers', players => {
             a.appendChild(document.createElement('span')).textContent = j.chr
             a.classList.add('joker')
             a.classList.add(j.cls)
-            a.onclick = () => { socket.emit('playRequest', { index: i, jsuit: j.suit }) }
+            a.onclick = () => {
+              clearTimeout(autoplay)
+              socket.emit('playRequest', { index: i, jsuit: j.suit })
+            }
           }
           if (!player.restrictJokers.length) {
             elem.appendChild(document.createElement('span')).textContent = '🃟'
@@ -296,7 +301,12 @@ socket.on('updatePlayers', players => {
             a.appendChild(document.createElement('span')).textContent = c.chr[2]
           }
           if (c.cls) { a.classList.add(c.cls) }
-          if (playable) { a.onclick = () => { socket.emit('playRequest', { index: i }) } }
+          if (playable) {
+            a.onclick = () => {
+              clearTimeout(autoplay)
+              socket.emit('playRequest', { index: i })
+            }
+          }
         }
       }
       if (playableBase &&
@@ -369,7 +379,7 @@ socket.on('updatePlayers', players => {
     }
     div.appendChild(fragment)
   }
-  if (toclick) setTimeout(toclick.onclick, 1000)
+  if (toclick) autoplay = setTimeout(toclick.onclick, 1000)
   errorMsg.innerHTML = ''
 })
 
