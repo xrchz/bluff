@@ -7,7 +7,6 @@ body {
   font-size: large;
   background-color: MidnightBlue;
   color: Lavender;
-  margin-left: 2vw;
   width: 96vw;
 }
 input {
@@ -66,7 +65,7 @@ ul.inline > li {
 }
 #playArea {
   margin: auto;
-  width: 96vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
@@ -121,10 +120,27 @@ ul.inline > li {
 }
 #resultsArea {
   display: flex;
-  justify-content: space-around;
   align-items: flex-start;
   width: 100%;
   margin: auto;
+}
+#resultsArea > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+}
+#resultsArea::after {
+  content: '';
+  margin-right: auto;
+}
+#resultsArea::before {
+  content: '';
+  margin-left: auto;
+}
+#resultsArea > div {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
 }
 #resultsArea[hidden] {
   display: none;
@@ -136,6 +152,7 @@ ul.inline > li {
   justify-content: space-around;
   align-items: center;
   padding: 0;
+  width: max-content;
 }
 #resultsArea > div > ul.reversed {
   flex-direction: column-reverse;
