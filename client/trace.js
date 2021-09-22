@@ -342,10 +342,11 @@ socket.on('showScores', scores => {
   for (const result of scores) {
     const div = fragment.appendChild(document.createElement('div'))
     div.appendChild(document.createElement('h3')).textContent = result.name
-    div.appendChild(document.createElement('div')).textContent = `Total: ${result.score}`
+    const totalDiv = div.appendChild(document.createElement('div'))
     const controls = div.appendChild(document.createElement('div'))
     const ul = div.appendChild(document.createElement('ul'))
     let time = 0
+    let penalties = 0
     for (const data of result.words) {
       const li = ul.appendChild(document.createElement('li'))
       li.keys = {
@@ -384,6 +385,7 @@ socket.on('showScores', scores => {
       }
       if (data.invalidWord) wordUl.appendChild(document.createElement('li')).textContent = 'invalid'
       if (data.notWord) wordUl.appendChild(document.createElement('li')).textContent = 'nonword'
+      if (data.invalidWord || data.notWord) penalties++
       if (data.path) {
         wordA.classList.add('showPath')
         wordA.onclick = function () {
@@ -419,6 +421,7 @@ socket.on('showScores', scores => {
         }
       }
     }
+    totalDiv.textContent = `Total: ${result.score} (${penalties}:${result.words.length})`
     controls.classList.add('sort')
     const byTime = controls.appendChild(document.createElement('a'))
     const byMisses = controls.appendChild(document.createElement('a'))
