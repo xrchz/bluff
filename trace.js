@@ -253,6 +253,15 @@ function updateSettings(game, room) {
   io.in(room).emit('updatePenalty', { id: 'invalidWordPenalty', n: game.invalidWordPenalty })
 }
 
+function clearOtherApprovals(players, id) {
+  players.forEach(other => {
+    if (other.socketId !== id) {
+      other.approve = false
+      io.in(other.socketId).emit('clearApproval')
+    }
+  })
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -362,6 +371,7 @@ io.on('connection', socket => {
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName, godWords: game.words.size })
         updateSettings(game, socket.id)
+        socket.emit('clearApproval')
         socket.emit('updateSpectators', game.spectators)
         io.in(gameName).emit('updatePlayers', game.players)
       }
@@ -388,6 +398,7 @@ io.on('connection', socket => {
       if (game.players.find(player => player.socketId === socket.id) && Number.isInteger(n) && 0 < n) {
         game.timeLimit = n
         io.in(gameName).emit('updateTimeSetting', formatSeconds(game.timeLimit))
+        clearOtherApprovals(game.players, socket.id)
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} failed setting time limit to ${n}`)
@@ -407,6 +418,7 @@ io.on('connection', socket => {
           typeof(data.id) === 'string' && data.id.endsWith('Penalty') && game[data.id] !== undefined) {
         game[data.id] = data.n
         io.in(gameName).emit('updatePenalty', data)
+        clearOtherApprovals(game.players, socket.id)
       }
       else {
         console.log(`error: ${socket.playerName} in ${gameName} failed setting ${data.id} to ${data.n}`)
@@ -419,16 +431,38 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('setApprove', approve => inGame((gameName, game) => {
+    if (!game.started) {
+      const player = game.players.find(player => player.socketId === socket.id)
+      if (player) {
+        player.approve = approve
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} failed to (dis)approve`)
+        socket.emit('errorMsg', 'Error: cannot set approval: invalid player.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried (dis)approving settings when game already started`)
+      socket.emit('errorMsg', 'Error: cannot change approval after the game has started.')
+    }
+  }))
+
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
       if (game.players.length) {
-        console.log(`starting ${gameName}`)
-        game.started = true
-        game.players.forEach(player => player.words = [])
-        io.in(gameName).emit('gameStarted', game.grid)
-        io.in(`${gameName}spectators`).emit('setupLists', game.players.map(player => player.name))
-        game.secondsLeft = game.timeLimit
-        startTimer(gameName)
+        if (game.players.every(player => player.approve)) {
+          console.log(`starting ${gameName}`)
+          game.started = true
+          game.players.forEach(player => player.words = [])
+          io.in(gameName).emit('gameStarted', game.grid)
+          io.in(`${gameName}spectators`).emit('setupLists', game.players.map(player => player.name))
+          game.secondsLeft = game.timeLimit
+          startTimer(gameName)
+        }
+        else {
+          socket.emit('errorMsg', `Cannot start when players disapprove: ${game.players.flatMap(player => player.approve ? [] : [player.name]).join(', ')}.`)
+        }
       }
       else {
         socket.emit('errorMsg', 'Error: not enough players to start.')

@@ -23,6 +23,7 @@ const playSubmit = document.getElementById('playSubmit')
 const resultsArea = document.getElementById('resultsArea')
 const settingsDiv = document.getElementById('settings')
 const timeSetting = document.getElementById('timeSetting')
+const approveSetting = document.getElementById('approveSetting')
 const notWordPenalty = document.getElementById('notWordPenalty')
 const invalidWordPenalty = document.getElementById('invalidWordPenalty')
 const godWords = document.getElementById('godWords')
@@ -114,6 +115,15 @@ timeSetting.onchange = function () {
     socket.emit('setTimeSetting', mins * 60 + parseInt(found.groups.s))
   }
 }
+
+approveSetting.onchange = () => {
+  socket.emit('setApprove', approveSetting.checked)
+  errorMsg.innerHTML = ''
+}
+
+socket.on('clearApproval', () => {
+  approveSetting.checked = false
+})
 
 const penaltySettingOnchange = function (input) {
   return function () {
