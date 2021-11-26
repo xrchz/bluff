@@ -5,7 +5,7 @@
   "repository": "github:xrchz/bluff",
   "description": "Networked multiplayer card game bluff, aka cheat, aka bullshit",
   "dependencies": {
-    "express": "^4.17.1",
-    "socket.io": "^2.4.1"
+    "express": ">=4.17.1",
+    "socket.io": ">=4.3.1"
   }
 }
