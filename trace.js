@@ -327,8 +327,7 @@ io.on('connection', socket => {
     }
     else if (game.started) {
       if (game.players.find(player => player.name === socket.playerName && !player.socketId)) {
-        const rooms = Object.keys(socket.rooms)
-        if (rooms.length === 2 && rooms.includes(socket.id) && rooms.includes('lobby')) {
+        if (socket.rooms.size === 2 && socket.rooms.has(socket.id) && socket.rooms.has('lobby')) {
           console.log(`${socket.playerName} rejoining ${gameName}`)
           socket.gameName = gameName
           socket.leave('lobby'); socket.emit('updateGames', [])
@@ -353,7 +352,7 @@ io.on('connection', socket => {
             socket.emit('showScores', game.scores)
         }
         else {
-          console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${rooms}`)
+          console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${socket.rooms}`)
           socket.emit('errorMsg', 'Error: somehow this connection is already used in another game.')
         }
       }
