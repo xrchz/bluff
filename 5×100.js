@@ -1,6 +1,7 @@
 'use strict'
 
 const fs = require('fs')
+const cjson = require('compress-json')
 const express = require('express')
 const app = express()
 const gname = '5×100'
@@ -23,7 +24,7 @@ if (unix)
 
 const saveFile = `${gname}.json`
 
-const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
+const games = cjson.decompress(JSON.parse(fs.readFileSync(saveFile, 'utf8')))
 
 const randomLetter = () => String.fromCharCode(65 + Math.random() * 26)
 
@@ -40,12 +41,14 @@ function randomUnusedGameName() {
 function saveGames() {
   let toSave = {}
   for (const [gameName, game] of Object.entries(games))
-    if (game.started) toSave[gameName] = game
+    if (game.started) {
+      toSave[gameName] = {...game}
+      toSave[gameName].spectators = []
+      toSave[gameName].players = JSON.parse(JSON.stringify(
+        toSave[gameName].players, (k, v) => k === 'socketId' ? null : v))
+    }
   fs.writeFileSync(saveFile,
-    JSON.stringify(
-      toSave,
-      (k, v) => k === 'socketId' ? null :
-                k === 'spectators' ? [] : v))
+    JSON.stringify(cjson.compress(toSave)))
 }
 
 function updateGames(room) {
