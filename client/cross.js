@@ -48,7 +48,9 @@ socket.on('updatePlayers', players => {
   playersList.innerHTML = ''
   for (player of players) {
     const li = document.createElement('li')
-    li.textContent = player.name
+    const span = document.createElement('span')
+    span.textContent = player.name
+    li.appendChild(span)
     if (typeof player.score === 'number') {
       const span = document.createElement('span')
       span.textContent = player.score.toString()
@@ -56,9 +58,9 @@ socket.on('updatePlayers', players => {
       li.appendChild(span)
     }
     if (!player.socketId)
-      li.classList.add('disconnected')
+      span.classList.add('disconnected')
     if (player.current)
-      li.classList.add('current')
+      span.classList.add('current')
     playersList.appendChild(li)
     console.log(`For ${player.name} got rack ${player.rack}`)
     if (player.rack) {

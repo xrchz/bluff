@@ -37,6 +37,13 @@ input[type=button], input[type=submit] {
 .disconnected {
   color: Violet;
 }
+span.score {
+  margin-left: 0.5em;
+  border: solid darkgreen;
+  font-weight: bold;
+  padding: 0.2em;
+  color: navy;
+}
 .current::after {
   content: "*"
 }
