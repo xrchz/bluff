@@ -178,6 +178,21 @@ const scoreWord = (word) => {
   return score
 }
 
+const startWord = {w: ' ', i: midIndex, j: midIndex, d: true}
+const sharesTile = ({w: wa, i: ia, j: ja, d: da},
+                    {w: wb, i: ib, j: jb, d: db}) => {
+  if (da === db)
+    return (wa === wb && ia === ib && ja === jb)
+  const na = wa.length
+  const nb = wb.length
+  if (da)
+    return (ia <= ib && ib < ia + na &&
+            jb <= ja && ja < jb + nb)
+  else
+    return (ib <= ia && ia < ib + nb &&
+            ja <= jb && jb < ja + na)
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -319,17 +334,20 @@ io.on('connection', socket => {
     if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = 0 <= playerIndex ? game.players[playerIndex] : {}
+      const validLetter = (l) => (
+        typeof l === 'string' &&
+        0 < l.length && l.length <= 2 &&
+        alphabet.includes(l.at(-1)))
+      const validPosition = (a) => (
+        Array.isArray(a) && a.length === 2 &&
+        a.every((i) => (typeof i === 'number' &&
+                        0 <= i && i < boardSize)) &&
+        (!('l' in game.board[a[0]][a[1]])))
       if (player.current) {
         if (Array.isArray(moves) &&
-            moves.every((x) => Array.isArray(x) && x.length === 2 &&
-                               (x[1] === null || (
-                                Array.isArray(x[1]) && x[1].length === 2 &&
-                                x[1].every(i => typeof i === 'number' &&
-                                                0 <= i && i < boardSize) &&
-                                (!('l' in game.board[x[1][0]][x[1][1]])))) &&
-                               typeof x[0] === 'string' &&
-                               0 < x[0].length && x[0].length <= 2 &&
-                               alphabet.includes(x[0].at(-1)))) {
+            moves.every((x) => (Array.isArray(x) && x.length === 2 &&
+                                validLetter(x[0]) &&
+                                (x[1] === null || validPosition(x[1]))))) {
           const isExchange = moves.every(([,t]) => t === null)
           const usedPositions = []
           const newRack = Array.from(player.rack)
@@ -356,13 +374,13 @@ io.on('connection', socket => {
               const newRow = []
               newBoard.push(newRow)
               for (const tile of row) {
-                const newTile = {}
-                Object.assign(newTile, tile)
-                newRow.push(tile)
+                newRow.push(Object.assign({}, tile))
               }
             }
+            let firstWord = true
             for (const row of newBoard) {
               for (const tile of row) {
+                if (firstWord && tile.last) firstWord = false
                 delete tile.last
               }
             }
@@ -376,12 +394,14 @@ io.on('connection', socket => {
                 tile.last = true
               }
               words = []
-              const process = (wordTiles, i, j) => {
+              const processWord = (wordTiles, i, j, d) => {
+                if (wordTiles.length <= 1) return
                 if (wordTiles.some((t) => t.last)) {
                   const word = wordTiles.map((t) => t.l)
                   if (inSowpods(word)) {
-                    words.push({w: word, i: i, j: j,
-                      s: scoreWord(wordTiles)]})
+                    words.push({w: word, i, j, d,
+                                c: wordTiles.some((t) => !t.last),
+                                s: scoreWord(wordTiles)})
                   }
                   else {
                     invalid = word
@@ -390,8 +410,7 @@ io.on('connection', socket => {
               }
               for (let i = 0; i < boardSize; i++) {
                 for (let j = 0; j < boardSize; j++) {
-                  const start = newBoard[i][j]
-                  if (!('l' in start)) continue
+                  if (!('l' in newBoard[i][j])) continue
                   if (i === 0 || (!('l' in newBoard[i-1][j]))) {
                     const wordTiles = []
                     let wi = i
@@ -399,7 +418,7 @@ io.on('connection', socket => {
                       wordTiles.push(newBoard[wi][j])
                       wi++
                     }
-                    process(wordTiles, i, j)
+                    processWord(wordTiles, i, j, true)
                     if (invalid) break
                   }
                   if (j === 0 || (!('l' in newBoard[i][j-1]))) {
@@ -409,13 +428,32 @@ io.on('connection', socket => {
                       wordTiles.push(newBoard[i][wj])
                       wj++
                     }
-                    process(wordTiles, i, j)
+                    processWord(wordTiles, i, j, false)
                     if (invalid) break
                   }
                 }
+                if (invalid) break
               }
-              if (!invalid)
-                player.score += words.reduce((a,{s}) => a + s, 0)
+              if (!invalid) {
+                const mainWords = []
+                for (const candidate of words) {
+                  let b = true
+                  for (const word of words) {
+                    if (!sharesTile(word, candidate)) {
+                      b = false
+                      break
+                    }
+                  }
+                  if (b) mainWords.push(candidate)
+                }
+                if (mainWords.some((w) => w.c) ||
+                    (firstWord && mainWords.some((w) => sharesTile(w, startWord)))) {
+                  player.score += words.reduce((a,{s}) => a + s, 0)
+                }
+                else {
+                  invalid = ['no connected main word']
+                }
+              }
             }
             if (!invalid) {
               game.board = newBoard
@@ -448,10 +486,6 @@ io.on('connection', socket => {
         else {
           console.log(`error: ${socket.playerName} in ${gameName} made a malformed move`)
           socket.emit('errorMsg', 'Error: invalid move type.')
-        }
-        else {
-          console.log(`error: ${socket.playerName} in ${gameName} made an invalid move`)
-          socket.emit('errorMsg', 'Error: invalid move.')
         }
       }
       else {
