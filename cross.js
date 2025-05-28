@@ -201,6 +201,10 @@ io.on('connection', socket => {
   socket.emit('ensureLobby')
   socket.join('lobby'); updateGames(socket.id)
 
+  socket.on('pointsPerLetter', () => {
+    socket.emit('pointsPerLetter', pointsPerLetter)
+  })
+
   socket.on('joinRequest', data => {
     let game
     let gameName = data.gameName
@@ -236,6 +240,7 @@ io.on('connection', socket => {
         socket.emit('updatePlayers', game.players)
         if (game.started) {
           socket.emit('gameStarted')
+          socket.emit('showLastPlay', game.last)
           socket.emit('updateBoard', game.board)
           socket.emit('updateBag', game.bag)
         }
@@ -259,6 +264,7 @@ io.on('connection', socket => {
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
           io.in(gameName).emit('updatePlayers', game.players)
+          socket.emit('showLastPlay', game.last)
           socket.emit('updateBoard', game.board)
           socket.emit('updateBag', game.bag)
         }
@@ -353,6 +359,7 @@ io.on('connection', socket => {
           const isExchange = moves.every(([,t]) => t === null)
           const usedPositions = []
           const newRack = Array.from(player.rack)
+          const played = []
           let onRackFitsBoard = true
           for (const [l, t] of moves) {
             const i = newRack.indexOf(l[0])
@@ -368,7 +375,7 @@ io.on('connection', socket => {
               }
               usedPositions[s] = true
             }
-            newRack.splice(i, 1)
+            played.push(...newRack.splice(i, 1))
           }
           if (onRackFitsBoard) {
             const newBoard = []
@@ -386,9 +393,14 @@ io.on('connection', socket => {
                 delete tile.last
               }
             }
-            let words = moves.length ? 'exchange' : 'pass'
+            let words = moves.length ? `exchanged ${moves.length} letters` : 'passed'
             let invalid = false
-            if (!isExchange) {
+            if (isExchange) {
+              game.bag.push(...played)
+              if (played.length)
+                shuffleInPlace(game.bag)
+            }
+            else {
               for (const [l, [i,j]] of moves) {
                 const tile = newBoard[i][j]
                 tile.l = l.at(-1)
@@ -448,8 +460,9 @@ io.on('connection', socket => {
                   }
                   if (b) mainWords.push(candidate)
                 }
-                if (mainWords.some((w) => w.c) ||
-                    (firstWord && mainWords.some((w) => sharesTile(w, startWord)))) {
+                if (mainWords.length &&
+                    (words.some((w) => w.c) ||
+                     (firstWord && mainWords.some((w) => sharesTile(w, startWord))))) {
                   player.score += words.reduce((a,{s}) => a + s, 0)
                 }
                 else {
@@ -471,7 +484,8 @@ io.on('connection', socket => {
                 if (nextIndex === game.players.length) nextIndex = 0
                 game.players[nextIndex].current = true
               }
-              io.in(gameName).emit('showLastMove', {name: player.name, words})
+              game.last = {name: player.name, words}
+              io.in(gameName).emit('showLastPlay', game.last)
               io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateBoard', game.board)
               io.in(gameName).emit('updateBag', game.bag)

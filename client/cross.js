@@ -12,6 +12,8 @@ const spectatorsList = document.getElementById('spectators')
 const playersList = document.getElementById('players')
 const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
+const lastPlayDiv = document.getElementById('lastPlay')
+const bagDiv = document.getElementById('bag')
 const playArea = document.getElementById('playArea')
 const boardDiv = document.getElementById('board')
 const rackList = document.getElementById('rack')
@@ -29,6 +31,9 @@ socket.on('ensureLobby', () => {
   playersList.innerHTML = ''
   playArea.hidden = true
   boardDiv.innerHTML = ''
+  rackList.innerHTML = ''
+  bagDiv.innerHTML = ''
+  lastPlayDiv.innerHTML = ''
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -140,9 +145,30 @@ socket.on('updateBoard', board => {
         tileDiv.appendChild(span)
       }
       if (tile.blank) tileDiv.classList.add('blank')
+      if (tile.last) tileDiv.classList.add('last')
     }
   }
   boardDiv.appendChild(fragment)
+})
+
+socket.on('showLastPlay', (data) => {
+  lastPlayDiv.innerHTML = ''
+  const {name, words} = data || {}
+  if (typeof words === 'string')
+    lastPlayDiv.textContent = `${name} ${words}`
+  else if (Array.isArray(words)) {
+    const span = document.createElement('span')
+    const ul = document.createElement('ul')
+    let total = 0
+    for (const {w, s} of words) {
+      const li = document.createElement('li')
+      total += s
+      li.textContent = `${w.join('')} for ${s} point${s === 1 ? '' : 's'}`
+      ul.appendChild(li)
+    }
+    span.textContent = `${name} scored ${total}, playing:`
+    lastPlayDiv.append(span, ul)
+  }
 })
 
 socket.on('errorMsg', msg => {
