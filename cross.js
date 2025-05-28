@@ -1,21 +1,27 @@
 'use strict'
 
-const express = require('express')
-const http = require('http')
 const fs = require('fs')
-var app = express()
-var server = http.createServer(app)
-var io = require('socket.io')(server)
+const express = require('express')
+const app = express()
+const gname = 'cross'
 
 app.get('/', (req, res) => {
-  res.sendFile(`${__dirname}/client/cross.html`)
+  res.sendFile(`${__dirname}/client/${gname}.html`)
 })
 app.use(express.static(`${__dirname}/client`))
 
-const unix = '/run/games/cross.socket'
-server.listen(unix)
+const config = require(`${__dirname}/client/config.js`)
+const server = require('http').createServer(app)
+const io = require('socket.io')(server)
+
+const port = config.ServerPort(gname)
+const unix = typeof port === 'string'
+server.listen(port)
 console.log(`server started on ${unix}`)
-server.on('listening', () => fs.chmodSync(unix, 0o777))
+if (unix)
+  server.on('listening', () => fs.chmodSync(port, 0o777))
+
+const saveFile = `${gname}.json`
 
 const games = JSON.parse(fs.readFileSync(saveFile, 'utf8'))
 
@@ -30,7 +36,7 @@ function saveGames() {
                 k === 'spectators' ? [] : v))
 }
 
-process.on('SIGINT', () => { saveGames(); fs.unlinkSync(unix); process.exit() })
+process.on('SIGINT', () => { saveGames(); fs.unlinkSync(port); process.exit() })
 process.on('uncaughtExceptionMonitor', saveGames)
 
 function shuffleInPlace(array) {
