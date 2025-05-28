@@ -124,6 +124,14 @@ function makeBoard() {
 }
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+const sowpods = JSON.parse(fs.readFileSync('sowpods.json', 'utf8'))
+
+const inSowpods = (w) => {
+  if (w.length <= 1) return false
+  if (w.length > boardSize) return false
+  const capitalised = `${w[0].toUpperCase()}${w.slice(1)}`
+  return 0 <= sowpods[w.length].indexOf(capitalised)
+}
 
 const pointsPerLetter = {}
 for (const l of " ") pointsPerLetter[l] = 0
@@ -343,66 +351,94 @@ io.on('connection', socket => {
             newRack.splice(i, 1)
           }
           if (onRackFitsBoard) {
-            player.rack = newRack
+            const newBoard = []
             for (const row of game.board) {
+              const newRow = []
+              newBoard.push(newRow)
+              for (const tile of row) {
+                const newTile = {}
+                Object.assign(newTile, tile)
+                newRow.push(tile)
+              }
+            }
+            for (const row of newBoard) {
               for (const tile of row) {
                 delete tile.last
               }
             }
             let words = moves.length ? 'exchange' : 'pass'
+            let invalid = false
             if (!isExchange) {
               for (const [l, [i,j]] of moves) {
-                const tile = game.board[i][j]
+                const tile = newBoard[i][j]
                 tile.l = l.at(-1)
                 tile.blank = 1 < l.length
                 tile.last = true
               }
               words = []
-              for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
-                  const start = game.board[i][j]
-                  if (!('l' in start)) continue
-                  if (i === 0 || (!('l' in game.board[i-1][j]))) {
-                    const word = []
-                    let wi = i
-                    while (wi < boardSize && 'l' in game.board[wi][j]) {
-                      word.push(game.board[wi][j])
-                      wi++
-                    }
-                    if (word.some((t) => t.last))
-                      words.push({w: word.map((t) => t.l), i: i, j: j,
-                                  s: scoreWord(word)]})
+              const process = (wordTiles, i, j) => {
+                if (wordTiles.some((t) => t.last)) {
+                  const word = wordTiles.map((t) => t.l)
+                  if (inSowpods(word)) {
+                    words.push({w: word, i: i, j: j,
+                      s: scoreWord(wordTiles)]})
                   }
-                  if (j === 0 || (!('l' in game.board[i][j-1]))) {
-                    const word = []
-                    let wj = j
-                    while (wj < boardSize && 'l' in game.board[i][wj]) {
-                      word.push(game.board[i][wj])
-                      wj++
-                    }
-                    if (word.some((t) => t.last))
-                      words.push({w: word.map((t) => t.l), i: i, j: j,
-                                  s: scoreWord(word)]})
+                  else {
+                    invalid = word
                   }
                 }
               }
-              player.score += words.reduce((a,{s}) => a + s, 0)
+              for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                  const start = newBoard[i][j]
+                  if (!('l' in start)) continue
+                  if (i === 0 || (!('l' in newBoard[i-1][j]))) {
+                    const wordTiles = []
+                    let wi = i
+                    while (wi < boardSize && 'l' in newBoard[wi][j]) {
+                      wordTiles.push(newBoard[wi][j])
+                      wi++
+                    }
+                    process(wordTiles, i, j)
+                    if (invalid) break
+                  }
+                  if (j === 0 || (!('l' in newBoard[i][j-1]))) {
+                    const wordTiles = []
+                    let wj = j
+                    while (wj < boardSize && 'l' in newBoard[i][wj]) {
+                      wordTiles.push(newBoard[i][wj])
+                      wj++
+                    }
+                    process(wordTiles, i, j)
+                    if (invalid) break
+                  }
+                }
+              }
+              if (!invalid)
+                player.score += words.reduce((a,{s}) => a + s, 0)
             }
-            fillRack(player.rack, game.bag)
-            if (!player.rack.length && !game.bag.length) {
-              game.ended = true
-              // TODO: ...
+            if (!invalid) {
+              game.board = newBoard
+              player.rack = newRack
+              fillRack(player.rack, game.bag)
+              if (!player.rack.length && !game.bag.length) {
+                game.ended = true
+                // TODO: ...
+              }
+              else {
+                delete player.current
+                let nextIndex = playerIndex + 1
+                if (nextIndex === game.players.length) nextIndex = 0
+                game.players[nextIndex].current = true
+              }
+              io.in(gameName).emit('showLastMove', {name: player.name, words})
+              io.in(gameName).emit('updatePlayers', game.players)
+              io.in(gameName).emit('updateBoard', game.board)
+              io.in(gameName).emit('updateBag', game.bag)
             }
             else {
-              delete player.current
-              let nextIndex = playerIndex + 1
-              if (nextIndex === game.players.length) nextIndex = 0
-              game.players[nextIndex].current = true
+              socket.emit('errorMsg', `${invalid} is not a valid word`)
             }
-            io.in(gameName).emit('showLastMove', {name: player.name, words})
-            io.in(gameName).emit('updatePlayers', game.players)
-            io.in(gameName).emit('updateBoard', game.board)
-            io.in(gameName).emit('updateBag', game.bag)
           }
           else {
             console.log(`error: ${socket.playerName} in ${gameName} made a move that does not fit`)
