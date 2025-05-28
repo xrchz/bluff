@@ -8,7 +8,8 @@ const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const joinButton = document.getElementById('join')
 const spectateInput = document.getElementById('spectate')
-const spectatorsDiv = document.getElementById('spectators')
+const spectatorsList = document.getElementById('spectators')
+const playersList = document.getElementById('players')
 const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
 const playArea = document.getElementById('playArea')
@@ -23,9 +24,52 @@ socket.on('ensureLobby', () => {
   spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false
   startButton.hidden = true
-  spectatorsDiv.innerHTML = ''
+  spectatorsList.innerHTML = ''
+  playersList.innerHTML = ''
   playArea.hidden = true
   boardDiv.innerHTML = ''
+  history.replaceState('lobby', 'Lobby')
+})
+
+socket.on('updateSpectators', spectators => {
+  spectatorsList.innerHTML = ''
+  if (spectators.length) {
+    spectators.unshift({ name: 'Spectators:' })
+  }
+  for (spectator of spectators) {
+    const elem = document.createElement('li')
+    elem.textContent = spectator.name
+    spectatorsList.appendChild(elem)
+  }
+})
+
+socket.on('updatePlayers', players => {
+  playersList.innerHTML = ''
+  for (player of players) {
+    const li = document.createElement('li')
+    li.textContent = player.name
+    if (!player.socketId)
+      li.classList.add('disconnected')
+    playersList.appendChild(li)
+  }
+  errorMsg.innerHTML = ''
+})
+
+socket.on('joinedGame', data => {
+  gameInput.value = data.gameName
+  nameInput.value = data.playerName
+  spectateInput.checked = data.spectating
+  gameInput.disabled = true
+  nameInput.disabled = true
+  spectateInput.disabled = true
+  joinButton.hidden = true
+  if (!spectateInput.checked) {
+    spectateInput.previousElementSibling.hidden = true
+    spectateInput.hidden = true
+  }
+  errorMsg.innerHTML = ''
+  if (history.state === 'lobby')
+    history.pushState(data, `Game ${data.gameName}`)
 })
 
 joinButton.parentElement.onsubmit = () => {

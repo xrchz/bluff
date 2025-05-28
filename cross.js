@@ -193,6 +193,7 @@ io.on('connection', socket => {
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
         io.in(gameName).emit('updateSpectators', game.spectators)
+        socket.emit('updatePlayers', game.players)
         if (game.started) {
           socket.emit('gameStarted')
           socket.emit('updateBoard', game.board)
@@ -217,7 +218,7 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          socket.emit('updatePlayers', game.players)
+          io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('updateBoard', game.board)
           socket.emit('updateBag', game.bag)
         }
@@ -239,6 +240,7 @@ io.on('connection', socket => {
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+        socket.emit('updatePlayers', game.players)
         socket.emit('updateSpectators', game.spectators)
         io.in(gameName).emit('showStart', canStart(game))
       }

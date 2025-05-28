@@ -1,3 +1,78 @@
+body {
+  font-family: sans-serif;
+  font-size: large;
+  background-color: aliceblue;
+  color: firebrick;
+  margin-left: 2vw;
+  width: 96vw;
+}
+input {
+  font-size: large;
+}
+input[type=text] {
+  background-color: DarkSlateBlue;
+  color: PapayaWhip;
+  width: 8em;
+}
+input[type=text]:disabled {
+  background-color: #382d7b;
+}
+input[type=button], input[type=submit] {
+  background-color: Indigo;
+  color: Moccasin;
+}
+#game {
+  width: 2em;
+  text-transform: uppercase;
+}
+.name {
+  color: #b7abfe;
+}
+#spectators {
+  color: SlateGray
+}
+li.disconnected::after {
+  content: " (d/c)"
+}
+.disconnected {
+  color: Violet;
+}
+.current {
+  background-color: NavajoWhite;
+  color: #004;
+}
+.current.disconnected {
+  background-color: NavajoWhite;
+  color: DarkViolet;
+}
+#games {
+  list-style-type: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#games[hidden] {
+  display: none;
+}
+#games > li > ul {
+  display: inline;
+}
+a:hover {
+  cursor: pointer;
+}
+form.inline {
+  display:inline;
+}
+ul.inline {
+  list-style-type: none;
+  padding: 0;
+}
+ul.inline > li {
+  display: inline;
+  padding-left: 1em;
+}
+#playArea[hidden] {
+  display: none;
+}
 #board {
   display: grid;
   margin: auto;
