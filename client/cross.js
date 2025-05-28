@@ -28,6 +28,17 @@ socket.on('ensureLobby', () => {
   boardDiv.innerHTML = ''
 })
 
+joinButton.parentElement.onsubmit = () => {
+  socket.emit('joinRequest', {
+    gameName:  gameInput.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2),
+    playerName: nameInput.value.replace(/\W/g, ''),
+    spectate: spectateInput.checked
+  })
+  return false
+}
+
+startButton.onclick = () => socket.emit('startGame')
+
 socket.on('gameStarted', () => {
   startButton.hidden = true
   joinButton.hidden = true
