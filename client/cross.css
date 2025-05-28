@@ -1,0 +1,25 @@
+#board {
+  display: grid;
+  margin: auto;
+  width: min-content;
+  grid-template-columns: repeat(15, 1fr);
+  border: solid;
+}
+
+#board div.tile {
+  width: 2em;
+  height: 2em;
+}
+
+#board div.tile.dl {
+  background-color: lightblue;
+}
+#board div.tile.tl {
+  background-color: darkblue;
+}
+#board div.tile.dw {
+  background-color: pink;
+}
+#board div.tile.tw {
+  background-color: red;
+}
