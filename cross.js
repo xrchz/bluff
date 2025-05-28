@@ -142,6 +142,86 @@ io.on('connection', socket => {
   socket.emit('ensureLobby')
   socket.join('lobby'); updateGames(socket.id)
 
+  socket.on('joinRequest', data => {
+    let game
+    let gameName = data.gameName
+    if (!gameName) gameName = randomUnusedGameName()
+    if (!(gameName in games)) {
+      console.log(`new game ${gameName}`)
+      game = {
+        players: [],
+        spectators: []
+      }
+      games[gameName] = game
+    }
+    else
+      game = games[gameName]
+    if (!data.playerName) {
+      socket.playerName = `Smith${Math.floor(Math.random()*20)}`
+      console.log(`random name ${socket.playerName} for ${socket.id}`)
+    }
+    else {
+      socket.playerName = data.playerName
+      console.log(`name ${socket.playerName} supplied for ${socket.id}`)
+    }
+    if (data.spectate) {
+      if (game.spectators.every(spectator => spectator.name !== socket.playerName)) {
+        console.log(`${socket.playerName} joining ${gameName} as spectator`)
+        socket.gameName = gameName
+        socket.leave('lobby'); socket.emit('updateGames', [])
+        socket.join(gameName)
+        game.spectators.push({ socketId: socket.id, name: socket.playerName })
+        socket.emit('joinedGame',
+          { gameName: gameName, playerName: socket.playerName, spectating: true })
+        io.in(gameName).emit('updateSpectators', game.spectators)
+        if (game.started) socket.emit('gameStarted')
+      }
+      else {
+        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate spectator`)
+        socket.emit('errorMsg', `Game ${gameName} already contains spectator ${socket.playerName}.`)
+      }
+    }
+    else if (game.started) {
+      if (game.players.find(player => player.name === socket.playerName && !player.socketId)) {
+        if (socket.rooms.size === 2 && socket.rooms.has(socket.id) && socket.rooms.has('lobby')) {
+          console.log(`${socket.playerName} rejoining ${gameName}`)
+          socket.gameName = gameName
+          socket.leave('lobby'); socket.emit('updateGames', [])
+          socket.join(gameName)
+          const player = game.players.find(player => player.name === socket.playerName)
+          player.socketId = socket.id
+          socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+          socket.emit('updateSpectators', game.spectators)
+          socket.emit('gameStarted')
+        }
+        else {
+          console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${socket.rooms}`)
+          socket.emit('errorMsg', 'Error: somehow this connection is already used in another game.')
+        }
+      }
+      else {
+        console.log(`${socket.playerName} barred from joining ${gameName} as extra player`)
+        socket.emit('errorMsg', `Game ${gameName} has already started. Try spectating.`)
+      }
+    }
+    else {
+      if (game.players.every(player => player.name !== socket.playerName)) {
+        console.log(`${socket.playerName} joining ${gameName}`)
+        socket.leave('lobby'); socket.emit('updateGames', [])
+        socket.join(gameName)
+        socket.gameName = gameName
+        game.players.push({ socketId: socket.id, name: socket.playerName })
+        socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
+        socket.emit('updateSpectators', game.spectators)
+      }
+      else {
+        console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
+        socket.emit('errorMsg', `Game ${gameName} already contains player ${socket.playerName}.`)
+      }
+    }
+    updateGames()
+  })
+
   function inGame(func) {
     const gameName = socket.gameName
     const game = games[gameName]

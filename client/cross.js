@@ -3,10 +3,36 @@ var socket = io(ServerURI('cross'), SocketOptions('cross'))
 
 const fragment = document.createDocumentFragment()
 
+const errorMsg = document.getElementById('errorMsg')
+const gameInput = document.getElementById('game')
+const nameInput = document.getElementById('name')
+const joinButton = document.getElementById('join')
+const spectateInput = document.getElementById('spectate')
+const spectatorsDiv = document.getElementById('spectators')
+const gamesList = document.getElementById('games')
+const startButton = document.getElementById('start')
+const playArea = document.getElementById('playArea')
 const boardDiv = document.getElementById('board')
 
 socket.on('ensureLobby', () => {
+  errorMsg.innerHTML = ''
+  gameInput.disabled = false
+  nameInput.disabled = false
+  joinButton.hidden = false
+  spectateInput.hidden = false
+  spectateInput.previousElementSibling.hidden = false
+  spectateInput.disabled = false
+  startButton.hidden = true
+  spectatorsDiv.innerHTML = ''
+  playArea.hidden = true
   boardDiv.innerHTML = ''
+})
+
+socket.on('gameStarted', () => {
+  startButton.hidden = true
+  joinButton.hidden = true
+  playArea.hidden = false
+  errorMsg.innerHTML = ''
 })
 
 socket.on('updateBoard', board => {
@@ -24,4 +50,8 @@ socket.on('updateBoard', board => {
     }
   }
   boardDiv.appendChild(fragment)
+})
+
+socket.on('errorMsg', msg => {
+  errorMsg.innerHTML = msg
 })

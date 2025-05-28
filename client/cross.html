@@ -8,6 +8,17 @@
     <script src="config.js"></script>
   </head>
   <body>
-    <div id=board></div>
+    <p id=errorMsg></p>
+    <form class=inline>
+      <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
+      <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
+      <input id=join type=submit value="Join" />
+      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
+    </form>
+    <ul id=games hidden></ul>
+    <input id=start type=button value="Start!" hidden />
+    <div id=playArea hidden>
+      <div id=board></div>
+    </div>
   </body>
 </html>
