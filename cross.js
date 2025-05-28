@@ -123,6 +123,8 @@ function makeBoard() {
   return b
 }
 
+const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+
 const pointsPerLetter = {}
 for (const l of " ") pointsPerLetter[l] = 0
 for (const l of "lsunrtoaie") pointsPerLetter[l] = 1
@@ -154,6 +156,19 @@ function fillRack(rack, bag) {
 
 const canStart = (game) =>
   game.players.length > 1 && game.players.length < 5
+
+const scoreWord = (word) => {
+  let score = 0
+  for (const t of word) {
+    const m = t.tl ? 3 : t.dl ? 2 : 1
+    score += m * pointsPerLetter[t.l]
+  }
+  for (const t of word) {
+    if (t.dw) score *= 2
+    if (t.tw) score *= 3
+  }
+  return score
+}
 
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
@@ -272,6 +287,7 @@ io.on('connection', socket => {
         game.bag = makeBag()
         for (const player of game.players) {
           player.rack = []
+          player.score = 0
           fillRack(player.rack, game.bag)
         }
         const current = game.players[Math.floor(Math.random() * game.players.length)]
@@ -288,6 +304,128 @@ io.on('connection', socket => {
     else {
       console.log(`${socket.playerName} attempted to start ${gameName} again`)
       socket.emit('errorMsg', `Error: ${gameName} has already started.`)
+    }
+  }))
+
+  socket.on('play', moves => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      const player = 0 <= playerIndex ? game.players[playerIndex] : {}
+      if (player.current) {
+        if (Array.isArray(moves) &&
+            moves.every((x) => Array.isArray(x) && x.length === 2 &&
+                               (x[1] === null || (
+                                Array.isArray(x[1]) && x[1].length === 2 &&
+                                x[1].every(i => typeof i === 'number' &&
+                                                0 <= i && i < boardSize) &&
+                                (!('l' in game.board[x[1][0]][x[1][1]])))) &&
+                               typeof x[0] === 'string' &&
+                               0 < x[0].length && x[0].length <= 2 &&
+                               alphabet.includes(x[0].at(-1)))) {
+          const isExchange = moves.every(([,t]) => t === null)
+          const usedPositions = []
+          const newRack = Array.from(player.rack)
+          let onRackFitsBoard = true
+          for (const [l, t] of moves) {
+            const i = newRack.indexOf(l[0])
+            if (i < 0) {
+              onRackFitsBoard = false
+              break
+            }
+            if (!isExchange) {
+              const s = `${t}`
+              if (usedPositions[s]) {
+                onRackFitsBoard = false
+                break
+              }
+              usedPositions[s] = true
+            }
+            newRack.splice(i, 1)
+          }
+          if (onRackFitsBoard) {
+            player.rack = newRack
+            for (const row of game.board) {
+              for (const tile of row) {
+                delete tile.last
+              }
+            }
+            let words = moves.length ? 'exchange' : 'pass'
+            if (!isExchange) {
+              for (const [l, [i,j]] of moves) {
+                const tile = game.board[i][j]
+                tile.l = l.at(-1)
+                tile.blank = 1 < l.length
+                tile.last = true
+              }
+              words = []
+              for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                  const start = game.board[i][j]
+                  if (!('l' in start)) continue
+                  if (i === 0 || (!('l' in game.board[i-1][j]))) {
+                    const word = []
+                    let wi = i
+                    while (wi < boardSize && 'l' in game.board[wi][j]) {
+                      word.push(game.board[wi][j])
+                      wi++
+                    }
+                    if (word.some((t) => t.last))
+                      words.push({w: word.map((t) => t.l), i: i, j: j,
+                                  s: scoreWord(word)]})
+                  }
+                  if (j === 0 || (!('l' in game.board[i][j-1]))) {
+                    const word = []
+                    let wj = j
+                    while (wj < boardSize && 'l' in game.board[i][wj]) {
+                      word.push(game.board[i][wj])
+                      wj++
+                    }
+                    if (word.some((t) => t.last))
+                      words.push({w: word.map((t) => t.l), i: i, j: j,
+                                  s: scoreWord(word)]})
+                  }
+                }
+              }
+              player.score += words.reduce((a,{s}) => a + s, 0)
+            }
+            fillRack(player.rack, game.bag)
+            if (!player.rack.length && !game.bag.length) {
+              game.ended = true
+              // TODO: ...
+            }
+            else {
+              delete player.current
+              let nextIndex = playerIndex + 1
+              if (nextIndex === game.players.length) nextIndex = 0
+              game.players[nextIndex].current = true
+            }
+            io.in(gameName).emit('showLastMove', {name: player.name, words})
+            io.in(gameName).emit('updatePlayers', game.players)
+            io.in(gameName).emit('updateBoard', game.board)
+            io.in(gameName).emit('updateBag', game.bag)
+          }
+          else {
+            console.log(`error: ${socket.playerName} in ${gameName} made a move that does not fit`)
+            socket.emit('errorMsg', 'Error: invalid move letters or targets.')
+          }
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} made a malformed move`)
+          socket.emit('errorMsg', 'Error: invalid move type.')
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} made an invalid move`)
+          socket.emit('errorMsg', 'Error: invalid move.')
+        }
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
+        socket.emit('errorMsg', 'Error: it is not your turn.')
+      }
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried playing out of phase`)
+      socket.emit('errorMsg', `Error: playing is not currently possible.`)
     }
   }))
 
