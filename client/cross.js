@@ -14,6 +14,7 @@ const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
 const playArea = document.getElementById('playArea')
 const boardDiv = document.getElementById('board')
+const rackList = document.getElementById('rack')
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -48,9 +49,33 @@ socket.on('updatePlayers', players => {
   for (player of players) {
     const li = document.createElement('li')
     li.textContent = player.name
+    if (typeof player.score === 'number') {
+      const span = document.createElement('span')
+      span.textContent = player.score.toString()
+      span.classList.add('score')
+      li.appendChild(span)
+    }
     if (!player.socketId)
       li.classList.add('disconnected')
+    if (player.current)
+      li.classList.add('current')
     playersList.appendChild(li)
+    console.log(`For ${player.name} got rack ${player.rack}`)
+    if (player.rack) {
+      console.log(`${player.name} Rack is true`)
+      const thisPlayer = (player.name === nameInput.value)
+      console.log(`${player.name} thisPlayer is ${thisPlayer}`)
+      if (thisPlayer || spectateInput.checked) {
+        rackList.innerHTML = ''
+        for (const l of player.rack) {
+          const li = document.createElement('li')
+          const span = document.createElement('span')
+          span.textContent = l
+          li.appendChild(span)
+          rackList.appendChild(li)
+        }
+      }
+    }
   }
   errorMsg.innerHTML = ''
 })

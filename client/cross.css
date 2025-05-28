@@ -31,11 +31,14 @@ input[type=button], input[type=submit] {
 #spectators {
   color: SlateGray
 }
-li.disconnected::after {
+.disconnected::after {
   content: " (d/c)"
 }
 .disconnected {
   color: Violet;
+}
+.current::after {
+  content: "*"
 }
 .current {
   background-color: NavajoWhite;
@@ -84,6 +87,7 @@ ul.inline > li {
 #board div.tile {
   width: 3em;
   height: 3em;
+  border: thin solid black;
 }
 
 #board div.tile.dl {
@@ -97,4 +101,27 @@ ul.inline > li {
 }
 #board div.tile.tw {
   background-color: red;
+}
+#rack {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 1em;
+  column-gap: 1em;
+}
+#rack > li {
+  width: 3em;
+  height: 3em;
+  line-height: 3em;
+  border: solid;
+  display: flex;
+  justify-content: center;
+}
+#rack > li > span {
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 2.8em;
 }
