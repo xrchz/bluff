@@ -167,13 +167,15 @@ const canStart = (game) =>
 
 const scoreWord = (word) => {
   let score = 0
-  for (const t of word) {
-    const m = t.tl ? 3 : t.dl ? 2 : 1
-    score += m * pointsPerLetter[t.l]
+  for (const {last, tl, dl, l} of word) {
+    const m = last ? (tl ? 3 : dl ? 2 : 1) : 1
+    score += m * pointsPerLetter[l]
   }
-  for (const t of word) {
-    if (t.dw) score *= 2
-    if (t.tw) score *= 3
+  for (const {last, dw, tw} of word) {
+    if (last) {
+      if (dw) score *= 2
+      if (tw) score *= 3
+    }
   }
   return score
 }
