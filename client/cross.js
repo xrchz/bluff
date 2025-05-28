@@ -134,6 +134,12 @@ socket.on('updateBoard', board => {
       if (tile.tl) tileDiv.classList.add('tl')
       if (tile.dw) tileDiv.classList.add('dw')
       if (tile.tw) tileDiv.classList.add('tw')
+      if (tile.l) {
+        const span = document.createElement('span')
+        span.textContent = tile.l
+        tileDiv.appendChild(span)
+      }
+      if (tile.blank) tileDiv.classList.add('blank')
     }
   }
   boardDiv.appendChild(fragment)
