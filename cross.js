@@ -129,7 +129,7 @@ const sowpods = JSON.parse(fs.readFileSync('sowpods.json', 'utf8'))
 const inSowpods = (w) => {
   if (w.length <= 1) return false
   if (w.length > boardSize) return false
-  const capitalised = `${w[0].toUpperCase()}${w.slice(1)}`
+  const capitalised = `${w[0].toUpperCase()}${w.slice(1).join('')}`
   return 0 <= sowpods[w.length].indexOf(capitalised)
 }
 
