@@ -39,6 +39,11 @@ joinButton.parentElement.onsubmit = () => {
 
 startButton.onclick = () => socket.emit('startGame')
 
+socket.on('showStart', show => {
+  if (!spectateInput.checked)
+    startButton.hidden = !show
+})
+
 socket.on('gameStarted', () => {
   startButton.hidden = true
   joinButton.hidden = true

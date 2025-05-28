@@ -70,10 +70,13 @@ function updateGames(room) {
   io.in(room).emit('updateGames', data)
 }
 
+const rackSize = 7
 const boardSize = 15
-const midIndex = (boardSize - 1) / 2
-const onEdgeIndex = (i) => (i === 0 || (i+1) === boardSize)
-const onInnerIndex = (i) => (i === 1 || (i+2) === boardSize)
+const midIndex = (boardSize-1) / 2
+const onDiagonal = (i,j) => (i === j || i === boardSize-j-1)
+const hasDistFromEdge = (i,n) => (i === n || i+n+1 === boardSize)
+const onEdgeIndex = (i) => hasDistFromEdge(i,0)
+const onInnerIndex = (i) => hasDistFromEdge(i,1)
 const onEdge = (i,j) => (onEdgeIndex(i) || onEdgeIndex(j))
 const onInner = (i,j) => (onInnerIndex(i) || onInnerIndex(j))
 
@@ -85,28 +88,36 @@ function makeBoard() {
     for (let j = 0; j < boardSize; j++) {
       const tile = {}
       row[j] = tile
-      if (i === j) {
-        if (onEdgeIndex(i))
+      const imid = Math.abs(i - midIndex)
+      const jmid = Math.abs(j - midIndex)
+      if (onDiagonal(i,j)) {
+        if (onEdge(i,j))
           tile.tw = true
-        else if (i === midIndex - 2)
+        else if (imid === 2 || jmid === 2)
           tile.tl = true
-        else if (i === midIndex - 1)
+        else if (imid === 1 || jmid === 1)
           tile.dl = true
         else
           tile.dw = true
       }
-      else if (onEdge((i,j))) {
+      else if (onEdge(i,j)) {
         if (i === midIndex || j === midIndex)
           tile.tw = true
         else if (i === 3 || j === 3 ||
                  i+4 === boardSize || j+4 === boardSize)
           tile.dl = true
       }
-      else if (onInner((i,j))) {
-        if (i+2 === midIndex || j+2 === midIndex ||
-            i-2 === midIndex || j-2 === midIndex)
+      else if (onInner(i,j)) {
+        if (imid === 2 || jmid === 2)
           tile.tl = true
       }
+      else if (
+        (hasDistFromEdge(i,2) && jmid === 1) ||
+        (hasDistFromEdge(i,3) && jmid === 0) ||
+        (hasDistFromEdge(j,2) && imid === 1) ||
+        (hasDistFromEdge(j,3) && imid === 0)
+      )
+        tile.dl = true
     }
   }
   return b
@@ -135,6 +146,14 @@ function makeBag() {
   shuffleInPlace(b)
   return b
 }
+
+function fillRack(rack, bag) {
+  if (rack.length < rackSize && bag.length)
+    rack.push(...bag.splice(0, rackSize - rack.length))
+}
+
+const canStart = (game) =>
+  game.players.length > 1 && game.players.length < 5
 
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
@@ -174,7 +193,12 @@ io.on('connection', socket => {
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
         io.in(gameName).emit('updateSpectators', game.spectators)
-        if (game.started) socket.emit('gameStarted')
+        if (game.started) {
+          socket.emit('gameStarted')
+          socket.emit('updateBoard', game.board)
+          socket.emit('updateBag', game.bag)
+        }
+        else io.in(gameName).emit('showStart', canStart(game))
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate spectator`)
@@ -193,6 +217,9 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
+          socket.emit('updatePlayers', game.players)
+          socket.emit('updateBoard', game.board)
+          socket.emit('updateBag', game.bag)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${socket.rooms}`)
@@ -213,6 +240,7 @@ io.on('connection', socket => {
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
         socket.emit('updateSpectators', game.spectators)
+        io.in(gameName).emit('showStart', canStart(game))
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate player`)
@@ -234,7 +262,7 @@ io.on('connection', socket => {
 
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
-      if (game.players.length > 1 && game.players.length < 5) {
+      if (canStart(game)) {
         console.log(`starting ${gameName}`)
         game.started = true
         game.undoLog = []
@@ -242,11 +270,10 @@ io.on('connection', socket => {
         game.bag = makeBag()
         for (const player of game.players) {
           player.rack = []
-          fillRack(player, game)
+          fillRack(player.rack, game.bag)
         }
         const current = game.players[Math.floor(Math.random() * game.players.length)]
         current.current = true
-        game.picking = true
         io.in(gameName).emit('gameStarted')
         io.in(gameName).emit('updatePlayers', game.players)
         io.in(gameName).emit('updateBoard', game.board)
