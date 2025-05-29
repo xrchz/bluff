@@ -141,7 +141,7 @@ for (const l of "bcmp") pointsPerLetter[l] = 3
 for (const l of "fhvwy") pointsPerLetter[l] = 4
 for (const l of "k") pointsPerLetter[l] = 5
 for (const l of "jx") pointsPerLetter[l] = 8
-for (const l of "z") pointsPerLetter[l] = 10
+for (const l of "qz") pointsPerLetter[l] = 10
 
 function makeBag() {
   const b = []
