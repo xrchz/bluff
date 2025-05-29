@@ -381,14 +381,17 @@ io.on('connection', socket => {
         socket.emit('joinedGame',
           { gameName: gameName, playerName: socket.playerName, spectating: true })
         io.in(gameName).emit('updateSpectators', game.spectators)
-        socket.emit('updatePlayers', game.players)
         if (game.started) {
           socket.emit('gameStarted')
-          socket.emit('showLastPlay', game.last)
-          socket.emit('updateBoard', game.board)
           socket.emit('updateBag', game.bag.length)
+          socket.emit('updateBoard', game.board)
+          socket.emit('updatePlayers', {players: game.players, updateRacks: true})
+          socket.emit('showLastPlay', game.last)
         }
-        else io.in(gameName).emit('showStart', canStart(game))
+        else {
+          socket.emit('updatePlayers', {players: game.players, updateRacks: true})
+          io.in(gameName).emit('showStart', canStart(game))
+        }
       }
       else {
         console.log(`${socket.playerName} barred from joining ${gameName} as duplicate spectator`)
@@ -407,10 +410,10 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          io.in(gameName).emit('updatePlayers', game.players)
-          socket.emit('showLastPlay', game.last)
-          socket.emit('updateBoard', game.board)
           socket.emit('updateBag', game.bag.length)
+          socket.emit('updateBoard', game.board)
+          io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: socket.playerName})
+          socket.emit('showLastPlay', game.last)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${socket.rooms}`)
@@ -430,7 +433,7 @@ io.on('connection', socket => {
         socket.gameName = gameName
         game.players.push({ socketId: socket.id, name: socket.playerName })
         socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
-        socket.emit('updatePlayers', game.players)
+        io.in(gameName).emit('updatePlayers', {players: game.players})
         socket.emit('updateSpectators', game.spectators)
         io.in(gameName).emit('showStart', canStart(game))
       }
@@ -468,9 +471,9 @@ io.on('connection', socket => {
         const current = game.players[Math.floor(Math.random() * game.players.length)]
         current.current = true
         io.in(gameName).emit('gameStarted')
-        io.in(gameName).emit('updatePlayers', game.players)
-        io.in(gameName).emit('updateBoard', game.board)
         io.in(gameName).emit('updateBag', game.bag.length)
+        io.in(gameName).emit('updateBoard', game.board)
+        io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
       }
       else {
         socket.emit('errorMsg', 'Error: not enough or too many players to start.')
@@ -549,10 +552,10 @@ io.on('connection', socket => {
                 game.players[nextIndex].current = true
               }
               game.last = {name: player.name, words}
-              io.in(gameName).emit('updatePlayers', game.players)
-              io.in(gameName).emit('showLastPlay', game.last)
-              io.in(gameName).emit('updateBoard', game.board)
               io.in(gameName).emit('updateBag', game.bag.length)
+              io.in(gameName).emit('updateBoard', game.board)
+              io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
+              io.in(gameName).emit('showLastPlay', game.last)
             }
             else {
               socket.emit('errorMsg', `${invalid} is not a valid word`)
@@ -589,7 +592,7 @@ io.on('connection', socket => {
         game.players = game.players.filter(notThisPlayer)
         game.spectators = game.spectators.filter(notThisPlayer)
         io.in(gameName).emit('updateSpectators', game.spectators)
-        io.in(gameName).emit('updatePlayers', game.players)
+        io.in(gameName).emit('updatePlayers', {players: game.players})
         if (game.players.length === 0 && game.spectators.length === 0) {
           console.log(`removing empty game ${gameName}`)
           delete games[gameName]
@@ -605,7 +608,7 @@ io.on('connection', socket => {
           const player = game.players.find(player => player.socketId === socket.id)
           if (player) {
             player.socketId = null
-            io.in(gameName).emit('updatePlayers', game.players)
+            io.in(gameName).emit('updatePlayers', {players: game.players})
           }
           if (game.timeout && game.players.every(player => !player.socketId)) {
             console.log(`pausing ${gameName} since all players are disconnected`)

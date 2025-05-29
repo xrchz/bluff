@@ -281,7 +281,7 @@ shuffleButton.addEventListener('click', (e) => {
   rackList.replaceChildren(...shuffled)
 }, {passive: true})
 
-socket.on('updatePlayers', players => {
+socket.on('updatePlayers', ({players, updateRacks}) => {
   playersList.innerHTML = ''
   for (player of players) {
     const li = document.createElement('li')
@@ -302,7 +302,7 @@ socket.on('updatePlayers', players => {
     if (thisPlayer)
       isCurrent = player.current
     playersList.appendChild(li)
-    if (player.rack) {
+    if ((updateRacks === true || updateRacks === nameInput.value) && player.rack) {
       if (thisPlayer || spectateInput.checked) {
         rackList.innerHTML = ''
         for (const l of player.rack) {
