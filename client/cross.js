@@ -273,6 +273,8 @@ function shuffleInPlace(array) {
 
 shuffleButton.addEventListener('click', (e) => {
   document.querySelectorAll('.placed').forEach(removeFromBoard)
+  document.querySelectorAll('.selected').forEach(
+    (t) => t.classList.remove('selected'))
   previewDiv.innerHTML = ''
   resetPlayButton()
   const shuffled = Array.from(rackList.children)
