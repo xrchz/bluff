@@ -254,11 +254,13 @@ const doMoves = (moves, oldBoard) => {
   }
   let invalid = false
   let score = 0
+  const unassigned = {}
   for (const [l, [i,j]] of moves) {
     const tile = newBoard[i][j]
     tile.l = l.at(-1)
     tile.blank = 1 < l.length
     tile.last = true
+    unassigned[`${i},${j}`] = true
   }
   const words = []
   const processWord = (wordTiles, i, j, d) => {
@@ -300,6 +302,18 @@ const doMoves = (moves, oldBoard) => {
       }
     }
     if (invalid) break
+  }
+  if (!invalid) {
+    for (const {w, i, j, d} of words) {
+      let wi = i
+      let wj = j
+      for (const l of w) {
+        delete unassigned[`${wi},${wj}`]
+        if (d) { wi++ } else { wj++ }
+      }
+    }
+    if (Object.keys(unassigned).length)
+      invalid = ['single letter word']
   }
   if (!invalid) {
     const mainWords = []
