@@ -388,7 +388,7 @@ socket.on('updateBoard', board => {
 
 socket.on('updateBag', baglen => {
   bagList.innerHTML = ''
-  bagLabel.innerHTML = `${baglen} tile${bag.length === 1 ? '' : 's'} left`
+  bagLabel.innerHTML = `${baglen} tile${baglen === 1 ? '' : 's'} left`
 })
 
 const createPlayList = (words) => {
