@@ -80,6 +80,12 @@ ul.inline > li {
   display: inline;
   padding-left: 1em;
 }
+
+.selected {
+  outline: thick solid yellow;
+  z-index: 1;
+}
+
 #board {
   display: grid;
   margin: auto;
@@ -88,7 +94,7 @@ ul.inline > li {
   border: solid;
 }
 
-#board div.tile {
+#board div.cell {
   width: 3em;
   height: 3em;
   line-height: 3em;
@@ -97,16 +103,16 @@ ul.inline > li {
   border: thin solid black;
 }
 
-#board div.tile.dl {
+#board div.cell.dl {
   background-color: lightblue;
 }
-#board div.tile.tl {
+#board div.cell.tl {
   background-color: darkblue;
 }
-#board div.tile.dw {
+#board div.cell.dw {
   background-color: pink;
 }
-#board div.tile.tw {
+#board div.cell.tw {
   background-color: red;
 }
 #rack {
@@ -126,7 +132,7 @@ ul.inline > li {
   display: flex;
   justify-content: center;
 }
-#rack > li > span, #board > div.tile > span {
+#rack > li > span, #board > div.cell > span {
   font-weight: bold;
   text-transform: uppercase;
   text-align: center;

@@ -92,6 +92,66 @@ socket.on('updateSpectators', spectators => {
   }
 })
 
+const createRackLi = () => {
+  const li = document.createElement('li')
+  li.addEventListener('click', onClickTile, {passive: true})
+  return li
+}
+
+const onClickTile = (e) => {
+  const tile = e.currentTarget
+  if (tile.classList.contains('selected')) {
+    tile.classList.remove('selected')
+    return
+  }
+  const selected = document.querySelector('.selected')
+  const removeSelected = () => {
+    selected.classList.remove('selected')
+    if (selected.classList.contains('cell'))
+      selected.classList.remove('placed')
+    else selected.remove()
+  }
+  if (selected) {
+    if (tile.classList.contains('cell')) {
+      if (tile.firstElementChild) {
+        // tile is a board cell with a tile
+        if (tile.classList.contains('placed')) {
+          // cell's tile is newly-placed:
+          // remove tile from board and replace on rack (or a nearby empty cell?)
+          const li = createRackLi()
+          li.appendChild(tile.firstElementChild)
+          rackList.appendChild(li)
+          // then move selected to tile's former cell
+          tile.appendChild(selected.firstElementChild)
+          removeSelected()
+        }
+      }
+      else {
+        // tile is an empty board cell: put selected here
+        const span = selected.firstElementChild
+        // TODO: handle blank letter selection and class add
+        tile.appendChild(span)
+        tile.classList.add('placed')
+        removeSelected()
+      }
+    }
+    else {
+      // tile is a rack tile:
+      // move selected and insert it on tile's left/right
+      const rackItems = Array.from(rackList.children)
+      const ti = rackItems.indexOf(tile)
+      const si = rackItems.indexOf(selected)
+      const pos = ti < si ? 'beforebegin' : 'afterend'
+      const li = createRackLi()
+      li.appendChild(selected.firstElementChild)
+      tile.insertAdjacentElement(pos, li)
+      removeSelected()
+    }
+  } else {
+    tile.classList.add('selected')
+  }
+}
+
 socket.on('updatePlayers', players => {
   playersList.innerHTML = ''
   for (player of players) {
@@ -110,15 +170,12 @@ socket.on('updatePlayers', players => {
     if (player.current)
       span.classList.add('current')
     playersList.appendChild(li)
-    console.log(`For ${player.name} got rack ${player.rack}`)
     if (player.rack) {
-      console.log(`${player.name} Rack is true`)
       const thisPlayer = (player.name === nameInput.value)
-      console.log(`${player.name} thisPlayer is ${thisPlayer}`)
       if (thisPlayer || spectateInput.checked) {
         rackList.innerHTML = ''
         for (const l of player.rack) {
-          const li = document.createElement('li')
+          const li = createRackLi()
           const span = document.createElement('span')
           span.textContent = l
           li.appendChild(span)
@@ -177,19 +234,21 @@ socket.on('updateBoard', board => {
     const row = board[i]
     for (let j = 0; j < row.length; j++) {
       const tile = row[j]
-      const tileDiv = fragment.appendChild(document.createElement('div'))
-      tileDiv.classList.add('tile')
-      if (tile.dl) tileDiv.classList.add('dl')
-      if (tile.tl) tileDiv.classList.add('tl')
-      if (tile.dw) tileDiv.classList.add('dw')
-      if (tile.tw) tileDiv.classList.add('tw')
+      const cellDiv = fragment.appendChild(document.createElement('div'))
+      cellDiv.id = `c-${i}-${j}`
+      cellDiv.classList.add('cell')
+      cellDiv.addEventListener('click', onClickTile, {passive: true})
+      if (tile.dl) cellDiv.classList.add('dl')
+      if (tile.tl) cellDiv.classList.add('tl')
+      if (tile.dw) cellDiv.classList.add('dw')
+      if (tile.tw) cellDiv.classList.add('tw')
       if (tile.l) {
         const span = document.createElement('span')
         span.textContent = tile.l
-        tileDiv.appendChild(span)
+        if (tile.blank) span.classList.add('blank')
+        if (tile.last) span.classList.add('last')
+        cellDiv.appendChild(span)
       }
-      if (tile.blank) tileDiv.classList.add('blank')
-      if (tile.last) tileDiv.classList.add('last')
     }
   }
   boardDiv.appendChild(fragment)
