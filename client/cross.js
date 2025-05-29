@@ -341,6 +341,10 @@ socket.on('preview', (data) => {
   else playButton.disabled = true
 })
 
+playButton.addEventListener('click', (e) =>
+  socket.emit('play', constructMoves()),
+{passive: true})
+
 socket.on('showLastPlay', (data) => {
   lastPlayDiv.innerHTML = ''
   const {name, words} = data || {}
@@ -352,6 +356,8 @@ socket.on('showLastPlay', (data) => {
     span.textContent = `${name} scored ${total}, playing:`
     lastPlayDiv.append(span, ul)
   }
+  previewDiv.innerHTML = ''
+  playButton.disabled = true
 })
 
 socket.on('errorMsg', msg => {
