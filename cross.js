@@ -523,7 +523,9 @@ io.on('connection', socket => {
           const {onRackFitsBoard, played} =
             checkOnRackFitsBoard(moves, isExchange, newRack)
           if (onRackFitsBoard) {
-            let words = moves.length ? `exchanged ${moves.length} letters` : 'passed'
+            let words = moves.length ?
+              `swapped ${moves.length} tile${moves.length === 1 ? '' : 's'}` :
+              'passed'
             let invalid = false
             let newBoard = game.board
             let score = 0
