@@ -133,11 +133,10 @@ span.letter, span.points {
   content: '';
   display: block;
   position: absolute;
-  height: 100%;
-  width: 100%;
-  top: 0;
-  left: 0;
-  background-color: rgb(255 255 255 / 80%);
+  height: 90%;
+  width: 90%;
+  margin: 5%;
+  background-color: NavajoWhite;
   z-index: 1;
 }
 
