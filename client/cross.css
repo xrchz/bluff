@@ -73,8 +73,10 @@ span.score {
 a:hover {
   cursor: pointer;
 }
-form.inline {
-  display:inline;
+#spectators, #players, #games, form {
+  margin: auto;
+  width: fit-content;
+  margin-top: 2em;
 }
 ul.inline {
   list-style-type: none;
@@ -88,6 +90,15 @@ ul.inline > li {
 .selected {
   outline: thick solid yellow;
   z-index: 1;
+}
+
+#info {
+  display: flex;
+  flex-direction: row;
+  width: 60em;
+  margin: auto;
+  margin-top: 2em;
+  justify-content: space-between;
 }
 
 #board {
@@ -122,6 +133,9 @@ ul.inline > li {
 
 #board div.cell.placed, #rack > li {
   color: Crimson;
+}
+#board div.cell.placed:hover, #rack > li:hover {
+  cursor: pointer;
 }
 
 #player {

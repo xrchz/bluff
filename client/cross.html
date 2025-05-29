@@ -8,22 +8,14 @@
     <script src="config.js"></script>
   </head>
   <body>
-    <p id=errorMsg></p>
-    <form class=inline>
+    <form>
       <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
       <input id=name type=text autocomplete=on pattern="\w+" placeholder="Name" />
       <input id=join type=submit value="Join" />
       <label for=spectate>Spectate</label><input id=spectate type=checkbox />
     </form>
+    <ul id=spectators class=inline></ul>
     <ul id=games hidden></ul>
-    <div>
-      <ul id=players class=inline></ul>
-      <input id=start type=button value="Start!" hidden />
-      <ul id=spectators class=inline></ul>
-      <div id=bag hidden><span></span><ul class=inline></ul></div>
-      <div id=lastPlay></div>
-      <div id=preview></div>
-    </div>
     <div id=playArea hidden>
       <div id=board></div>
       <div id=player>
@@ -35,6 +27,14 @@
         </div>
       </div>
       <div id=blank hidden></div>
+    </div>
+    <p id=errorMsg></p>
+    <ul id=players class=inline></ul>
+    <input id=start type=button value="Start!" hidden />
+    <div id=info>
+      <div id=bag hidden><span></span><ul class=inline></ul></div>
+      <div id=lastPlay></div>
+      <div id=preview></div>
     </div>
     <script src="cross.js"></script>
   </body>
