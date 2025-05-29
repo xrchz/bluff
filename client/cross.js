@@ -258,7 +258,9 @@ let isCurrent = false
 const swapAllowed = () => (isCurrent && swapInput.checked)
 const resetPlayButton = () => {
   playButton.disabled = !swapAllowed()
-  playButton.value = swapInput.checked ? 'Pass' : 'Play'
+  playButton.value = swapInput.checked ?
+    (document.querySelector('.selected') ? 'Swap' : 'Pass')
+    : 'Play'
 }
 
 function shuffleInPlace(array) {
