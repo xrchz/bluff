@@ -22,9 +22,6 @@ const shuffleButton = document.getElementById('shuffle')
 const rackList = document.getElementById('rack')
 const playButton = document.getElementById('play')
 
-const retrieveLabel = '⇊'
-const shuffleLabel = '🔀'
-
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
   gameInput.disabled = false
@@ -43,7 +40,6 @@ socket.on('ensureLobby', () => {
   bagList.innerHTML = ''
   bagLabel.innerHTML = ''
   lastPlayDiv.innerHTML = ''
-  shuffleButton.value = shuffleLabel
   playButton.disabled = true
   history.replaceState('lobby', 'Lobby')
 })
@@ -98,6 +94,20 @@ const createRackLi = () => {
   return li
 }
 
+const removeSelected = (selected) => {
+  selected.classList.remove('selected')
+  if (selected.classList.contains('cell'))
+    selected.classList.remove('placed')
+  else selected.remove()
+}
+
+const removeFromBoard = (tile) => {
+  const li = createRackLi()
+  li.appendChild(tile.firstElementChild)
+  tile.classList.remove('placed')
+  rackList.appendChild(li)
+}
+
 const onClickTile = (e) => {
   const tile = e.currentTarget
   if (tile.classList.contains('selected')) {
@@ -105,12 +115,6 @@ const onClickTile = (e) => {
     return
   }
   const selected = document.querySelector('.selected')
-  const removeSelected = () => {
-    selected.classList.remove('selected')
-    if (selected.classList.contains('cell'))
-      selected.classList.remove('placed')
-    else selected.remove()
-  }
   if (selected) {
     if (tile.classList.contains('cell')) {
       if (tile.firstElementChild) {
@@ -118,12 +122,11 @@ const onClickTile = (e) => {
         if (tile.classList.contains('placed')) {
           // cell's tile is newly-placed:
           // remove tile from board and replace on rack (or a nearby empty cell?)
-          const li = createRackLi()
-          li.appendChild(tile.firstElementChild)
-          rackList.appendChild(li)
+          removeFromBoard(tile)
           // then move selected to tile's former cell
           tile.appendChild(selected.firstElementChild)
-          removeSelected()
+          tile.classList.add('placed')
+          removeSelected(selected)
         }
       }
       else {
@@ -132,7 +135,7 @@ const onClickTile = (e) => {
         // TODO: handle blank letter selection and class add
         tile.appendChild(span)
         tile.classList.add('placed')
-        removeSelected()
+        removeSelected(selected)
       }
     }
     else {
@@ -145,12 +148,44 @@ const onClickTile = (e) => {
       const li = createRackLi()
       li.appendChild(selected.firstElementChild)
       tile.insertAdjacentElement(pos, li)
-      removeSelected()
+      removeSelected(selected)
     }
   } else {
     tile.classList.add('selected')
   }
 }
+
+const pointsPerLetter = {}
+socket.emit('pointsPerLetter')
+socket.on('pointsPerLetter', (x) =>
+  Object.assign(pointsPerLetter, x)
+)
+
+const fillLetterSpan = (span, l) => {
+  span.classList.add('letter')
+  const ls = document.createElement('span')
+  ls.textContent = l
+  const ps = document.createElement('span')
+  ps.classList.add('points')
+  ps.textContent = pointsPerLetter[l]
+  span.append(ls, ps)
+}
+
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * i)
+    const t = array[i]
+    array[i] = array[j]
+    array[j] = t
+  }
+}
+
+shuffleButton.addEventListener('click', (e) => {
+  document.querySelectorAll('.placed').forEach(removeFromBoard)
+  const shuffled = Array.from(rackList.children)
+  shuffleInPlace(shuffled)
+  rackList.replaceChildren(...shuffled)
+}, {passive: true})
 
 socket.on('updatePlayers', players => {
   playersList.innerHTML = ''
@@ -177,7 +212,7 @@ socket.on('updatePlayers', players => {
         for (const l of player.rack) {
           const li = createRackLi()
           const span = document.createElement('span')
-          span.textContent = l
+          fillLetterSpan(span, l)
           li.appendChild(span)
           rackList.appendChild(li)
         }
@@ -244,7 +279,7 @@ socket.on('updateBoard', board => {
       if (tile.tw) cellDiv.classList.add('tw')
       if (tile.l) {
         const span = document.createElement('span')
-        span.textContent = tile.l
+        fillLetterSpan(span, tile.l)
         if (tile.blank) span.classList.add('blank')
         if (tile.last) span.classList.add('last')
         cellDiv.appendChild(span)

@@ -1,8 +1,8 @@
 body {
   font-family: sans-serif;
   font-size: large;
-  background-color: aliceblue;
-  color: firebrick;
+  background-color: AliceBlue;
+  color: FireBrick;
   margin-left: 2vw;
   width: 96vw;
 }
@@ -16,6 +16,10 @@ input[type=text] {
 }
 input[type=text]:disabled {
   background-color: #382d7b;
+}
+input[type=button]:disabled {
+  background-color: SlateGray;
+  color: DarkGray;
 }
 input[type=button], input[type=submit] {
   background-color: Indigo;
@@ -95,9 +99,9 @@ ul.inline > li {
 }
 
 #board div.cell {
-  width: 3em;
-  height: 3em;
-  line-height: 3em;
+  width: 4em;
+  height: 4em;
+  line-height: 4em;
   display: flex;
   justify-content: center;
   border: thin solid black;
@@ -115,6 +119,16 @@ ul.inline > li {
 #board div.cell.tw {
   background-color: red;
 }
+#player {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 60em;
+  margin: auto;
+}
+#player > input[type=button] {
+  padding: 2em;
+}
 #rack {
   list-style-type: none;
   padding: 0;
@@ -125,16 +139,22 @@ ul.inline > li {
   column-gap: 1em;
 }
 #rack > li {
-  width: 3em;
-  height: 3em;
-  line-height: 3em;
+  width: 4em;
+  height: 4em;
+  line-height: 4em;
   border: solid;
   display: flex;
   justify-content: center;
 }
-#rack > li > span, #board > div.cell > span {
+span.letter {
   font-weight: bold;
   text-transform: uppercase;
   text-align: center;
   font-size: 2.8em;
+}
+span.points {
+  font-size: xx-small;
+  position: absolute;
+  margin-top: 1.8em;
+  letter-spacing: -0.3em;
 }
