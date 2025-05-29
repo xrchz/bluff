@@ -25,23 +25,38 @@ const playButton = document.getElementById('play')
 const swapInput = document.getElementById('swap')
 const blankDiv = document.getElementById('blank')
 
-const alphabet = 'abcdefghijklmnopqrstuvwxyz '
+{
+  const onBlankClick = (e) => {
+    document.querySelector('.selected .letter').textContent =
+      e.currentTarget.value
+    blankDiv.hidden = true
+    shuffleButton.disabled = false
+    resetPlayButton()
+  }
 
-const onBlankClick = (e) => {
-  document.querySelector('.selected .letter').textContent =
-    e.currentTarget.value
-  blankDiv.hidden = true
-}
-
-const blankButtons = []
-for (const c of alphabet) {
+  const blankButtons = []
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz '
+  for (const c of alphabet) {
+    const input = document.createElement('input')
+    input.type = 'button'
+    input.value = c
+    input.addEventListener('click', onBlankClick, {passive: true})
+    blankButtons.push(input)
+  }
   const input = document.createElement('input')
   input.type = 'button'
-  input.value = c
-  input.addEventListener('click', onBlankClick, {passive: true})
+  input.value = '⮌'
+  input.addEventListener('click', (e) => {
+    blankDiv.hidden = true
+    document.querySelector('.selected').classList.remove('selected')
+    shuffleButton.disabled = false
+    resetPlayButton()
+    if (!swapInput.checked && isCurrent)
+      socket.emit('preview', constructMoves())
+  })
   blankButtons.push(input)
+  blankDiv.append(...blankButtons)
 }
-blankDiv.append(...blankButtons)
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -157,6 +172,8 @@ const onClickTile = (e) => {
   if (tile.classList.contains('selected')) {
     if (!swapInput.checked &&
         tile.querySelector('.letter').classList.contains('blank')) {
+      playButton.disabled = true
+      shuffleButton.disabled = true
       blankDiv.hidden = false
       return
     }
@@ -216,7 +233,7 @@ const onClickTile = (e) => {
   else if (!onBoard || tile.classList.contains('placed')) {
     tile.classList.add('selected')
   }
-  if (moved) socket.emit('preview', constructMoves())
+  if (moved && isCurrent) socket.emit('preview', constructMoves())
 }
 
 const pointsPerLetter = {}
