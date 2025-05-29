@@ -72,6 +72,7 @@ function updateGames(room) {
 
 const rackSize = 7
 const boardSize = 15
+const bonusPoints = 50
 const midIndex = (boardSize-1) / 2
 const onDiagonal = (i,j) => (i === j || i === boardSize-j-1)
 const hasDistFromEdge = (i,n) => (i === n || i+n+1 === boardSize)
@@ -253,7 +254,6 @@ const doMoves = (moves, oldBoard) => {
     }
   }
   let invalid = false
-  let score = 0
   const unassigned = {}
   for (const [l, [i,j]] of moves) {
     const tile = newBoard[i][j]
@@ -327,16 +327,16 @@ const doMoves = (moves, oldBoard) => {
       }
       if (b) mainWords.push(candidate)
     }
-    if (mainWords.length &&
-        (words.some((w) => w.c) ||
-         (firstWord && mainWords.some((w) => sharesTile(w, startWord))))) {
-      score += words.reduce((a,{s}) => a + s, 0)
-    }
-    else {
+    if (!(mainWords.length &&
+          (words.some((w) => w.c) ||
+           (firstWord && mainWords.some((w) => sharesTile(w, startWord)))))) {
       invalid = ['no connected main word']
     }
   }
-  return {newBoard, invalid, words, score}
+  if (!invalid && moves.length === rackSize) {
+    words.push({s: bonusPoints})
+  }
+  return {newBoard, invalid, words}
 }
 
 io.on('connection', socket => {
@@ -494,9 +494,9 @@ io.on('connection', socket => {
           if (moves.some(([,t]) => t)) {
             const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
             if (onRackFitsBoard) {
-              const {invalid, words, score} = doMoves(moves, game.board)
+              const {invalid, words} = doMoves(moves, game.board)
               console.log(`preview validity ${invalid}`)
-              socket.emit('preview', !invalid && {words, score})
+              socket.emit('preview', !invalid && words)
             }
             else console.log(`preview not fit`)
           }
@@ -528,19 +528,17 @@ io.on('connection', socket => {
               'passed'
             let invalid = false
             let newBoard = game.board
-            let score = 0
             if (isExchange) {
               game.bag.push(...played)
               if (played.length)
                 shuffleInPlace(game.bag)
             }
             else {
-              ({newBoard, invalid, words, score} =
-                doMoves(moves, game.board))
+              ({newBoard, invalid, words} = doMoves(moves, game.board))
             }
             if (!invalid) {
               game.board = newBoard
-              player.score += score
+              player.score += words.reduce((a,{s}) => a + s, 0)
               player.rack = newRack
               fillRack(player.rack, game.bag)
               if (!player.rack.length && !game.bag.length) {

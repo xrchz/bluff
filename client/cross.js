@@ -396,15 +396,17 @@ const createPlayList = (words) => {
   for (const {w, s} of words) {
     const li = document.createElement('li')
     total += s
-    li.textContent = `${w.join('')} for ${s} point${s === 1 ? '' : 's'}`
+    li.textContent =
+      typeof w === 'string' ?
+      `${w.join('')} for ${s} point${s === 1 ? '' : 's'}` :
+      `their whole rack for ${s} bonus points`
     ul.appendChild(li)
   }
   return {ul, total}
 }
 
-socket.on('preview', (data) => {
+socket.on('preview', (words) => {
   previewDiv.innerHTML = ''
-  const {words, score} = data || {}
   if (Array.isArray(words)) {
     const span = document.createElement('span')
     const {ul, total} = createPlayList(words)
