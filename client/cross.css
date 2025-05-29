@@ -89,7 +89,7 @@ ul.inline > li {
 
 .selected {
   outline: thick solid yellow;
-  z-index: 1;
+  z-index: 3;
 }
 
 #info {
@@ -116,6 +116,29 @@ ul.inline > li {
   display: flex;
   justify-content: center;
   border: thin solid black;
+}
+
+#board div.cell, #rack > li {
+  position: relative;
+  z-index: 0;
+}
+
+span.letter, span.points {
+  position: relative;
+  z-index: 2;
+}
+
+#board div.cell:has(span):before,
+#rack > li:has(span):before {
+  content: '';
+  display: block;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  background-color: rgb(255 255 255 / 80%);
+  z-index: 1;
 }
 
 #board div.cell.dl {
