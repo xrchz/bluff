@@ -542,12 +542,13 @@ io.on('connection', socket => {
               player.score += Array.isArray(words) ? words.reduce((a,{s}) => a + s, 0) : 0
               player.rack = newRack
               fillRack(player.rack, game.bag)
+              delete player.current
               if (!player.rack.length && !game.bag.length) {
                 game.ended = true
-                // TODO: ...
+                // TODO: add bonus scores for non-empty racks to playr
+                // TODO: add these as extra items to words
               }
               else {
-                delete player.current
                 let nextIndex = playerIndex + 1
                 if (nextIndex === game.players.length) nextIndex = 0
                 game.players[nextIndex].current = true
