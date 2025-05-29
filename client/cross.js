@@ -114,9 +114,10 @@ const onClickTile = (e) => {
     tile.classList.remove('selected')
     return
   }
+  const onBoard = tile.classList.contains('cell')
   const selected = document.querySelector('.selected')
   if (selected) {
-    if (tile.classList.contains('cell')) {
+    if (onBoard) {
       if (tile.firstElementChild) {
         // tile is a board cell with a tile
         if (tile.classList.contains('placed')) {
@@ -150,7 +151,8 @@ const onClickTile = (e) => {
       tile.insertAdjacentElement(pos, li)
       removeSelected(selected)
     }
-  } else {
+  }
+  else if (!onBoard || tile.classList.contains('placed')) {
     tile.classList.add('selected')
   }
 }

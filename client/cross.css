@@ -119,6 +119,11 @@ ul.inline > li {
 #board div.cell.tw {
   background-color: red;
 }
+
+#board div.cell.placed, #rack > li {
+  color: Crimson;
+}
+
 #player {
   display: flex;
   flex-direction: row;
