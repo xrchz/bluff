@@ -539,7 +539,7 @@ io.on('connection', socket => {
             }
             if (!invalid) {
               game.board = newBoard
-              player.score += words.reduce((a,{s}) => a + s, 0)
+              player.score += Array.isArray(words) ? words.reduce((a,{s}) => a + s, 0) : 0
               player.rack = newRack
               fillRack(player.rack, game.bag)
               if (!player.rack.length && !game.bag.length) {
