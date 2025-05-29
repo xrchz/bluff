@@ -139,6 +139,22 @@ ul.inline > li {
   flex-direction: column;
 }
 
+#blank[hidden] {
+  display: none;
+}
+#blank > input {
+  width: 3em;
+  height: 3em;
+  text-transform: uppercase;
+}
+#blank {
+  display: grid;
+  margin: auto;
+  grid-template-columns: repeat(5, 1fr);
+  width: 19em;
+  grid-row-gap: 1em;
+}
+
 #rack {
   list-style-type: none;
   padding: 0;

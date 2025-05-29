@@ -23,6 +23,25 @@ const shuffleButton = document.getElementById('shuffle')
 const rackList = document.getElementById('rack')
 const playButton = document.getElementById('play')
 const swapInput = document.getElementById('swap')
+const blankDiv = document.getElementById('blank')
+
+const alphabet = 'abcdefghijklmnopqrstuvwxyz '
+
+const onBlankClick = (e) => {
+  document.querySelector('.selected .letter').textContent =
+    e.currentTarget.value
+  blankDiv.hidden = true
+}
+
+const blankButtons = []
+for (const c of alphabet) {
+  const input = document.createElement('input')
+  input.type = 'button'
+  input.value = c
+  input.addEventListener('click', onBlankClick, {passive: true})
+  blankButtons.push(input)
+}
+blankDiv.append(...blankButtons)
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -45,6 +64,7 @@ socket.on('ensureLobby', () => {
   playButton.disabled = true
   swapInput.checked = false
   playButton.value = 'Play'
+  blankDiv.hidden = true
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -132,8 +152,14 @@ const constructMoves = () => {
 }
 
 const onClickTile = (e) => {
+  if (!blankDiv.hidden) return
   const tile = e.currentTarget
   if (tile.classList.contains('selected')) {
+    if (!swapInput.checked &&
+        tile.querySelector('.letter').classList.contains('blank')) {
+      blankDiv.hidden = false
+      return
+    }
     tile.classList.remove('selected')
     if (swapInput.checked && !document.querySelector('.selected'))
       playButton.value = 'Pass'
@@ -167,7 +193,6 @@ const onClickTile = (e) => {
       else {
         // tile is an empty board cell: put selected here
         const span = selected.firstElementChild
-        // TODO: handle blank letter selection and class add
         tile.appendChild(span)
         tile.classList.add('placed')
         moved = true
@@ -204,6 +229,7 @@ const fillLetterSpan = (span, l) => {
   const ls = document.createElement('span')
   ls.classList.add('letter')
   ls.textContent = l
+  if (l === ' ') ls.classList.add('blank')
   const ps = document.createElement('span')
   ps.classList.add('points')
   ps.textContent = pointsPerLetter[l]
