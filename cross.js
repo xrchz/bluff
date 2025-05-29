@@ -496,16 +496,11 @@ io.on('connection', socket => {
             const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
             if (onRackFitsBoard) {
               const {invalid, words} = doMoves(moves, game.board)
-              console.log(`preview validity ${invalid}`)
               socket.emit('preview', !invalid && words)
             }
-            else console.log(`preview not fit`)
           }
-          else console.log(`preview exchange`)
         }
-        else console.log(`preview invalid moves ${moves}`)
       }
-      else console.log(`preview from not current player`)
     }
     else {
       console.log(`error: ${socket.playerName} in ${gameName} tried previewing out of phase`)
