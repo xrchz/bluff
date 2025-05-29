@@ -242,7 +242,7 @@ io.on('connection', socket => {
           socket.emit('gameStarted')
           socket.emit('showLastPlay', game.last)
           socket.emit('updateBoard', game.board)
-          socket.emit('updateBag', game.bag)
+          socket.emit('updateBag', game.bag.length)
         }
         else io.in(gameName).emit('showStart', canStart(game))
       }
@@ -266,7 +266,7 @@ io.on('connection', socket => {
           io.in(gameName).emit('updatePlayers', game.players)
           socket.emit('showLastPlay', game.last)
           socket.emit('updateBoard', game.board)
-          socket.emit('updateBag', game.bag)
+          socket.emit('updateBag', game.bag.length)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${socket.rooms}`)
@@ -326,7 +326,7 @@ io.on('connection', socket => {
         io.in(gameName).emit('gameStarted')
         io.in(gameName).emit('updatePlayers', game.players)
         io.in(gameName).emit('updateBoard', game.board)
-        io.in(gameName).emit('updateBag', game.bag)
+        io.in(gameName).emit('updateBag', game.bag.length)
       }
       else {
         socket.emit('errorMsg', 'Error: not enough or too many players to start.')
@@ -488,7 +488,7 @@ io.on('connection', socket => {
               io.in(gameName).emit('showLastPlay', game.last)
               io.in(gameName).emit('updatePlayers', game.players)
               io.in(gameName).emit('updateBoard', game.board)
-              io.in(gameName).emit('updateBag', game.bag)
+              io.in(gameName).emit('updateBag', game.bag.length)
             }
             else {
               socket.emit('errorMsg', `${invalid} is not a valid word`)

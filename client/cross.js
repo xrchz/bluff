@@ -14,9 +14,16 @@ const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
 const lastPlayDiv = document.getElementById('lastPlay')
 const bagDiv = document.getElementById('bag')
+const bagLabel = bagDiv.firstElementChild
+const bagList = bagLabel.nextElementSibling
 const playArea = document.getElementById('playArea')
 const boardDiv = document.getElementById('board')
+const shuffleButton = document.getElementById('shuffle')
 const rackList = document.getElementById('rack')
+const playButton = document.getElementById('play')
+
+const retrieveLabel = '⇊'
+const shuffleLabel = '🔀'
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -32,9 +39,45 @@ socket.on('ensureLobby', () => {
   playArea.hidden = true
   boardDiv.innerHTML = ''
   rackList.innerHTML = ''
-  bagDiv.innerHTML = ''
+  bagDiv.hidden = true
+  bagList.innerHTML = ''
+  bagLabel.innerHTML = ''
   lastPlayDiv.innerHTML = ''
+  shuffleButton.value = shuffleLabel
+  playButton.disabled = true
   history.replaceState('lobby', 'Lobby')
+})
+
+socket.on('updateGames', games => {
+  gamesList.innerHTML = ''
+  for (const game of games) {
+    const li = fragment.appendChild(document.createElement('li'))
+    let a = li.appendChild(document.createElement('a'))
+    a.textContent = game.name
+    a.onclick = () => {
+      gameInput.value = gameInput.value === game.name ? '' : game.name
+    }
+    const ul = li.appendChild(document.createElement('ul'))
+    ul.classList.add('inline')
+    for (const player of game.players) {
+      a = ul.appendChild(document.createElement('li'))
+      if (player.disconnected) {
+        a = a.appendChild(document.createElement('a'))
+        a.classList.add('disconnected')
+        a.onclick = () => {
+          if (gameInput.value === game.name && nameInput.value === player.name)
+            nameInput.value = ''
+          else {
+            gameInput.value = game.name
+            nameInput.value = player.name
+          }
+        }
+      }
+      a.textContent = player.name
+    }
+  }
+  gamesList.appendChild(fragment)
+  gamesList.hidden = !games.length
 })
 
 socket.on('updateSpectators', spectators => {
@@ -124,6 +167,7 @@ socket.on('gameStarted', () => {
   startButton.hidden = true
   joinButton.hidden = true
   playArea.hidden = false
+  bagDiv.hidden = false
   errorMsg.innerHTML = ''
 })
 
@@ -149,6 +193,11 @@ socket.on('updateBoard', board => {
     }
   }
   boardDiv.appendChild(fragment)
+})
+
+socket.on('updateBag', baglen => {
+  bagList.innerHTML = ''
+  bagLabel.innerHTML = `${baglen} tile${bag.length === 1 ? '' : 's'} left`
 })
 
 socket.on('showLastPlay', (data) => {

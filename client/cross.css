@@ -60,7 +60,7 @@ span.score {
   display: flex;
   flex-direction: column-reverse;
 }
-#games[hidden] {
+[hidden] {
   display: none;
 }
 #games > li > ul {
@@ -79,9 +79,6 @@ ul.inline {
 ul.inline > li {
   display: inline;
   padding-left: 1em;
-}
-#playArea[hidden] {
-  display: none;
 }
 #board {
   display: grid;
