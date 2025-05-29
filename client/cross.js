@@ -157,7 +157,7 @@ const constructMoves = () => {
   else {
     for (const placed of document.querySelectorAll('.placed')) {
       const ls = placed.querySelector('.letter')
-      const l = `${ls.classList.contains('blank') ? ' ' : ''}${ls.textContent}`
+      const l = `${ls.parentElement.classList.contains('blank') ? ' ' : ''}${ls.textContent}`
       const [,is,js] = placed.id.split('-')
       const [i, j] = [is, js].map(Number)
       moves.push([l, [i,j]])
@@ -170,8 +170,7 @@ const onClickTile = (e) => {
   if (!blankDiv.hidden) return
   const tile = e.currentTarget
   if (tile.classList.contains('selected')) {
-    if (!swapInput.checked &&
-        tile.querySelector('.letter').classList.contains('blank')) {
+    if (!swapInput.checked && tile.firstElementChild.classList.contains('blank')) {
       playButton.disabled = true
       shuffleButton.disabled = true
       blankDiv.hidden = false
@@ -246,10 +245,10 @@ const fillLetterSpan = (span, l) => {
   const ls = document.createElement('span')
   ls.classList.add('letter')
   ls.textContent = l
-  if (l === ' ') ls.classList.add('blank')
+  if (l === ' ') span.classList.add('blank')
   const ps = document.createElement('span')
   ps.classList.add('points')
-  ps.textContent = pointsPerLetter[l]
+  ps.textContent = span.classList.contains('blank') ? 0 : pointsPerLetter[l]
   span.append(ls, ps)
 }
 
@@ -375,9 +374,9 @@ socket.on('updateBoard', board => {
       if (tile.tw) cellDiv.classList.add('tw')
       if (tile.l) {
         const span = document.createElement('span')
-        fillLetterSpan(span, tile.l)
         if (tile.blank) span.classList.add('blank')
         if (tile.last) span.classList.add('last')
+        fillLetterSpan(span, tile.l)
         cellDiv.appendChild(span)
       }
     }
@@ -397,7 +396,7 @@ const createPlayList = (words) => {
     const li = document.createElement('li')
     total += s
     li.textContent =
-      typeof w === 'string' ?
+      Array.isArray(w) ?
       `${w.join('')} for ${s} point${s === 1 ? '' : 's'}` :
       `their whole rack for ${s} bonus points`
     ul.appendChild(li)
