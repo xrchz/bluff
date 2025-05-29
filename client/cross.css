@@ -13,6 +13,7 @@ input[type=text] {
   background-color: DarkSlateBlue;
   color: PapayaWhip;
   width: 8em;
+  padding: 1em;
 }
 input[type=text]:disabled {
   background-color: #382d7b;
@@ -24,6 +25,7 @@ input[type=button]:disabled {
 input[type=button], input[type=submit] {
   background-color: Indigo;
   color: Moccasin;
+  padding: 2em;
 }
 #game {
   width: 2em;
@@ -163,17 +165,25 @@ span.letter, span.points {
 
 #player {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 60em;
+  flex-direction: column;
+  align-items: center;
+  width: 80em;
   margin: auto;
 }
 #player input[type=button] {
   padding: 2em;
 }
-#player > div {
+#control > div {
   display: flex;
   flex-direction: column;
+  row-gap: 2em;
+}
+
+#control {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  column-gap: 24em;
 }
 
 #blank[hidden] {
@@ -202,13 +212,25 @@ span.letter, span.points {
   column-gap: 1em;
 }
 #rack > li {
-  width: 4em;
-  height: 4em;
-  line-height: 4em;
+  width: 7em;
+  height: 7em;
+  line-height: 7em;
   border: solid;
   display: flex;
   justify-content: center;
 }
+
+#rack span.letter {
+  font-size: 5.6em;
+}
+
+#rack span.points {
+  font-size: large;
+  margin-top: 2em;
+  letter-spacing: -0.2em;
+  font-weight: bold;
+}
+
 span.letter {
   font-weight: bold;
   text-transform: uppercase;
