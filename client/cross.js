@@ -22,6 +22,7 @@ const boardDiv = document.getElementById('board')
 const shuffleButton = document.getElementById('shuffle')
 const rackList = document.getElementById('rack')
 const playButton = document.getElementById('play')
+const swapInput = document.getElementById('swap')
 
 socket.on('ensureLobby', () => {
   errorMsg.innerHTML = ''
@@ -42,6 +43,8 @@ socket.on('ensureLobby', () => {
   bagLabel.innerHTML = ''
   lastPlayDiv.innerHTML = ''
   playButton.disabled = true
+  swapInput.checked = false
+  playButton.value = 'Play'
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -111,12 +114,19 @@ const removeFromBoard = (tile) => {
 
 const constructMoves = () => {
   const moves = []
-  for (const placed of document.querySelectorAll('.placed')) {
-    const ls = placed.querySelector('.letter')
-    const l = `${ls.classList.contains('blank') ? ' ' : ''}${ls.textContent}`
-    const [,is,js] = placed.id.split('-')
-    const [i, j] = [is, js].map(Number)
-    moves.push([l, [i,j]])
+  if (swapInput.checked) {
+    for (const tile of document.querySelectorAll('.selected')) {
+      moves.push([tile.querySelector('.letter').textContent, null])
+    }
+  }
+  else {
+    for (const placed of document.querySelectorAll('.placed')) {
+      const ls = placed.querySelector('.letter')
+      const l = `${ls.classList.contains('blank') ? ' ' : ''}${ls.textContent}`
+      const [,is,js] = placed.id.split('-')
+      const [i, j] = [is, js].map(Number)
+      moves.push([l, [i,j]])
+    }
   }
   return moves
 }
@@ -125,9 +135,18 @@ const onClickTile = (e) => {
   const tile = e.currentTarget
   if (tile.classList.contains('selected')) {
     tile.classList.remove('selected')
+    if (swapInput.checked && !document.querySelector('.selected'))
+      playButton.value = 'Pass'
     return
   }
   const onBoard = tile.classList.contains('cell')
+  if (swapInput.checked) {
+    if (!onBoard) {
+      tile.classList.add('selected')
+      playButton.value = 'Swap'
+    }
+    return
+  }
   const selected = document.querySelector('.selected')
   let moved = false
   if (selected) {
@@ -191,6 +210,14 @@ const fillLetterSpan = (span, l) => {
   span.append(ls, ps)
 }
 
+let isCurrent = false
+
+const swapAllowed = () => (isCurrent && swapInput.checked)
+const resetPlayButton = () => {
+  playButton.disabled = !swapAllowed()
+  playButton.value = swapInput.checked ? 'Pass' : 'Play'
+}
+
 function shuffleInPlace(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * i)
@@ -203,7 +230,7 @@ function shuffleInPlace(array) {
 shuffleButton.addEventListener('click', (e) => {
   document.querySelectorAll('.placed').forEach(removeFromBoard)
   previewDiv.innerHTML = ''
-  playButton.disabled = true
+  resetPlayButton()
   const shuffled = Array.from(rackList.children)
   shuffleInPlace(shuffled)
   rackList.replaceChildren(...shuffled)
@@ -224,11 +251,13 @@ socket.on('updatePlayers', players => {
     }
     if (!player.socketId)
       span.classList.add('disconnected')
+    const thisPlayer = (player.name === nameInput.value)
     if (player.current)
       span.classList.add('current')
+    if (thisPlayer)
+      isCurrent = player.current
     playersList.appendChild(li)
     if (player.rack) {
-      const thisPlayer = (player.name === nameInput.value)
       if (thisPlayer || spectateInput.checked) {
         rackList.innerHTML = ''
         for (const l of player.rack) {
@@ -345,6 +374,15 @@ playButton.addEventListener('click', (e) =>
   socket.emit('play', constructMoves()),
 {passive: true})
 
+swapInput.addEventListener('change', (e) => {
+  if (swapInput.checked)
+    document.querySelectorAll('.placed').forEach(removeFromBoard)
+  else
+    document.querySelectorAll('.selected').forEach(
+      (t) => t.classList.remove('selected'))
+  resetPlayButton()
+}, {passive: true})
+
 socket.on('showLastPlay', (data) => {
   lastPlayDiv.innerHTML = ''
   const {name, words} = data || {}
@@ -357,7 +395,7 @@ socket.on('showLastPlay', (data) => {
     lastPlayDiv.append(span, ul)
   }
   previewDiv.innerHTML = ''
-  playButton.disabled = true
+  resetPlayButton()
 })
 
 socket.on('errorMsg', msg => {

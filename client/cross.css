@@ -131,9 +131,14 @@ ul.inline > li {
   width: 60em;
   margin: auto;
 }
-#player > input[type=button] {
+#player input[type=button] {
   padding: 2em;
 }
+#player > div {
+  display: flex;
+  flex-direction: column;
+}
+
 #rack {
   list-style-type: none;
   padding: 0;

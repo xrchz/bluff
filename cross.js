@@ -549,8 +549,8 @@ io.on('connection', socket => {
                 game.players[nextIndex].current = true
               }
               game.last = {name: player.name, words}
-              io.in(gameName).emit('showLastPlay', game.last)
               io.in(gameName).emit('updatePlayers', game.players)
+              io.in(gameName).emit('showLastPlay', game.last)
               io.in(gameName).emit('updateBoard', game.board)
               io.in(gameName).emit('updateBag', game.bag.length)
             }
