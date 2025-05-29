@@ -195,6 +195,136 @@ const sharesTile = ({w: wa, i: ia, j: ja, d: da},
             ja <= jb && jb < ja + na)
 }
 
+const validLetter = (l) => (
+  typeof l === 'string' &&
+  0 < l.length && l.length <= 2 &&
+  alphabet.includes(l.at(-1)))
+
+const validPositionOn = (board, a) => (
+  Array.isArray(a) && a.length === 2 &&
+  a.every((i) => (typeof i === 'number' &&
+                  0 <= i && i < boardSize)) &&
+  (!('l' in board[a[0]][a[1]])))
+
+const validMovesOn = (board, moves) => (
+  Array.isArray(moves) &&
+  moves.every((x) => (
+    Array.isArray(x) && x.length === 2 &&
+    validLetter(x[0]) &&
+    (x[1] === null || validPositionOn(board, x[1])))))
+
+const checkOnRackFitsBoard = (moves, isExchange, newRack) => {
+  const usedPositions = []
+  const played = []
+  let onRackFitsBoard = true
+  for (const [l, t] of moves) {
+    const i = newRack.indexOf(l[0])
+    if (i < 0) {
+      onRackFitsBoard = false
+      break
+    }
+    if (!isExchange) {
+      const s = `${t}`
+      if (usedPositions[s]) {
+        onRackFitsBoard = false
+        break
+      }
+      usedPositions[s] = true
+    }
+    played.push(...newRack.splice(i, 1))
+  }
+  return {onRackFitsBoard, played}
+}
+
+const doMoves = (moves, oldBoard) => {
+  const newBoard = []
+  for (const row of oldBoard) {
+    const newRow = []
+    newBoard.push(newRow)
+    for (const tile of row) {
+      newRow.push(Object.assign({}, tile))
+    }
+  }
+  let firstWord = true
+  for (const row of newBoard) {
+    for (const tile of row) {
+      if (firstWord && tile.last) firstWord = false
+      delete tile.last
+    }
+  }
+  let invalid = false
+  let score = 0
+  for (const [l, [i,j]] of moves) {
+    const tile = newBoard[i][j]
+    tile.l = l.at(-1)
+    tile.blank = 1 < l.length
+    tile.last = true
+  }
+  const words = []
+  const processWord = (wordTiles, i, j, d) => {
+    if (wordTiles.length <= 1) return
+    if (wordTiles.some((t) => t.last)) {
+      const word = wordTiles.map((t) => t.l)
+      if (inSowpods(word)) {
+        words.push({w: word, i, j, d,
+                    c: wordTiles.some((t) => !t.last),
+                    s: scoreWord(wordTiles)})
+      }
+      else {
+        invalid = word
+      }
+    }
+  }
+  for (let i = 0; i < boardSize; i++) {
+    for (let j = 0; j < boardSize; j++) {
+      if (!('l' in newBoard[i][j])) continue
+      if (i === 0 || (!('l' in newBoard[i-1][j]))) {
+        const wordTiles = []
+        let wi = i
+        while (wi < boardSize && 'l' in newBoard[wi][j]) {
+          wordTiles.push(newBoard[wi][j])
+          wi++
+        }
+        processWord(wordTiles, i, j, true)
+        if (invalid) break
+      }
+      if (j === 0 || (!('l' in newBoard[i][j-1]))) {
+        const wordTiles = []
+        let wj = j
+        while (wj < boardSize && 'l' in newBoard[i][wj]) {
+          wordTiles.push(newBoard[i][wj])
+          wj++
+        }
+        processWord(wordTiles, i, j, false)
+        if (invalid) break
+      }
+    }
+    if (invalid) break
+  }
+  if (!invalid) {
+    const mainWords = []
+    for (const candidate of words) {
+      let b = true
+      for (const word of words) {
+        if (!sharesTile(word, candidate)) {
+          b = false
+          break
+        }
+      }
+      if (b) mainWords.push(candidate)
+    }
+    if (mainWords.length &&
+        (words.some((w) => w.c) ||
+         (firstWord && mainWords.some((w) => sharesTile(w, startWord))))) {
+      score += words.reduce((a,{s}) => a + s, 0)
+    }
+    else {
+      invalid = ['no connected main word']
+    }
+  }
+  return {newBoard, invalid, words, score}
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -338,140 +468,60 @@ io.on('connection', socket => {
     }
   }))
 
+  socket.on('preview', moves => inGame((gameName, game) => {
+    if (game.started && !game.ended) {
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      const player = 0 <= playerIndex ? game.players[playerIndex] : {}
+      if (player.current) {
+        if (validMovesOn(game.board, moves)) {
+          if (moves.some(([,t]) => t)) {
+            const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
+            if (onRackFitsBoard) {
+              const {invalid, words, score} = doMoves(moves, game.board)
+              console.log(`preview validity ${invalid}`)
+              socket.emit('preview', !invalid && {words, score})
+            }
+            else console.log(`preview not fit`)
+          }
+          else console.log(`preview exchange`)
+        }
+        else console.log(`preview invalid moves ${moves}`)
+      }
+      else console.log(`preview from not current player`)
+    }
+    else {
+      console.log(`error: ${socket.playerName} in ${gameName} tried previewing out of phase`)
+      socket.emit('errorMsg', `Error: preview not currently possible.`)
+    }
+  }))
+
   socket.on('play', moves => inGame((gameName, game) => {
     if (game.started && !game.ended) {
       const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
       const player = 0 <= playerIndex ? game.players[playerIndex] : {}
-      const validLetter = (l) => (
-        typeof l === 'string' &&
-        0 < l.length && l.length <= 2 &&
-        alphabet.includes(l.at(-1)))
-      const validPosition = (a) => (
-        Array.isArray(a) && a.length === 2 &&
-        a.every((i) => (typeof i === 'number' &&
-                        0 <= i && i < boardSize)) &&
-        (!('l' in game.board[a[0]][a[1]])))
       if (player.current) {
-        if (Array.isArray(moves) &&
-            moves.every((x) => (Array.isArray(x) && x.length === 2 &&
-                                validLetter(x[0]) &&
-                                (x[1] === null || validPosition(x[1]))))) {
+        if (validMovesOn(game.board, moves)) {
           const isExchange = moves.every(([,t]) => t === null)
-          const usedPositions = []
           const newRack = Array.from(player.rack)
-          const played = []
-          let onRackFitsBoard = true
-          for (const [l, t] of moves) {
-            const i = newRack.indexOf(l[0])
-            if (i < 0) {
-              onRackFitsBoard = false
-              break
-            }
-            if (!isExchange) {
-              const s = `${t}`
-              if (usedPositions[s]) {
-                onRackFitsBoard = false
-                break
-              }
-              usedPositions[s] = true
-            }
-            played.push(...newRack.splice(i, 1))
-          }
+          const {onRackFitsBoard, played} =
+            checkOnRackFitsBoard(moves, isExchange, newRack)
           if (onRackFitsBoard) {
-            const newBoard = []
-            for (const row of game.board) {
-              const newRow = []
-              newBoard.push(newRow)
-              for (const tile of row) {
-                newRow.push(Object.assign({}, tile))
-              }
-            }
-            let firstWord = true
-            for (const row of newBoard) {
-              for (const tile of row) {
-                if (firstWord && tile.last) firstWord = false
-                delete tile.last
-              }
-            }
             let words = moves.length ? `exchanged ${moves.length} letters` : 'passed'
             let invalid = false
+            let newBoard = game.board
+            let score = 0
             if (isExchange) {
               game.bag.push(...played)
               if (played.length)
                 shuffleInPlace(game.bag)
             }
             else {
-              for (const [l, [i,j]] of moves) {
-                const tile = newBoard[i][j]
-                tile.l = l.at(-1)
-                tile.blank = 1 < l.length
-                tile.last = true
-              }
-              words = []
-              const processWord = (wordTiles, i, j, d) => {
-                if (wordTiles.length <= 1) return
-                if (wordTiles.some((t) => t.last)) {
-                  const word = wordTiles.map((t) => t.l)
-                  if (inSowpods(word)) {
-                    words.push({w: word, i, j, d,
-                                c: wordTiles.some((t) => !t.last),
-                                s: scoreWord(wordTiles)})
-                  }
-                  else {
-                    invalid = word
-                  }
-                }
-              }
-              for (let i = 0; i < boardSize; i++) {
-                for (let j = 0; j < boardSize; j++) {
-                  if (!('l' in newBoard[i][j])) continue
-                  if (i === 0 || (!('l' in newBoard[i-1][j]))) {
-                    const wordTiles = []
-                    let wi = i
-                    while (wi < boardSize && 'l' in newBoard[wi][j]) {
-                      wordTiles.push(newBoard[wi][j])
-                      wi++
-                    }
-                    processWord(wordTiles, i, j, true)
-                    if (invalid) break
-                  }
-                  if (j === 0 || (!('l' in newBoard[i][j-1]))) {
-                    const wordTiles = []
-                    let wj = j
-                    while (wj < boardSize && 'l' in newBoard[i][wj]) {
-                      wordTiles.push(newBoard[i][wj])
-                      wj++
-                    }
-                    processWord(wordTiles, i, j, false)
-                    if (invalid) break
-                  }
-                }
-                if (invalid) break
-              }
-              if (!invalid) {
-                const mainWords = []
-                for (const candidate of words) {
-                  let b = true
-                  for (const word of words) {
-                    if (!sharesTile(word, candidate)) {
-                      b = false
-                      break
-                    }
-                  }
-                  if (b) mainWords.push(candidate)
-                }
-                if (mainWords.length &&
-                    (words.some((w) => w.c) ||
-                     (firstWord && mainWords.some((w) => sharesTile(w, startWord))))) {
-                  player.score += words.reduce((a,{s}) => a + s, 0)
-                }
-                else {
-                  invalid = ['no connected main word']
-                }
-              }
+              ({newBoard, invalid, words, score} =
+                doMoves(moves, game.board))
             }
             if (!invalid) {
               game.board = newBoard
+              player.score += score
               player.rack = newRack
               fillRack(player.rack, game.bag)
               if (!player.rack.length && !game.bag.length) {

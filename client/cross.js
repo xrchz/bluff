@@ -13,6 +13,7 @@ const playersList = document.getElementById('players')
 const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
 const lastPlayDiv = document.getElementById('lastPlay')
+const previewDiv = document.getElementById('preview')
 const bagDiv = document.getElementById('bag')
 const bagLabel = bagDiv.firstElementChild
 const bagList = bagLabel.nextElementSibling
@@ -108,6 +109,18 @@ const removeFromBoard = (tile) => {
   rackList.appendChild(li)
 }
 
+const constructMoves = () => {
+  const moves = []
+  for (const placed of document.querySelectorAll('.placed')) {
+    const ls = placed.querySelector('.letter')
+    const l = `${ls.classList.contains('blank') ? ' ' : ''}${ls.textContent}`
+    const [,is,js] = placed.id.split('-')
+    const [i, j] = [is, js].map(Number)
+    moves.push([l, [i,j]])
+  }
+  return moves
+}
+
 const onClickTile = (e) => {
   const tile = e.currentTarget
   if (tile.classList.contains('selected')) {
@@ -116,6 +129,7 @@ const onClickTile = (e) => {
   }
   const onBoard = tile.classList.contains('cell')
   const selected = document.querySelector('.selected')
+  let moved = false
   if (selected) {
     if (onBoard) {
       if (tile.firstElementChild) {
@@ -127,6 +141,7 @@ const onClickTile = (e) => {
           // then move selected to tile's former cell
           tile.appendChild(selected.firstElementChild)
           tile.classList.add('placed')
+          moved = true
           removeSelected(selected)
         }
       }
@@ -136,12 +151,14 @@ const onClickTile = (e) => {
         // TODO: handle blank letter selection and class add
         tile.appendChild(span)
         tile.classList.add('placed')
+        moved = true
         removeSelected(selected)
       }
     }
     else {
       // tile is a rack tile:
       // move selected and insert it on tile's left/right
+      moved = selected.classList.contains('cell')
       const rackItems = Array.from(rackList.children)
       const ti = rackItems.indexOf(tile)
       const si = rackItems.indexOf(selected)
@@ -155,6 +172,7 @@ const onClickTile = (e) => {
   else if (!onBoard || tile.classList.contains('placed')) {
     tile.classList.add('selected')
   }
+  if (moved) socket.emit('preview', constructMoves())
 }
 
 const pointsPerLetter = {}
@@ -164,8 +182,8 @@ socket.on('pointsPerLetter', (x) =>
 )
 
 const fillLetterSpan = (span, l) => {
-  span.classList.add('letter')
   const ls = document.createElement('span')
+  ls.classList.add('letter')
   ls.textContent = l
   const ps = document.createElement('span')
   ps.classList.add('points')
@@ -184,6 +202,8 @@ function shuffleInPlace(array) {
 
 shuffleButton.addEventListener('click', (e) => {
   document.querySelectorAll('.placed').forEach(removeFromBoard)
+  previewDiv.innerHTML = ''
+  playButton.disabled = true
   const shuffled = Array.from(rackList.children)
   shuffleInPlace(shuffled)
   rackList.replaceChildren(...shuffled)
@@ -296,6 +316,31 @@ socket.on('updateBag', baglen => {
   bagLabel.innerHTML = `${baglen} tile${bag.length === 1 ? '' : 's'} left`
 })
 
+const createPlayList = (words) => {
+  const ul = document.createElement('ul')
+  let total = 0
+  for (const {w, s} of words) {
+    const li = document.createElement('li')
+    total += s
+    li.textContent = `${w.join('')} for ${s} point${s === 1 ? '' : 's'}`
+    ul.appendChild(li)
+  }
+  return {ul, total}
+}
+
+socket.on('preview', (data) => {
+  previewDiv.innerHTML = ''
+  const {words, score} = data || {}
+  if (Array.isArray(words)) {
+    const span = document.createElement('span')
+    const {ul, total} = createPlayList(words)
+    span.textContent = `Would score ${total} playing:`
+    previewDiv.append(span, ul)
+    playButton.disabled = false
+  }
+  else playButton.disabled = true
+})
+
 socket.on('showLastPlay', (data) => {
   lastPlayDiv.innerHTML = ''
   const {name, words} = data || {}
@@ -303,14 +348,7 @@ socket.on('showLastPlay', (data) => {
     lastPlayDiv.textContent = `${name} ${words}`
   else if (Array.isArray(words)) {
     const span = document.createElement('span')
-    const ul = document.createElement('ul')
-    let total = 0
-    for (const {w, s} of words) {
-      const li = document.createElement('li')
-      total += s
-      li.textContent = `${w.join('')} for ${s} point${s === 1 ? '' : 's'}`
-      ul.appendChild(li)
-    }
+    const {ul, total} = createPlayList(words)
     span.textContent = `${name} scored ${total}, playing:`
     lastPlayDiv.append(span, ul)
   }
