@@ -231,6 +231,8 @@ const onClickTile = (e) => {
     return
   }
   const selected = document.querySelector('.selected')
+  const cursor = document.querySelector('.cursor-right, .cursor-down')
+  const letter = tile.querySelector('.letter')
   let moved = false
   if (selected) {
     if (onBoard) {
@@ -270,6 +272,13 @@ const onClickTile = (e) => {
       removeSelected(selected)
     }
   }
+  else if (!onBoard && cursor && !cursor.classList.contains('keying') && letter?.textContent !== ' ') {
+    cursor.appendChild(tile.firstElementChild)
+    cursor.classList.add('placed')
+    moved = true
+    tile.remove()
+    progressCursor(cursor)
+  }
   else if (!onBoard || tile.classList.contains('placed')) {
     removeCursors()
     tile.classList.add('selected')
@@ -291,14 +300,29 @@ const onClickTile = (e) => {
   if (moved && isCurrent) socket.emit('preview', constructMoves())
 }
 
+const progressCursor = (tile) => {
+  const d = tile.classList.contains('cursor-down')
+  let [i, j] = coordsOfCell(tile)
+  while (i < boardSize && j < boardSize &&
+    document.getElementById(`c-${i}-${j}`).firstElementChild) {
+    if (d) { i++ } else { j++ }
+  }
+  tile.classList.remove('cursor-right', 'cursor-down')
+  if (i < boardSize && j < boardSize) {
+    document.getElementById(`c-${i}-${j}`).classList.add(
+      d ? 'cursor-down' : 'cursor-right')
+  }
+}
+
 document.addEventListener('keyup', (e) => {
   if (document.querySelector('.selected')) return
   if (swapInput.checked) return
   const tile = document.querySelector('.cursor-right, .cursor-down')
   const l = e.key.toLowerCase()
   if (tile) {
-    const d = tile.classList.contains('cursor-down')
-    if (l === 'backspace') {
+    tile.classList.add('keying')
+    if (l === 'backspace' || l === 'arrowleft') {
+      const d = tile.classList.contains('cursor-down')
       let [i, j] = coordsOfCell(tile)
       if (d) { i-- } else { j-- }
       while (true) {
@@ -337,18 +361,10 @@ document.addEventListener('keyup', (e) => {
           Array.from(document.querySelectorAll('#blank > input')).find(
             (x) => x.value === l).dispatchEvent(new Event('click'))
         }
-        let [i, j] = coordsOfCell(tile)
-        while (i < boardSize && j < boardSize &&
-               document.getElementById(`c-${i}-${j}`).firstElementChild) {
-          if (d) { i++ } else { j++ }
-        }
-        tile.classList.remove('cursor-right', 'cursor-down')
-        if (i < boardSize && j < boardSize) {
-          document.getElementById(`c-${i}-${j}`).classList.add(
-            d ? 'cursor-down' : 'cursor-right')
-        }
+        progressCursor(tile)
       }
     }
+    tile.classList.remove('keying')
   }
 }, {passive: true})
 
