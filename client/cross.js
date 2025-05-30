@@ -85,6 +85,15 @@ socket.on('ensureLobby', () => {
   history.replaceState('lobby', 'Lobby')
 })
 
+window.onpopstate = function (e) {
+  if (e.state === 'lobby') {
+    socket.close()
+    socket.open()
+  }
+  else if (e.state)
+    socket.emit('joinRequest', e.state)
+}
+
 socket.on('updateGames', games => {
   gamesList.innerHTML = ''
   for (const game of games) {
