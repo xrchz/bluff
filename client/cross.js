@@ -261,33 +261,59 @@ document.addEventListener('keyup', (e) => {
   if (swapInput.checked) return
   const tile = document.querySelector('.cursor-right, .cursor-down')
   const l = e.key.toLowerCase()
-  if (tile && alphabet.includes(l)) {
-    const rackLetter = Array.from(document.querySelectorAll('#rack .letter')).find(
-      (x) => x.textContent === l || x.parentNode.classList.contains('blank'))
-    if (rackLetter) {
-      console.log(`Found rackLetter for key event ${l} targeting ${tile.id}`)
-      const rackLi = rackLetter.parentElement.parentElement
-      rackLi.dispatchEvent(new Event('click'))
-      console.log(`Selected rack, content ${rackLetter.textContent}, li classes "${Array.from(rackLi.classList)}"`)
-      tile.dispatchEvent(new Event('click'))
-      console.log(`Put in position`)
-      if (tile.querySelector('.letter').textContent !== l) {
-        tile.dispatchEvent(new Event('click'))
-        tile.dispatchEvent(new Event('click'))
-        Array.from(document.querySelectorAll('#blank > input')).find(
-          (x) => x.value === l).dispatchEvent(new Event('click'))
-        tile.dispatchEvent(new Event('click'))
-      }
-      const d = tile.classList.contains('cursor-down')
+  if (tile) {
+    const d = tile.classList.contains('cursor-down')
+    if (l === 'backspace') {
       let [i, j] = coordsOfCell(tile)
-      while (i < boardSize && j < boardSize &&
-             document.getElementById(`c-${i}-${j}`).firstElementChild) {
-        if (d) { i++ } else { j++ }
+      if (d) { i-- } else { j-- }
+      while (true) {
+        const cell = document.getElementById(`c-${i}-${j}`)
+        if (cell && cell.firstElementChild && !cell.classList.contains('placed')) {
+          if (d) { i-- } else { j-- }
+        }
+        else break
       }
-      tile.classList.remove('cursor-right', 'cursor-down')
-      if (i < boardSize && j < boardSize) {
-        document.getElementById(`c-${i}-${j}`).classList.add(
-          d ? 'cursor-down' : 'cursor-right')
+      const cell = document.getElementById(`c-${i}-${j}`)
+      if (cell && cell.classList.contains('placed')) {
+        const li = rackList.lastElementChild
+        if (li) {
+          cell.dispatchEvent(new Event('click'))
+          li.dispatchEvent(new Event('click'))
+          tile.classList.remove('cursor-right', 'cursor-down')
+          cell.classList.add(d ? 'cursor-down' : 'cursor-right')
+        }
+      }
+      else {
+        tile.classList.remove('cursor-right', 'cursor-down')
+      }
+    }
+    else if (alphabet.includes(l)) {
+      const rackLetter = Array.from(document.querySelectorAll('#rack .letter')).find(
+        (x) => x.textContent === l || x.parentNode.classList.contains('blank'))
+      if (rackLetter) {
+        console.log(`Found rackLetter for key event ${l} targeting ${tile.id}`)
+        const rackLi = rackLetter.parentElement.parentElement
+        rackLi.dispatchEvent(new Event('click'))
+        console.log(`Selected rack, content ${rackLetter.textContent}, li classes "${Array.from(rackLi.classList)}"`)
+        tile.dispatchEvent(new Event('click'))
+        console.log(`Put in position`)
+        if (tile.querySelector('.letter').textContent !== l) {
+          tile.dispatchEvent(new Event('click'))
+          tile.dispatchEvent(new Event('click'))
+          Array.from(document.querySelectorAll('#blank > input')).find(
+            (x) => x.value === l).dispatchEvent(new Event('click'))
+          tile.dispatchEvent(new Event('click'))
+        }
+        let [i, j] = coordsOfCell(tile)
+        while (i < boardSize && j < boardSize &&
+               document.getElementById(`c-${i}-${j}`).firstElementChild) {
+          if (d) { i++ } else { j++ }
+        }
+        tile.classList.remove('cursor-right', 'cursor-down')
+        if (i < boardSize && j < boardSize) {
+          document.getElementById(`c-${i}-${j}`).classList.add(
+            d ? 'cursor-down' : 'cursor-right')
+        }
       }
     }
   }
