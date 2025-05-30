@@ -3,6 +3,9 @@ body {
   font-size: large;
   background-color: AliceBlue;
   color: FireBrick;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 input, label {
   font-size: x-large;
@@ -64,9 +67,12 @@ span.score {
   display: flex;
   flex-direction: column-reverse;
 }
-[hidden] {
-  display: none;
-}
+
+#games[hidden] { display: none; }
+#playArea[hidden] { display: none; }
+#bag[hidden] { display: none; }
+[hidden] { display: none; }
+
 #games > li > ul {
   display: inline;
 }
@@ -74,8 +80,6 @@ a:hover {
   cursor: pointer;
 }
 #spectators, #players, #games, form {
-  margin: auto;
-  width: fit-content;
   margin-top: 2em;
   font-size: xx-large;
 }
@@ -96,17 +100,21 @@ ul.inline > li {
 #info {
   display: flex;
   flex-direction: row;
-  width: 60em;
-  margin: auto;
   margin-top: 2em;
-  justify-content: space-between;
+  justify-content: space-evenly;
+  column-gap: 3em;
   font-size: x-large;
+}
+
+#playArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 2em;
 }
 
 #board {
   display: grid;
-  margin: auto;
-  width: min-content;
   grid-template-columns: repeat(15, 1fr);
   border: solid;
 }
@@ -175,11 +183,10 @@ span.letter, span.points {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 80em;
-  margin: auto;
+  row-gap: 2em;
 }
 #player input[type=button] {
-  padding: 2em;
+  padding: 1em 2em;
 }
 #control > div {
   display: flex;
@@ -204,7 +211,6 @@ span.letter, span.points {
 }
 #blank {
   display: grid;
-  margin: auto;
   grid-template-columns: repeat(5, 1fr);
   width: 19em;
   grid-row-gap: 1em;
