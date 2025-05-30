@@ -300,8 +300,15 @@ span.points {
 #checker {
   display: flex;
   column-gap: 1em;
+  align-items: center;
 }
 #checker input[type=text] {
   text-transform: uppercase;
   min-width: 8em;
+}
+#checker span.valid {
+  color: green;
+}
+#checker span.invalid {
+  color: red;
 }

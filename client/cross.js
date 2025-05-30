@@ -589,7 +589,14 @@ checkerForm.onsubmit = () => {
   return false
 }
 socket.on('checked', ({word, valid}) => {
-  checkOutput.textContent = word ? `${word} is ${valid ? ' ' : 'NOT '}VALID` : ''
+  checkOutput.classList.remove('valid', 'invalid')
+  if (word) {
+    checkOutput.textContent = `${word} is ${valid ? ' ' : 'NOT '}VALID`
+    checkOutput.classList.add(valid ? 'valid' : 'invalid')
+  }
+  else {
+    checkOutput.textContent = ''
+  }
 })
 
 socket.on('errorMsg', msg => {
