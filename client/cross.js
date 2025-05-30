@@ -200,6 +200,11 @@ const constructMoves = () => {
   return moves
 }
 
+const removeCursors = () => {
+  document.querySelectorAll('.cursor-right, .cursor-down').forEach(
+    (x) => x.classList.remove('cursor-right', 'cursor-down'))
+}
+
 const onClickTile = (e) => {
   if (!blankDiv.hidden) return
   const tile = e.currentTarget
@@ -264,6 +269,7 @@ const onClickTile = (e) => {
     }
   }
   else if (!onBoard || tile.classList.contains('placed')) {
+    removeCursors()
     tile.classList.add('selected')
   }
   else if (onBoard && !tile.firstElementChild) {
@@ -276,8 +282,7 @@ const onClickTile = (e) => {
       tile.classList.remove('cursor-down')
     }
     else {
-      document.querySelectorAll('.cursor-right, .cursor-down').forEach(
-        (x) => x.classList.remove('cursor-right', 'cursor-down'))
+      removeCursors()
       tile.classList.add('cursor-right')
     }
   }
