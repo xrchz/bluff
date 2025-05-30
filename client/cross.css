@@ -290,3 +290,12 @@ span.points {
   margin-top: 1.8em;
   letter-spacing: -0.3em;
 }
+
+#checker {
+  display: flex;
+  column-gap: 1em;
+}
+#checker input[type=text] {
+  text-transform: uppercase;
+  min-width: 8em;
+}

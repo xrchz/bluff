@@ -24,6 +24,7 @@ const rackList = document.getElementById('rack')
 const playButton = document.getElementById('play')
 const swapInput = document.getElementById('swap')
 const blankDiv = document.getElementById('blank')
+const checkerForm = document.getElementById('checker')
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz'
 const boardSize = 15
@@ -559,6 +560,16 @@ socket.on('showLastPlay', (data) => {
   }
   previewDiv.innerHTML = ''
   resetPlayButton()
+})
+
+const checkWord = checkerForm.querySelector('input[type=text]')
+const checkOutput = checkerForm.querySelector('span')
+checkerForm.onsubmit = () => {
+  socket.emit('check', checkWord.value)
+  return false
+}
+socket.on('checked', ({word, valid}) => {
+  checkOutput.textContent = word ? `${word} is ${valid ? ' ' : 'NOT '}VALID` : ''
 })
 
 socket.on('errorMsg', msg => {

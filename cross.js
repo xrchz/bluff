@@ -130,7 +130,7 @@ const sowpods = JSON.parse(fs.readFileSync('sowpods.json', 'utf8'))
 const inSowpods = (w) => {
   if (w.length <= 1) return false
   if (w.length > boardSize) return false
-  const capitalised = `${w[0].toUpperCase()}${w.slice(1).join('')}`
+  const capitalised = `${w[0].toUpperCase()}${w.slice(1)}`
   return 0 <= sowpods[w.length].indexOf(capitalised)
 }
 
@@ -271,7 +271,7 @@ const doMoves = (moves, oldBoard) => {
     if (wordTiles.length <= 1) return
     if (wordTiles.some((t) => t.last)) {
       const word = wordTiles.map((t) => t.l)
-      if (inSowpods(word)) {
+      if (inSowpods(word.join(''))) {
         words.push({w: word, i, j, d,
                     c: wordTiles.some((t) => !t.last),
                     s: scoreWord(wordTiles)})
@@ -488,6 +488,13 @@ io.on('connection', socket => {
       socket.emit('errorMsg', `Error: ${gameName} has already started.`)
     }
   }))
+
+  socket.on('check', word => {
+    if (typeof word === 'string')
+      socket.emit('checked', {word, valid: inSowpods(word.toLowerCase())})
+    else
+      socket.emit('checked', {})
+  })
 
   socket.on('preview', moves => inGame((gameName, game) => {
     if (game.started && !game.ended) {
