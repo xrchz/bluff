@@ -182,7 +182,10 @@ const scoreWord = (word) => {
   return score
 }
 
-const startWord = {w: ' ', i: midIndex, j: midIndex, d: true}
+const onStart = ({w, i, j, d}) => (
+  d ? (i <= midIndex && midIndex < i + w.length && j === midIndex)
+    : (i === midIndex && j <= midIndex && midIndex < j + w.length)
+)
 const sharesTile = ({w: wa, i: ia, j: ja, d: da},
                     {w: wb, i: ib, j: jb, d: db}) => {
   if (da === db)
@@ -330,7 +333,7 @@ const doMoves = (moves, oldBoard) => {
     }
     if (!(mainWords.length &&
           (words.some((w) => w.c) ||
-           (firstWord && mainWords.some((w) => sharesTile(w, startWord)))))) {
+           (firstWord && mainWords.some(onStart))))) {
       invalid = ['no connected main word']
     }
   }
