@@ -120,9 +120,9 @@ ul.inline > li {
 }
 
 #board div.cell {
-  width: 4em;
-  height: 4em;
-  line-height: 4em;
+  width: 3em;
+  height: 3em;
+  line-height: 3em;
   display: flex;
   justify-content: center;
   border: thin solid black;
@@ -226,16 +226,16 @@ span.letter, span.points {
   column-gap: 1em;
 }
 #rack > li {
-  width: 7em;
-  height: 7em;
-  line-height: 7em;
+  width: 6em;
+  height: 6em;
+  line-height: 6em;
   border: solid;
   display: flex;
   justify-content: center;
 }
 
 #rack span.letter {
-  font-size: 5.6em;
+  font-size: 5em;
 }
 
 #rack span.points {
