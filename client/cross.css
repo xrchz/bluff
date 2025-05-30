@@ -3,7 +3,8 @@ body {
   --text-color:                         DarkRed;
   --input-background-color:             #3A2009;
   --input-text-color:                   PapayaWhip;
-  --disabled-text-background-color:     #382d7b;
+  --disabled-text-color:                #8f3200;
+  --disabled-text-background-color:     PapayaWhip;
   --disabled-button-background-color:   SlateGray;
   --disabled-button-text-color:         DarkGray;
   --input-button-background-color:      Indigo;
@@ -34,15 +35,16 @@ body {
 
 }
 input, label {
-  font-size: x-large;
+  font-size: xx-large;
 }
 input[type=text] {
   background-color: var(--input-background-color);
   color: var(--input-text-color);
   width: 8em;
-  padding: 1em;
+  padding: 0.5em;
 }
 input[type=text]:disabled {
+  color: var(--disabled-text-color);
   background-color: var(--disabled-text-background-color);
 }
 input[type=button]:disabled {
@@ -52,7 +54,8 @@ input[type=button]:disabled {
 input[type=button], input[type=submit] {
   background-color: var(--input-button-background-color);
   color: var(--input-button-text-color);
-  padding: 2em;
+  padding: 0.5em;
+  font-weight: bold;
 }
 #game {
   width: 2em;
@@ -112,9 +115,14 @@ span.score {
 a:hover {
   cursor: pointer;
 }
-#spectators, #players, #games, form {
-  margin-top: 2em;
+#players {
   font-size: xx-large;
+  margin: 0;
+}
+#spectators, #games, form {
+  margin-top: 1em;
+  font-size: xx-large;
+  margin-bottom: 0;
 }
 ul.inline {
   list-style-type: none;
@@ -218,9 +226,6 @@ span.letter, span.points {
   align-items: center;
   row-gap: 2em;
 }
-#player input[type=button] {
-  padding: 1em 2em;
-}
 #control > div {
   display: flex;
   flex-direction: column;
@@ -231,7 +236,8 @@ span.letter, span.points {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  column-gap: 24em;
+  column-gap: 6em;
+  align-items: center;
 }
 
 #blank[hidden] {
@@ -256,7 +262,7 @@ span.letter, span.points {
   flex-direction: row;
   justify-content: center;
   margin-top: 1em;
-  column-gap: 1em;
+  column-gap: 0.2em;
 }
 #rack > li {
   width: 6em;

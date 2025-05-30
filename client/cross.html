@@ -16,22 +16,20 @@
     </form>
     <ul id=spectators class=inline></ul>
     <ul id=games hidden></ul>
+    <ul id=players class=inline></ul>
+    <p id=errorMsg></p>
     <div id=playArea hidden>
       <div id=board></div>
       <div id=player>
         <ul id=rack></ul>
         <div id=control>
           <input id=shuffle type=button value="Shuffle / Recall"></input>
-          <div>
-            <input id=play type=button value=Play disabled></input>
-            <label>Swap / Pass<input id=swap type=checkbox></input></label>
-          </div>
+          <label>Swap / Pass<input id=swap type=checkbox></input></label>
+          <input id=play type=button value=Play disabled></input>
         </div>
       </div>
       <div id=blank hidden></div>
     </div>
-    <p id=errorMsg></p>
-    <ul id=players class=inline></ul>
     <input id=start type=button value="Start!" hidden />
     <div id=info>
       <div id=bag hidden><span></span><ul class=inline></ul></div>
