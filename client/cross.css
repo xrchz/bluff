@@ -124,6 +124,16 @@ ul.inline > li {
   position: relative;
 }
 
+#board div.cell.cursor-right::before {
+  content: '➡';
+  font-size: 3em;
+}
+
+#board div.cell.cursor-down::before {
+  content: '⬇';
+  font-size: 3em;
+}
+
 span.letter, span.points {
   position: relative;
   z-index: 2;

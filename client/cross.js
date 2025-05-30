@@ -25,6 +25,9 @@ const playButton = document.getElementById('play')
 const swapInput = document.getElementById('swap')
 const blankDiv = document.getElementById('blank')
 
+const alphabet = 'abcdefghijklmnopqrstuvwxyz'
+const boardSize = 15
+
 {
   const onBlankClick = (e) => {
     document.querySelector('.selected .letter').textContent =
@@ -35,8 +38,7 @@ const blankDiv = document.getElementById('blank')
   }
 
   const blankButtons = []
-  const alphabet = 'abcdefghijklmnopqrstuvwxyz '
-  for (const c of alphabet) {
+  for (const c of `${alphabet} `) {
     const input = document.createElement('input')
     input.type = 'button'
     input.value = c
@@ -147,6 +149,11 @@ const removeFromBoard = (tile) => {
   rackList.appendChild(li)
 }
 
+const coordsOfCell = (x) => {
+  const [,is,js] = x.id.split('-')
+  return [is, js].map(Number)
+}
+
 const constructMoves = () => {
   const moves = []
   if (swapInput.checked) {
@@ -158,9 +165,8 @@ const constructMoves = () => {
     for (const placed of document.querySelectorAll('.placed')) {
       const ls = placed.querySelector('.letter')
       const l = `${ls.parentElement.classList.contains('blank') ? ' ' : ''}${ls.textContent}`
-      const [,is,js] = placed.id.split('-')
-      const [i, j] = [is, js].map(Number)
-      moves.push([l, [i,j]])
+      const ij = coordsOfCell(placed)
+      moves.push([l, ij])
     }
   }
   return moves
@@ -232,8 +238,60 @@ const onClickTile = (e) => {
   else if (!onBoard || tile.classList.contains('placed')) {
     tile.classList.add('selected')
   }
+  else if (onBoard && !tile.firstElementChild) {
+    // empty board tile, could be for typing
+    if (tile.classList.contains('cursor-right')) {
+      tile.classList.remove('cursor-right')
+      tile.classList.add('cursor-down')
+    }
+    else if (tile.classList.contains('cursor-down')) {
+      tile.classList.remove('cursor-down')
+    }
+    else {
+      document.querySelectorAll('.cursor-right, .cursor-down').forEach(
+        (x) => x.classList.remove('cursor-right', 'cursor-down'))
+      tile.classList.add('cursor-right')
+    }
+  }
   if (moved && isCurrent) socket.emit('preview', constructMoves())
 }
+
+document.addEventListener('keyup', (e) => {
+  if (document.querySelector('.selected')) return
+  if (swapInput.checked) return
+  const tile = document.querySelector('.cursor-right, .cursor-down')
+  const l = e.key.toLowerCase()
+  if (tile && alphabet.includes(l)) {
+    const rackLetter = Array.from(document.querySelectorAll('#rack .letter')).find(
+      (x) => x.textContent === l || x.parentNode.classList.contains('blank'))
+    if (rackLetter) {
+      console.log(`Found rackLetter for key event ${l} targeting ${tile.id}`)
+      const rackLi = rackLetter.parentElement.parentElement
+      rackLi.dispatchEvent(new Event('click'))
+      console.log(`Selected rack, content ${rackLetter.textContent}, li classes "${Array.from(rackLi.classList)}"`)
+      tile.dispatchEvent(new Event('click'))
+      console.log(`Put in position`)
+      if (tile.querySelector('.letter').textContent !== l) {
+        tile.dispatchEvent(new Event('click'))
+        tile.dispatchEvent(new Event('click'))
+        Array.from(document.querySelectorAll('#blank > input')).find(
+          (x) => x.value === l).dispatchEvent(new Event('click'))
+        tile.dispatchEvent(new Event('click'))
+      }
+      const d = tile.classList.contains('cursor-down')
+      let [i, j] = coordsOfCell(tile)
+      while (i < boardSize && j < boardSize &&
+             document.getElementById(`c-${i}-${j}`).firstElementChild) {
+        if (d) { i++ } else { j++ }
+      }
+      tile.classList.remove('cursor-right', 'cursor-down')
+      if (i < boardSize && j < boardSize) {
+        document.getElementById(`c-${i}-${j}`).classList.add(
+          d ? 'cursor-down' : 'cursor-right')
+      }
+    }
+  }
+}, {passive: true})
 
 const pointsPerLetter = {}
 socket.emit('pointsPerLetter')
