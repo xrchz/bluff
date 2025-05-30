@@ -37,6 +37,11 @@ body {
 input, label {
   font-size: xx-large;
 }
+label:has(#swap) {
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+}
 input[type=text] {
   background-color: var(--input-background-color);
   color: var(--input-text-color);
