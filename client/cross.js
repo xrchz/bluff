@@ -536,7 +536,7 @@ const createPlayList = (words) => {
       Array.isArray(w) ?
       `${w.join('')} for ${sp}` :
       (Array.isArray(rack) ?
-        `the last tile, getting ${s} from ${other}'s rack ${rack.join('')}` :
+        `the last tile, getting ${s} from ${other}'s rack "${rack.join('')}"` :
         `their whole rack for ${s} bonus points`)
     ul.appendChild(li)
   }
