@@ -478,13 +478,16 @@ socket.on('updateBag', baglen => {
 const createPlayList = (words) => {
   const ul = document.createElement('ul')
   let total = 0
-  for (const {w, s} of words) {
+  for (const {w, s, other, rack} of words) {
     const li = document.createElement('li')
     total += s
+    const sp = `${s} point${s === 1 ? '' : 's'}`
     li.textContent =
       Array.isArray(w) ?
-      `${w.join('')} for ${s} point${s === 1 ? '' : 's'}` :
-      `their whole rack for ${s} bonus points`
+      `${w.join('')} for ${sp}` :
+      (Array.isArray(rack) ?
+        `the last tile, getting ${s} from ${other}'s rack ${rack.join('')}` :
+        `their whole rack for ${s} bonus points`)
     ul.appendChild(li)
   }
   return {ul, total}

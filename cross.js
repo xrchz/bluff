@@ -543,8 +543,13 @@ io.on('connection', socket => {
               delete player.current
               if (!player.rack.length && !game.bag.length) {
                 game.ended = true
-                // TODO: add bonus scores for non-empty racks to playr
-                // TODO: add these as extra items to words
+                for (const other of game.players) {
+                  if (other.name === player.name) continue
+                  const s = other.rack.reduce((a,l) => a + pointsPerLetter[l], 0)
+                  other.score -= s
+                  player.score += s
+                  words.push({other: other.name, rack: other.rack, s})
+                }
               }
               else {
                 let nextIndex = playerIndex + 1
