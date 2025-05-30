@@ -491,7 +491,7 @@ io.on('connection', socket => {
 
   socket.on('check', word => {
     if (typeof word === 'string')
-      socket.emit('checked', {word, valid: inSowpods(word.toLowerCase())})
+      socket.emit('checked', {word, valid: inSowpods(word.trim().toLowerCase())})
     else
       socket.emit('checked', {})
   })
