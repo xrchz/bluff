@@ -104,6 +104,10 @@ span.score {
 
 #games > li > ul {
   display: inline;
+  zoom: 2;
+}
+#games > li > a {
+  font-weight: bold;
 }
 a:hover {
   cursor: pointer;
