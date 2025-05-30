@@ -31,11 +31,13 @@ const boardSize = 15
 
 {
   const onBlankClick = (e) => {
-    document.querySelector('.selected .letter').textContent =
-      e.currentTarget.value
+    const selected = document.querySelector('.selected')
+    selected.querySelector('.letter').textContent = e.currentTarget.value
     blankDiv.hidden = true
     shuffleButton.disabled = false
     resetPlayButton()
+    if (selected.classList.contains('cell'))
+      selected.classList.remove('selected')
   }
 
   const blankButtons = []
@@ -326,18 +328,14 @@ document.addEventListener('keyup', (e) => {
       const rackLetter = rackLetters?.find((x) => !x.parentNode.classList.contains('blank')) ||
                          rackLetters?.at(0)
       if (rackLetter) {
-        console.log(`Found rackLetter for key event ${l} targeting ${tile.id}`)
         const rackLi = rackLetter.parentElement.parentElement
         rackLi.dispatchEvent(new Event('click'))
-        console.log(`Selected rack, content ${rackLetter.textContent}, li classes "${Array.from(rackLi.classList)}"`)
         tile.dispatchEvent(new Event('click'))
-        console.log(`Put in position`)
         if (tile.querySelector('.letter').textContent !== l) {
           tile.dispatchEvent(new Event('click'))
           tile.dispatchEvent(new Event('click'))
           Array.from(document.querySelectorAll('#blank > input')).find(
             (x) => x.value === l).dispatchEvent(new Event('click'))
-          tile.dispatchEvent(new Event('click'))
         }
         let [i, j] = coordsOfCell(tile)
         while (i < boardSize && j < boardSize &&
