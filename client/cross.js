@@ -409,6 +409,7 @@ shuffleButton.addEventListener('click', (e) => {
     (t) => t.classList.remove('selected'))
   previewDiv.innerHTML = ''
   resetPlayButton()
+  removeCursors()
   const shuffled = Array.from(rackList.children)
   shuffleInPlace(shuffled)
   rackList.replaceChildren(...shuffled)
@@ -565,6 +566,7 @@ swapInput.addEventListener('change', (e) => {
     document.querySelectorAll('.selected').forEach(
       (t) => t.classList.remove('selected'))
   resetPlayButton()
+  removeCursors()
 }, {passive: true})
 
 socket.on('showLastPlay', (data) => {
