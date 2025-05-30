@@ -94,6 +94,20 @@ window.onpopstate = function (e) {
     socket.emit('joinRequest', e.state)
 }
 
+const onChangeJoining = (e) => {
+  document.querySelectorAll('.joining').forEach((x) => x.classList.remove('joining'))
+  const a = Array.from(document.querySelectorAll('#games > li > a')).find(
+    (a) => a.textContent === gameInput.value)
+  if (a) {
+    const p = Array.from(a.parentElement.querySelectorAll('a.disconnected')).find(
+      (a) => a.textContent === nameInput.value)
+    if (p) p.classList.add('joining')
+  }
+}
+
+gameInput.addEventListener('change', onChangeJoining)
+nameInput.addEventListener('change', onChangeJoining)
+
 socket.on('updateGames', games => {
   gamesList.innerHTML = ''
   for (const game of games) {
@@ -102,6 +116,7 @@ socket.on('updateGames', games => {
     a.textContent = game.name
     a.onclick = () => {
       gameInput.value = gameInput.value === game.name ? '' : game.name
+      gameInput.dispatchEvent(new Event('change'))
     }
     const ul = li.appendChild(document.createElement('ul'))
     ul.classList.add('inline')
@@ -111,11 +126,14 @@ socket.on('updateGames', games => {
         a = a.appendChild(document.createElement('a'))
         a.classList.add('disconnected')
         a.onclick = () => {
-          if (gameInput.value === game.name && nameInput.value === player.name)
+          if (gameInput.value === game.name && nameInput.value === player.name) {
             nameInput.value = ''
+            nameInput.dispatchEvent(new Event('change'))
+          }
           else {
             gameInput.value = game.name
             nameInput.value = player.name
+            nameInput.dispatchEvent(new Event('change'))
           }
         }
       }
@@ -415,6 +433,7 @@ socket.on('updatePlayers', ({players, updateRacks}) => {
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
   nameInput.value = data.playerName
+  nameInput.dispatchEvent(new Event('change'))
   spectateInput.checked = data.spectating
   gameInput.disabled = true
   nameInput.disabled = true

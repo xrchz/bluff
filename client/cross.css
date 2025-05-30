@@ -66,12 +66,12 @@ input[type=button], input[type=submit] {
 #spectators {
   color: var(--spectators-color);
 }
-.disconnected::after {
-  content: " (d/c)"
-}
 .disconnected {
   color: var(--disconnected-color);
-  font-size: large;
+  text-decoration: underline wavy;
+}
+.disconnected.joining {
+  text-decoration: none;
 }
 span.score {
   margin-left: 0.5em;
