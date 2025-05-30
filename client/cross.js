@@ -321,8 +321,10 @@ document.addEventListener('keyup', (e) => {
       }
     }
     else if (alphabet.includes(l)) {
-      const rackLetter = Array.from(document.querySelectorAll('#rack .letter')).find(
+      const rackLetters = Array.from(document.querySelectorAll('#rack .letter')).filter(
         (x) => x.textContent === l || x.parentNode.classList.contains('blank'))
+      const rackLetter = rackLetters?.find((x) => !x.parentNode.classList.contains('blank')) ||
+                         rackLetters?.at(0)
       if (rackLetter) {
         console.log(`Found rackLetter for key event ${l} targeting ${tile.id}`)
         const rackLi = rackLetter.parentElement.parentElement
