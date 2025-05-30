@@ -277,7 +277,7 @@ const onClickTile = (e) => {
     cursor.classList.add('placed')
     moved = true
     tile.remove()
-    progressCursor(cursor)
+    progressCursor(cursor, cursor.classList.contains('cursor-down'))
   }
   else if (!onBoard || tile.classList.contains('placed')) {
     removeCursors()
@@ -300,8 +300,7 @@ const onClickTile = (e) => {
   if (moved && isCurrent) socket.emit('preview', constructMoves())
 }
 
-const progressCursor = (tile) => {
-  const d = tile.classList.contains('cursor-down')
+const progressCursor = (tile, d) => {
   let [i, j] = coordsOfCell(tile)
   while (i < boardSize && j < boardSize &&
     document.getElementById(`c-${i}-${j}`).firstElementChild) {
@@ -320,9 +319,9 @@ document.addEventListener('keyup', (e) => {
   const tile = document.querySelector('.cursor-right, .cursor-down')
   const l = e.key.toLowerCase()
   if (tile) {
+    const d = tile.classList.contains('cursor-down')
     tile.classList.add('keying')
     if (l === 'backspace' || l === 'arrowleft') {
-      const d = tile.classList.contains('cursor-down')
       let [i, j] = coordsOfCell(tile)
       if (d) { i-- } else { j-- }
       while (true) {
@@ -361,7 +360,7 @@ document.addEventListener('keyup', (e) => {
           Array.from(document.querySelectorAll('#blank > input')).find(
             (x) => x.value === l).dispatchEvent(new Event('click'))
         }
-        progressCursor(tile)
+        progressCursor(tile, d)
       }
     }
     tile.classList.remove('keying')
