@@ -285,6 +285,7 @@ span.letter, span.points {
 #rack span.points {
   font-size: large;
   margin-top: 2em;
+  margin-left: 0em;
   letter-spacing: -0.2em;
   font-weight: bold;
 }
@@ -298,7 +299,8 @@ span.letter {
 span.points {
   font-size: x-small;
   position: absolute;
-  margin-top: 1.8em;
+  margin-top: 1.6em;
+  margin-left: -0.4em;
   letter-spacing: -0.3em;
 }
 
