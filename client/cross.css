@@ -171,7 +171,6 @@ ul.inline > li {
 #info {
   display: flex;
   flex-direction: row;
-  margin-top: 2em;
   justify-content: space-evenly;
   column-gap: 3em;
   font-size: x-large;
