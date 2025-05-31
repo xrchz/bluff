@@ -435,6 +435,10 @@ shuffleButton.addEventListener('click', (e) => {
   }
 }, {passive: true})
 
+const rackListLetters = () =>
+  Array.from(rackList.querySelectorAll('.letter')).map(
+    (x) => x.parentElement.classList.contains('blank') ? ' ' : x.textContent)
+
 socket.on('updatePlayers', ({players, updateRacks}) => {
   playersList.innerHTML = ''
   for (player of players) {
@@ -457,7 +461,9 @@ socket.on('updatePlayers', ({players, updateRacks}) => {
       isCurrent = player.current
     playersList.appendChild(li)
     if ((updateRacks === true || updateRacks === nameInput.value) && player.rack) {
-      if (thisPlayer || spectateInput.checked) {
+      if ((thisPlayer || spectateInput.checked) &&
+          player.rack.toSorted().join('') !==
+          rackListLetters().toSorted().join('')) {
         rackList.innerHTML = ''
         for (const l of player.rack) {
           const li = createRackLi()
@@ -545,8 +551,7 @@ const ntiles = (n) => `${n} tile${n === 1 ? '' : 's'}`
 socket.on('updateBag', ({tiles, onRacks}) => {
   bagLabel.innerHTML = ''
   bagList.innerHTML = ''
-  const thisRack = Array.from(rackList.querySelectorAll('.letter')).map(
-    (x) => x.parentElement.classList.contains('blank') ? ' ' : x.textContent)
+  const thisRack = rackListLetters()
   const bagLen = tiles.length - onRacks
   const racksLen = onRacks - thisRack.length
   const s1 = document.createElement('span')
