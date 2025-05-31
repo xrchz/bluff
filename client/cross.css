@@ -133,7 +133,7 @@ a:hover {
   font-size: xx-large;
   margin: 0;
 }
-#spectators, #games, form {
+#games, form {
   margin-top: 1em;
   font-size: xx-large;
   margin-bottom: 0;
