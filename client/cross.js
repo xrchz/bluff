@@ -481,7 +481,7 @@ socket.on('updatePlayers', ({players, updateRacks}) => {
       isCurrent = player.current
     playersList.appendChild(li)
     if ((updateRacks === true || updateRacks === nameInput.value) && player.rack) {
-      if ((thisPlayer || spectateInput.checked) &&
+      if ((thisPlayer || (player.current && spectateInput.checked)) &&
           player.rack.toSorted().join('') !==
           rackListLetters().toSorted().join('')) {
         rackList.innerHTML = ''
