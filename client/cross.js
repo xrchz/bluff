@@ -568,6 +568,8 @@ socket.on('updateBoard', board => {
 
 const ntiles = (n) => `${n} tile${n === 1 ? '' : 's'}`
 
+const qbs = (l) => l === ' ' ? '?' : l
+
 socket.on('updateBag', ({tiles, onRacks}) => {
   bagLabel.innerHTML = ''
   bagList.innerHTML = ''
@@ -588,7 +590,7 @@ socket.on('updateBag', ({tiles, onRacks}) => {
     }
     else {
       const li = document.createElement('li')
-      li.textContent = l === ' ' ? '?' : l
+      li.textContent = qbs(l)
       fragment.appendChild(li)
     }
   }
@@ -606,7 +608,7 @@ const createPlayList = (words) => {
       Array.isArray(w) ?
       `${w.join('')} for ${sp}` :
       (Array.isArray(rack) ?
-        `the last tile, getting ${s} from ${other}'s rack "${rack.join('')}"` :
+        `the last tile, getting ${s} from ${other}'s rack "${rack.map(qbs).join('')}"` :
         `their whole rack for ${s} bonus points`)
     ul.appendChild(li)
   }
