@@ -16,7 +16,8 @@ body {
   --score-color:                        DarkRed;
   --current-dc-background-color:        NavajoWhite;
   --current-dc-color:                   DarkViolet;
-  --rack-background-color:              NavajoWhite;
+  --tile-background-color:              NavajoWhite;
+  --tile-border-color:                  WhiteSmoke;
   --cell-dl-color:                      MediumPurple;
   --cell-tl-color:                      RebeccaPurple;
   --cell-dw-color:                      Coral;
@@ -208,8 +209,10 @@ span.letter, span.points {
   position: absolute;
   height: 90%;
   width: 90%;
-  margin: 5%;
-  background-color: var(--rack-background-color);
+  margin: 2% 5% 8%;
+  background-color: var(--tile-background-color);
+  border: outset 0.2em;
+  border-color: var(--tile-border-color);
   z-index: 1;
 }
 
