@@ -341,6 +341,11 @@ span.points {
 
 #checker {
   display: flex;
+  flex-direction: column;
+}
+
+#checker > div {
+  display: flex;
   column-gap: 1em;
   align-items: center;
 }
