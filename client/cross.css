@@ -1,6 +1,8 @@
 body {
   --background-color:                   Ivory;
   --text-color:                         DarkRed;
+  --ended-color:                        IndianRed;
+  --prestart-background-color:          LightYellow;
   --blank-color:                        Crimson;
   --last-played-color:                  DarkBlue;
   --input-background-color:             #3A2009;
@@ -125,6 +127,14 @@ span.score {
 #playArea[hidden] { display: none; }
 #bag[hidden] { display: none; }
 [hidden] { display: none; }
+
+#games > li.ended {
+  color: var(--ended-color);
+}
+
+#games > li.prestart {
+  background-color: var(--prestart-background-color);
+}
 
 #games > li > ul {
   display: inline;

@@ -65,7 +65,9 @@ function updateGames(room) {
   const data = []
   for (const [gameName, game] of Object.entries(games))
     data.push({ name: gameName,
-                players: game.players.map(player => ({ name: player.name, socketId: player.socketId }))
+                players: game.players.map(player => ({ name: player.name, socketId: player.socketId })),
+                started: game.started,
+                ended: game.ended
               })
   io.in(room).emit('updateGames', data)
 }

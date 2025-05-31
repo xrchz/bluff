@@ -116,8 +116,11 @@ nameInput.addEventListener('change', onChangeJoining)
 
 socket.on('updateGames', games => {
   gamesList.innerHTML = ''
+  games.sort((a,b) => (!!b.ended) - (!!a.ended))
   for (const game of games) {
     const li = fragment.appendChild(document.createElement('li'))
+    if (!game.started) li.classList.add('prestart')
+    if (game.ended) li.classList.add('ended')
     let a = li.appendChild(document.createElement('a'))
     a.textContent = game.name
     a.onclick = () => {
