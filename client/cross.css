@@ -25,6 +25,8 @@ body {
   --cell-tw-color:                      SaddleBrown;
   --cell-placed-color:                  Purple;
   --selected-outline:                   DarkGreen;
+  --checked-valid-color:                Green;
+  --checked-invalid-color:              Red;
 
   font-family: sans-serif;
   font-size: large;
@@ -330,8 +332,8 @@ span.points {
   min-width: 8em;
 }
 #checker span.valid {
-  color: green;
+  color: var(--checked-valid-color);
 }
 #checker span.invalid {
-  color: red;
+  color: var(--checked-invalid-color);
 }
