@@ -106,6 +106,14 @@ span.score {
   zoom: 1.5;
 }
 
+#log {
+  display: flex;
+  flex-direction: column-reverse;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
 #games[hidden] { display: none; }
 #playArea[hidden] { display: none; }
 #bag[hidden] { display: none; }

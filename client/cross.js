@@ -12,7 +12,7 @@ const spectatorsList = document.getElementById('spectators')
 const playersList = document.getElementById('players')
 const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
-const lastPlayDiv = document.getElementById('lastPlay')
+const logList = document.getElementById('log')
 const previewDiv = document.getElementById('preview')
 const bagDiv = document.getElementById('bag')
 const bagLabel = bagDiv.firstElementChild
@@ -80,7 +80,7 @@ socket.on('ensureLobby', () => {
   bagDiv.hidden = true
   bagList.innerHTML = ''
   bagLabel.innerHTML = ''
-  lastPlayDiv.innerHTML = ''
+  logList.innerHTML = ''
   playButton.disabled = true
   swapInput.checked = false
   playButton.value = 'Play'
@@ -583,16 +583,27 @@ swapInput.addEventListener('change', (e) => {
   removeCursors()
 }, {passive: true})
 
-socket.on('showLastPlay', (data) => {
-  lastPlayDiv.innerHTML = ''
+const addLogEntry = (data) => {
   const {name, words} = data || {}
+  const li = document.createElement('li')
   if (typeof words === 'string')
-    lastPlayDiv.textContent = `${name} ${words}`
+    li.textContent = `${name} ${words}`
   else if (Array.isArray(words)) {
     const span = document.createElement('span')
     const {ul, total} = createPlayList(words)
     span.textContent = `${name} scored ${total}, playing:`
-    lastPlayDiv.append(span, ul)
+    li.append(span, ul)
+  }
+  logList.appendChild(li)
+}
+
+socket.on('updateLog', (data) => {
+  if (Array.isArray(data)) {
+    logList.innerHTML = ''
+    data.forEach(addLogEntry)
+  }
+  else {
+    addLogEntry(data)
   }
   previewDiv.innerHTML = ''
   resetPlayButton()

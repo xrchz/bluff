@@ -390,7 +390,7 @@ io.on('connection', socket => {
           socket.emit('updateBag', game.bag.length)
           socket.emit('updateBoard', game.board)
           socket.emit('updatePlayers', {players: game.players, updateRacks: true})
-          socket.emit('showLastPlay', game.last)
+          socket.emit('updateLog', game.log)
         }
         else {
           socket.emit('updatePlayers', {players: game.players, updateRacks: true})
@@ -417,7 +417,7 @@ io.on('connection', socket => {
           socket.emit('updateBag', game.bag.length)
           socket.emit('updateBoard', game.board)
           io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: socket.playerName})
-          socket.emit('showLastPlay', game.last)
+          socket.emit('updateLog', game.log)
         }
         else {
           console.log(`error: ${socket.playerName} rejoining ${gameName} while in ${socket.rooms}`)
@@ -464,7 +464,7 @@ io.on('connection', socket => {
       if (canStart(game)) {
         console.log(`starting ${gameName}`)
         game.started = true
-        game.undoLog = []
+        game.log = []
         game.board = makeBoard()
         game.bag = makeBag()
         for (const player of game.players) {
@@ -563,11 +563,11 @@ io.on('connection', socket => {
                 if (nextIndex === game.players.length) nextIndex = 0
                 game.players[nextIndex].current = true
               }
-              game.last = {name: player.name, words}
+              game.log.push({name: player.name, words})
               io.in(gameName).emit('updateBag', game.bag.length)
               io.in(gameName).emit('updateBoard', game.board)
               io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
-              io.in(gameName).emit('showLastPlay', game.last)
+              io.in(gameName).emit('updateLog', game.log.at(-1))
             }
             else {
               socket.emit('errorMsg', `${invalid} is not a valid word`)
