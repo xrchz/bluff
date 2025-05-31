@@ -354,7 +354,10 @@ span.points {
 }
 #bag ul {
   display: grid;
-  width: 6em;
-  grid-template-columns: repeat(5, 1fr);
+  width: 5em;
+  grid-template-columns: repeat(7, 1fr);
   margin: 0;
+}
+#bag li {
+  font-family: monospace;
 }
