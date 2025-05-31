@@ -335,13 +335,9 @@ document.addEventListener('keyup', (e) => {
       }
       const cell = document.getElementById(`c-${i}-${j}`)
       if (cell && cell.classList.contains('placed')) {
-        const li = rackList.lastElementChild
-        if (li) {
-          cell.dispatchEvent(new Event('click'))
-          li.dispatchEvent(new Event('click'))
-          tile.classList.remove('cursor-right', 'cursor-down')
-          cell.classList.add(d ? 'cursor-down' : 'cursor-right')
-        }
+        cell.dispatchEvent(new Event('click'))
+        shuffleButton.dispatchEvent(new Event('click'))
+        cell.classList.add(d ? 'cursor-down' : 'cursor-right')
       }
       else {
         tile.classList.remove('cursor-right', 'cursor-down')
