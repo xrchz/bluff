@@ -537,9 +537,33 @@ socket.on('updateBoard', board => {
   boardDiv.appendChild(fragment)
 })
 
-socket.on('updateBag', baglen => {
+const ntiles = (n) => `${n} tile${n === 1 ? '' : 's'}`
+
+socket.on('updateBag', ({tiles, onRacks}) => {
   bagList.innerHTML = ''
-  bagLabel.innerHTML = `${baglen} tile${baglen === 1 ? '' : 's'} left`
+  const thisRack = Array.from(rackList.querySelectorAll('.letter')).map(
+    (x) => x.parentElement.classList.contains('blank') ? ' ' : x.textContent)
+  const bagLen = tiles.length - onRacks
+  const racksLen = onRacks - thisRack.length
+  const s1 = document.createElement('span')
+  s1.textContent = `${ntiles(bagLen)} in bag`
+  const s2 = document.createElement('span')
+  s2.textContent = `+ ${ntiles(racksLen)} on other racks`
+  const s3 = document.createElement('span')
+  s3.textContent = `= ${ntiles(bagLen + racksLen)} unseen:`
+  bagLabel.append(s1, s2, s3)
+  for (const l of tiles) {
+    const i = thisRack.indexOf(l)
+    if (0 <= i) {
+      thisRack.splice(i, 1)
+    }
+    else {
+      const li = document.createElement('li')
+      li.textContent = l === ' ' ? '?' : l
+      fragment.appendChild(li)
+    }
+  }
+  bagList.appendChild(fragment)
 })
 
 const createPlayList = (words) => {

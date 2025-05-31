@@ -343,6 +343,12 @@ const doMoves = (moves, oldBoard) => {
   return {newBoard, invalid, words}
 }
 
+const bagInfo = (game) => {
+  const racks = game.players.flatMap((p) => p.rack)
+  const all = game.bag.concat(racks)
+  return { tiles: all.toSorted(), onRacks: racks.length }
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -387,9 +393,9 @@ io.on('connection', socket => {
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (game.started) {
           socket.emit('gameStarted')
-          socket.emit('updateBag', game.bag.length)
           socket.emit('updateBoard', game.board)
           socket.emit('updatePlayers', {players: game.players, updateRacks: true})
+          socket.emit('updateBag', bagInfo(game))
           socket.emit('updateLog', game.log)
         }
         else {
@@ -414,9 +420,9 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          socket.emit('updateBag', game.bag.length)
           socket.emit('updateBoard', game.board)
           io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: socket.playerName})
+          socket.emit('updateBag', bagInfo(game))
           socket.emit('updateLog', game.log)
         }
         else {
@@ -475,9 +481,9 @@ io.on('connection', socket => {
         const current = game.players[Math.floor(Math.random() * game.players.length)]
         current.current = true
         io.in(gameName).emit('gameStarted')
-        io.in(gameName).emit('updateBag', game.bag.length)
         io.in(gameName).emit('updateBoard', game.board)
         io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
+        io.in(gameName).emit('updateBag', bagInfo(game))
       }
       else {
         socket.emit('errorMsg', 'Error: not enough or too many players to start.')
@@ -567,9 +573,9 @@ io.on('connection', socket => {
                 game.players[nextIndex].current = true
               }
               game.log.push({name: player.name, words})
-              io.in(gameName).emit('updateBag', game.bag.length)
               io.in(gameName).emit('updateBoard', game.board)
               io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
+              io.in(gameName).emit('updateBag', bagInfo(game))
               io.in(gameName).emit('updateLog', game.log.at(-1))
             }
             else {

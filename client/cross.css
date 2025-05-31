@@ -344,3 +344,17 @@ span.points {
 #checker .invalid {
   color: var(--checked-invalid-color);
 }
+#bag {
+  overflow-y: scroll;
+  max-height: 20ex;
+}
+#bag > span {
+  display: flex;
+  flex-direction: column;
+}
+#bag ul {
+  display: grid;
+  width: 6em;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 0;
+}
