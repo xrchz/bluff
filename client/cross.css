@@ -112,8 +112,7 @@ span.score {
 
 #log {
   display: flex;
-  flex-direction: column-reverse;
-  justify-content: flex-end;
+  flex-direction: column;
   list-style-type: none;
   padding: 0;
   margin: 0;

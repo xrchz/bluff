@@ -597,7 +597,7 @@ const addLogEntry = (data) => {
     span.textContent = `${name} scored ${total}, playing:`
     li.append(span, ul)
   }
-  logList.appendChild(li)
+  logList.prepend(li)
 }
 
 socket.on('updateLog', (data) => {
