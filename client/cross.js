@@ -605,25 +605,27 @@ socket.on('updateLog', (data) => {
   else {
     addLogEntry(data)
   }
-  logList.lastChild.scrollIntoView()
   previewDiv.innerHTML = ''
+  resetShuffleButton()
   resetPlayButton()
 })
 
 const checkWord = checkerForm.querySelector('input[type=text]')
-const checkOutput = checkerForm.querySelector('span')
+const checkOutput = checkerForm.querySelector('ul')
 checkerForm.onsubmit = () => {
   socket.emit('check', checkWord.value)
   return false
 }
-socket.on('checked', ({word, valid}) => {
-  checkOutput.classList.remove('valid', 'invalid')
-  if (word) {
-    checkOutput.textContent = `${word} is ${valid ? ' ' : 'NOT '}VALID`
-    checkOutput.classList.add(valid ? 'valid' : 'invalid')
-  }
-  else {
-    checkOutput.textContent = ''
+socket.on('checked', (words) => {
+  checkOutput.innerHTML = ''
+  if (Array.isArray(words)) {
+    for (const {word, valid} of words) {
+      if (!word) continue
+      const li = document.createElement('li')
+      li.textContent = `${word} is ${valid ? ' ' : 'NOT '}VALID`
+      li.classList.add(valid ? 'valid' : 'invalid')
+      checkOutput.appendChild(li)
+    }
   }
 })
 

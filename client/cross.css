@@ -334,9 +334,9 @@ span.points {
   text-transform: uppercase;
   min-width: 8em;
 }
-#checker span.valid {
+#checker .valid {
   color: var(--checked-valid-color);
 }
-#checker span.invalid {
+#checker .invalid {
   color: var(--checked-invalid-color);
 }

@@ -489,11 +489,14 @@ io.on('connection', socket => {
     }
   }))
 
-  socket.on('check', word => {
-    if (typeof word === 'string')
-      socket.emit('checked', {word, valid: inSowpods(word.trim().toLowerCase())})
+  socket.on('check', s => {
+    if (typeof s === 'string') {
+      const words = s.toLowerCase().split(/\s+/, 10)
+      socket.emit('checked',
+        words.map((word) => ({word, valid: inSowpods(word)})))
+    }
     else
-      socket.emit('checked', {})
+      socket.emit('checked', [])
   })
 
   socket.on('preview', moves => inGame((gameName, game) => {
