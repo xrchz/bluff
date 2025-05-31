@@ -2,6 +2,7 @@ body {
   --background-color:                   Ivory;
   --text-color:                         DarkRed;
   --blank-color:                        Crimson;
+  --last-played-color:                  DarkBlue;
   --input-background-color:             #3A2009;
   --input-text-color:                   PapayaWhip;
   --disabled-text-color:                #8f3200;
@@ -192,8 +193,12 @@ ul.inline > li {
   position: relative;
 }
 
-.blank {
+.blank, .last.blank {
   color: var(--blank-color);
+}
+
+.last {
+  color: var(--last-played-color);
 }
 
 #board div.cell.cursor-right::before {
