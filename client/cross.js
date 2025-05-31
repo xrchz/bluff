@@ -213,6 +213,7 @@ let lastCursorBeforeEdge
 const removeCursors = () => {
   document.querySelectorAll('.cursor-right, .cursor-down').forEach(
     (x) => x.classList.remove('cursor-right', 'cursor-down'))
+  delete lastCursorBeforeEdge
 }
 
 const onClickTile = (e) => {
@@ -303,7 +304,6 @@ const onClickTile = (e) => {
     else {
       removeCursors()
       tile.classList.add('cursor-right')
-      delete lastCursorBeforeEdge
     }
   }
   resetShuffleButton()
