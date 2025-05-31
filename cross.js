@@ -260,13 +260,23 @@ const doMoves = (moves, oldBoard) => {
     }
   }
   let invalid = false
-  const unassigned = {}
+  const placedCoords = {}
   for (const [l, [i,j]] of moves) {
     const tile = newBoard[i][j]
     tile.l = l.at(-1)
     tile.blank = 1 < l.length
     tile.last = true
-    unassigned[`${i},${j}`] = true
+    placedCoords[`${i},${j}`] = true
+  }
+  const containsAllPlaced = ({w, i, j, d}) => {
+    let wi = i
+    let wj = j
+    const cs = Object.assign({}, placedCoords)
+    for (const l of w) {
+      delete cs[`${wi},${wj}`]
+      if (d) { wi++ } else { wj++ }
+    }
+    return !Object.keys(cs).length
   }
   const words = []
   const processWord = (wordTiles, i, j, d) => {
@@ -310,18 +320,6 @@ const doMoves = (moves, oldBoard) => {
     if (invalid) break
   }
   if (!invalid) {
-    for (const {w, i, j, d} of words) {
-      let wi = i
-      let wj = j
-      for (const l of w) {
-        delete unassigned[`${wi},${wj}`]
-        if (d) { wi++ } else { wj++ }
-      }
-    }
-    if (Object.keys(unassigned).length)
-      invalid = ['single letter word']
-  }
-  if (!invalid) {
     const mainWords = []
     for (const candidate of words) {
       let b = true
@@ -333,7 +331,7 @@ const doMoves = (moves, oldBoard) => {
       }
       if (b) mainWords.push(candidate)
     }
-    if (!(mainWords.length &&
+    if (!(mainWords.some(containsAllPlaced) &&
           (words.some((w) => w.c) ||
            (firstWord && mainWords.some(onStart))))) {
       invalid = ['no connected main word']
