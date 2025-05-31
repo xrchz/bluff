@@ -188,19 +188,6 @@ const onStart = ({w, i, j, d}) => (
   d ? (i <= midIndex && midIndex < i + w.length && j === midIndex)
     : (i === midIndex && j <= midIndex && midIndex < j + w.length)
 )
-const sharesTile = ({w: wa, i: ia, j: ja, d: da},
-                    {w: wb, i: ib, j: jb, d: db}) => {
-  if (da === db)
-    return (wa === wb && ia === ib && ja === jb)
-  const na = wa.length
-  const nb = wb.length
-  if (da)
-    return (ia <= ib && ib < ia + na &&
-            jb <= ja && ja < jb + nb)
-  else
-    return (ib <= ia && ia < ib + nb &&
-            ja <= jb && jb < ja + na)
-}
 
 const validLetter = (l) => (
   typeof l === 'string' &&
@@ -244,6 +231,7 @@ const checkOnRackFitsBoard = (moves, isExchange, newRack) => {
 }
 
 const doMoves = (moves, oldBoard) => {
+  // make a deep (enough) copy of the board
   const newBoard = []
   for (const row of oldBoard) {
     const newRow = []
@@ -252,6 +240,7 @@ const doMoves = (moves, oldBoard) => {
       newRow.push(Object.assign({}, tile))
     }
   }
+  // clear old last-play markers and detect if any words exist
   let firstWord = true
   for (const row of newBoard) {
     for (const tile of row) {
@@ -260,6 +249,8 @@ const doMoves = (moves, oldBoard) => {
     }
   }
   let invalid = false
+  // add new last-play markers and blank markers
+  // and store set of placed coordinates
   const placedCoords = {}
   for (const [l, [i,j]] of moves) {
     const tile = newBoard[i][j]
@@ -268,6 +259,7 @@ const doMoves = (moves, oldBoard) => {
     tile.last = true
     placedCoords[`${i},${j}`] = true
   }
+  // function to detect whether a word contains all the placed coordinates
   const containsAllPlaced = ({w, i, j, d}) => {
     let wi = i
     let wj = j
@@ -276,8 +268,16 @@ const doMoves = (moves, oldBoard) => {
       delete cs[`${wi},${wj}`]
       if (d) { wi++ } else { wj++ }
     }
-    return !Object.keys(cs).length
+    return !(Object.keys(cs).length)
   }
+  // function to process a word on the board
+  // keep those that:
+  // - have > 1 letter
+  // - contain a newly placed tile
+  // - are in the dictionary (set invalid if not)
+  // store also:
+  // - score, start tile coordinates, direction
+  // - whether it contains an existing tile
   const words = []
   const processWord = (wordTiles, i, j, d) => {
     if (wordTiles.length <= 1) return
@@ -289,10 +289,12 @@ const doMoves = (moves, oldBoard) => {
                     s: scoreWord(wordTiles)})
       }
       else {
-        invalid = word
+        invalid = `${word} is not in the dictionary`
       }
     }
   }
+  // find all words on the board (via possible start tiles, then 2 directions)
+  // and process them, stopping if any invalid found
   for (let i = 0; i < boardSize; i++) {
     for (let j = 0; j < boardSize; j++) {
       if (!('l' in newBoard[i][j])) continue
@@ -320,23 +322,19 @@ const doMoves = (moves, oldBoard) => {
     if (invalid) break
   }
   if (!invalid) {
-    const mainWords = []
-    for (const candidate of words) {
-      let b = true
-      for (const word of words) {
-        if (!sharesTile(word, candidate)) {
-          b = false
-          break
-        }
-      }
-      if (b) mainWords.push(candidate)
-    }
-    if (!(mainWords.some(containsAllPlaced) &&
-          (words.some((w) => w.c) ||
-           (firstWord && mainWords.some(onStart))))) {
-      invalid = ['no connected main word']
+    // words now contains all the newly placed words
+    // ensure there is one word that contains all newly placed tiles
+    // (this implies that all the words are connected: there is a path between
+    //  the newly placed tiles of any two words via the main word)
+    const mainWord = words.find(containsAllPlaced)
+    // also ensure that at least one word is connected to an old tile,
+    // or that the main word is the first word and on the start tile
+    if (!(mainWord && (words.some((w) => w.c) ||
+                       (firstWord && onStart(mainWord))))) {
+      invalid = 'no connected main word'
     }
   }
+  // check for bonus
   if (!invalid && moves.length === rackSize) {
     words.push({s: bonusPoints})
   }
@@ -579,7 +577,7 @@ io.on('connection', socket => {
               io.in(gameName).emit('updateLog', game.log.at(-1))
             }
             else {
-              socket.emit('errorMsg', `${invalid} is not a valid word`)
+              socket.emit('errorMsg', invalid)
             }
           }
           else {
