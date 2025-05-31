@@ -34,7 +34,7 @@ const boardSize = 15
     const selected = document.querySelector('.selected')
     selected.querySelector('.letter').textContent = e.currentTarget.value
     blankDiv.hidden = true
-    shuffleButton.disabled = false
+    resetShuffleButton()
     resetPlayButton()
     if (selected.classList.contains('cell'))
       selected.classList.remove('selected')
@@ -54,7 +54,7 @@ const boardSize = 15
   input.addEventListener('click', (e) => {
     blankDiv.hidden = true
     document.querySelector('.selected').classList.remove('selected')
-    shuffleButton.disabled = false
+    resetShuffleButton()
     resetPlayButton()
     if (!swapInput.checked && isCurrent)
       socket.emit('preview', constructMoves())
@@ -220,6 +220,7 @@ const onClickTile = (e) => {
     tile.classList.remove('selected')
     if (swapInput.checked && !document.querySelector('.selected'))
       playButton.value = 'Pass'
+    resetShuffleButton()
     return
   }
   const onBoard = tile.classList.contains('cell')
@@ -297,6 +298,7 @@ const onClickTile = (e) => {
       tile.classList.add('cursor-right')
     }
   }
+  resetShuffleButton()
   if (moved && isCurrent) socket.emit('preview', constructMoves())
 }
 
@@ -388,10 +390,16 @@ let isCurrent = false
 
 const swapAllowed = () => (isCurrent && swapInput.checked)
 const resetPlayButton = () => {
-  playButton.disabled = !swapAllowed()
+  playButton.disabled = !swapAllowed() && blankDiv.hidden && !previewDiv.firstElementChild
   playButton.value = swapInput.checked ?
     (document.querySelector('.selected') ? 'Swap' : 'Pass')
     : 'Play'
+}
+const resetShuffleButton = () => {
+  shuffleButton.disabled = swapAllowed() || !blankDiv.hidden
+  shuffleButton.value = document.querySelector('.placed.selected') ?
+    'Recall 1' : document.querySelector('.placed') ?
+    'Recall' : 'Shuffle'
 }
 
 function shuffleInPlace(array) {
@@ -404,15 +412,26 @@ function shuffleInPlace(array) {
 }
 
 shuffleButton.addEventListener('click', (e) => {
-  document.querySelectorAll('.placed').forEach(removeFromBoard)
+  previewDiv.innerHTML = ''
+  removeCursors()
+  const one = document.querySelector('.placed.selected')
+  const all = document.querySelectorAll('.placed')
+  if (one) {
+    removeFromBoard(one)
+    one.classList.remove('selected')
+  }
+  else if (all.length) {
+    all.forEach(removeFromBoard)
+  }
   document.querySelectorAll('.selected').forEach(
     (t) => t.classList.remove('selected'))
-  previewDiv.innerHTML = ''
+  resetShuffleButton()
   resetPlayButton()
-  removeCursors()
-  const shuffled = Array.from(rackList.children)
-  shuffleInPlace(shuffled)
-  rackList.replaceChildren(...shuffled)
+  if (!one && !all.length) {
+    const shuffled = Array.from(rackList.children)
+    shuffleInPlace(shuffled)
+    rackList.replaceChildren(...shuffled)
+  }
 }, {passive: true})
 
 socket.on('updatePlayers', ({players, updateRacks}) => {
