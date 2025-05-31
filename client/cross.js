@@ -240,14 +240,13 @@ const onClickTile = (e) => {
       if (tile.firstElementChild) {
         // tile is a board cell with a tile
         if (tile.classList.contains('placed')) {
-          // cell's tile is newly-placed:
-          // remove tile from board and replace on rack (or a nearby empty cell?)
-          removeFromBoard(tile)
-          // then move selected to tile's former cell
-          tile.appendChild(selected.firstElementChild)
-          tile.classList.add('placed')
+          // cell's tile is newly-placed: swap with selected
+          const tl = tile.firstElementChild
+          const sl = selected.firstElementChild
+          tile.appendChild(sl)
+          selected.appendChild(tl)
           moved = true
-          removeSelected(selected)
+          selected.classList.remove('selected')
         }
       }
       else {
