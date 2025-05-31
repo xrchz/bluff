@@ -101,6 +101,7 @@ window.onpopstate = function (e) {
 
 const onChangeJoining = (e) => {
   document.querySelectorAll('.joining').forEach((x) => x.classList.remove('joining'))
+  if (spectateInput.checked) return
   const a = Array.from(document.querySelectorAll('#games > li > a')).find(
     (a) => a.textContent === gameInput.value)
   if (a) {
