@@ -605,6 +605,7 @@ socket.on('updateLog', (data) => {
   else {
     addLogEntry(data)
   }
+  logList.lastChild.scrollIntoView()
   previewDiv.innerHTML = ''
   resetPlayButton()
 })
