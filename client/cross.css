@@ -231,8 +231,8 @@ span.letter, span.points {
   content: '';
   display: block;
   position: absolute;
-  height: 90%;
-  width: 90%;
+  height: 86%;
+  width: 86%;
   margin: 2% 5% 8%;
   background-color: var(--tile-background-color);
   border: outset 0.2em;
@@ -320,7 +320,7 @@ span.letter, span.points {
 #rack span.points {
   font-size: large;
   margin-top: 2em;
-  margin-left: 0em;
+  margin-left: -0.2em;
   letter-spacing: -0.2em;
   font-weight: bold;
 }
@@ -329,13 +329,13 @@ span.letter {
   font-weight: bold;
   text-transform: uppercase;
   text-align: center;
-  font-size: 2.8em;
+  font-size: 2.5em;
 }
 span.points {
   font-size: x-small;
   position: absolute;
-  margin-top: 1.6em;
-  margin-left: -0.4em;
+  margin-top: 1.5em;
+  margin-left: -0.35em;
   letter-spacing: -0.3em;
 }
 
