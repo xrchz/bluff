@@ -36,8 +36,10 @@ const boardSize = 15
     blankDiv.hidden = true
     resetShuffleButton()
     resetPlayButton()
-    if (selected.classList.contains('cell'))
+    if (selected.classList.contains('cell')) {
       selected.classList.remove('selected')
+      if (isCurrent) socket.emit('preview', constructMoves())
+    }
   }
 
   const blankButtons = []
