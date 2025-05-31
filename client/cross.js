@@ -540,6 +540,7 @@ socket.on('updateBoard', board => {
 const ntiles = (n) => `${n} tile${n === 1 ? '' : 's'}`
 
 socket.on('updateBag', ({tiles, onRacks}) => {
+  bagLabel.innerHTML = ''
   bagList.innerHTML = ''
   const thisRack = Array.from(rackList.querySelectorAll('.letter')).map(
     (x) => x.parentElement.classList.contains('blank') ? ' ' : x.textContent)
@@ -550,7 +551,7 @@ socket.on('updateBag', ({tiles, onRacks}) => {
   const s2 = document.createElement('span')
   s2.textContent = `+ ${ntiles(racksLen)} on other racks`
   const s3 = document.createElement('span')
-  s3.textContent = `= ${ntiles(bagLen + racksLen)} unseen:`
+  s3.textContent = `= ${ntiles(bagLen + racksLen)} hidden:`
   bagLabel.append(s1, s2, s3)
   for (const l of tiles) {
     const i = thisRack.indexOf(l)
