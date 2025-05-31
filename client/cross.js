@@ -208,6 +208,8 @@ const constructMoves = () => {
   return moves
 }
 
+let lastCursorBeforeEdge
+
 const removeCursors = () => {
   document.querySelectorAll('.cursor-right, .cursor-down').forEach(
     (x) => x.classList.remove('cursor-right', 'cursor-down'))
@@ -301,6 +303,7 @@ const onClickTile = (e) => {
     else {
       removeCursors()
       tile.classList.add('cursor-right')
+      delete lastCursorBeforeEdge
     }
   }
   resetShuffleButton()
@@ -309,14 +312,20 @@ const onClickTile = (e) => {
 
 const progressCursor = (tile, d) => {
   let [i, j] = coordsOfCell(tile)
-  while (i < boardSize && j < boardSize &&
-    document.getElementById(`c-${i}-${j}`).firstElementChild) {
+  let cell
+  while (i < boardSize && j < boardSize) {
+    cell = document.getElementById(`c-${i}-${j}`)
+    if (!cell.firstElementChild) break
     if (d) { i++ } else { j++ }
   }
   tile.classList.remove('cursor-right', 'cursor-down')
   if (i < boardSize && j < boardSize) {
     document.getElementById(`c-${i}-${j}`).classList.add(
       d ? 'cursor-down' : 'cursor-right')
+    delete lastCursorBeforeEdge
+  }
+  else {
+    lastCursorBeforeEdge = {cell, d}
   }
 }
 
@@ -325,10 +334,17 @@ document.addEventListener('keyup', (e) => {
   if (swapInput.checked) return
   const tile = document.querySelector('.cursor-right, .cursor-down')
   const l = e.key.toLowerCase()
+  const isBackSpace = (l === 'backspace' || l === 'arrowleft')
+  const doBackSpace = (cell, d) => {
+    cell.dispatchEvent(new Event('click'))
+    shuffleButton.dispatchEvent(new Event('click'))
+    cell.classList.add(d ? 'cursor-down' : 'cursor-right')
+    delete lastCursorBeforeEdge
+  }
   if (tile) {
     const d = tile.classList.contains('cursor-down')
     tile.classList.add('keying')
-    if (l === 'backspace' || l === 'arrowleft') {
+    if (isBackSpace) {
       let [i, j] = coordsOfCell(tile)
       if (d) { i-- } else { j-- }
       while (true) {
@@ -340,9 +356,7 @@ document.addEventListener('keyup', (e) => {
       }
       const cell = document.getElementById(`c-${i}-${j}`)
       if (cell && cell.classList.contains('placed')) {
-        cell.dispatchEvent(new Event('click'))
-        shuffleButton.dispatchEvent(new Event('click'))
-        cell.classList.add(d ? 'cursor-down' : 'cursor-right')
+        doBackSpace(cell, d)
       }
       else {
         tile.classList.remove('cursor-right', 'cursor-down')
@@ -367,6 +381,10 @@ document.addEventListener('keyup', (e) => {
       }
     }
     tile.classList.remove('keying')
+  }
+  else if (lastCursorBeforeEdge && isBackSpace &&
+           lastCursorBeforeEdge.cell.classList.contains('placed')) {
+    doBackSpace(lastCursorBeforeEdge.cell, lastCursorBeforeEdge.d)
   }
 }, {passive: true})
 
