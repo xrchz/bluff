@@ -433,6 +433,8 @@ shuffleButton.addEventListener('click', (e) => {
     shuffleInPlace(shuffled)
     rackList.replaceChildren(...shuffled)
   }
+  if (isCurrent && document.querySelectorAll('.placed').length)
+    socket.emit('preview', constructMoves())
 }, {passive: true})
 
 const rackListLetters = () =>
