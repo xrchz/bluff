@@ -26,6 +26,7 @@ const playButton = document.getElementById('play')
 const swapInput = document.getElementById('swap')
 const blankDiv = document.getElementById('blank')
 const checkerForm = document.getElementById('checker')
+const checkerInput = checkerForm.querySelector('input[type=text]')
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz'
 const boardSize = 15
@@ -333,6 +334,7 @@ const progressCursor = (tile, d) => {
 
 document.addEventListener('keyup', (e) => {
   if (document.querySelector('.selected')) return
+  if (document.activeElement === checkerInput) return
   if (swapInput.checked) return
   const tile = document.querySelector('.cursor-right, .cursor-down')
   const l = e.key.toLowerCase()
@@ -578,6 +580,7 @@ socket.on('updateBoard', board => {
     }
   }
   boardDiv.appendChild(fragment)
+  delete lastCursorBeforeEdge
 })
 
 const ntiles = (n) => `${n} tile${n === 1 ? '' : 's'}`
