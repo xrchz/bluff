@@ -7,6 +7,7 @@ const errorMsg = document.getElementById('errorMsg')
 const gameInput = document.getElementById('game')
 const nameInput = document.getElementById('name')
 const joinButton = document.getElementById('join')
+const undoButton = document.getElementById('undo')
 const spectateInput = document.getElementById('spectate')
 const spectatorsList = document.getElementById('spectators')
 const playersList = document.getElementById('players')
@@ -70,6 +71,7 @@ socket.on('ensureLobby', () => {
   gameInput.disabled = false
   nameInput.disabled = false
   joinButton.hidden = false
+  undoButton.hidden = true
   spectateInput.hidden = false
   spectateInput.previousElementSibling.hidden = false
   spectateInput.disabled = false
@@ -527,6 +529,17 @@ joinButton.parentElement.onsubmit = () => {
 
 startButton.onclick = () => socket.emit('startGame')
 
+undoButton.onclick = () => socket.emit('toggleUndo')
+
+socket.on('updateUndo', undoers => {
+  console.log(`Got updateUndo with ${undoers}`)
+  const n = playersList.children.length
+  const thisPlayer = !spectateInput.checked && undoers.includes(nameInput.value)
+  const verb = thisPlayer ? `Do Not Undo` : `Undo`
+  const count = undoers.length ? ` ${undoers.length}/${n}` : ''
+  undoButton.value = `${verb}${count}`
+})
+
 socket.on('showStart', show => {
   if (!spectateInput.checked)
     startButton.hidden = !show
@@ -535,6 +548,7 @@ socket.on('showStart', show => {
 socket.on('gameStarted', () => {
   startButton.hidden = true
   joinButton.hidden = true
+  undoButton.hidden = false
   playArea.hidden = false
   bagDiv.hidden = false
   errorMsg.innerHTML = ''
@@ -666,6 +680,7 @@ socket.on('updateLog', (data) => {
   previewDiv.innerHTML = ''
   resetShuffleButton()
   resetPlayButton()
+  undoButton.disabled = spectateInput.checked || !logList.firstElementChild
 })
 
 const checkWord = checkerForm.querySelector('input[type=text]')

@@ -347,7 +347,7 @@ const bagInfo = (game) => {
   return { tiles: all.toSorted(), onRacks: racks.length }
 }
 
-const countUndoers = (players) => (players.reduce((a, p) => a + !!p.allowsUndo, 0))
+const listUndoers = (players) => players.flatMap((p) => p.allowsUndo ? [p.name] : [])
 
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
@@ -609,18 +609,18 @@ io.on('connection', socket => {
   socket.on('toggleUndo', () => inGamePlayer((gameName, game, playerIndex, player) => {
     if (player.allowsUndo) {
       delete player.allowsUndo
-      io.in(gameName).emit('updateUndo', countUndoers(game.players))
+      io.in(gameName).emit('updateUndo', listUndoers(game.players))
     }
     else if (0 <= playerIndex) {
       player.allowsUndo = true
-      const n = countUndoers(game.players)
-      if (n === game.players.length) {
+      const undoers = listUndoers(game.players)
+      if (undoers.length === game.players.length) {
         // TODO do the undo
-        // TODO set all allows to false
-        // updateUndo with 0
+        game.players.forEach((p) => delete p.allowsUndo)
+        io.in(gameName).emit('updateUndo', [])
       }
       else {
-        io.in(gameName).emit('updateUndo', n)
+        io.in(gameName).emit('updateUndo', undoers)
       }
     }
   }))
