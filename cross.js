@@ -463,6 +463,33 @@ io.on('connection', socket => {
     }
   }
 
+  function inGamePlayer(func) {
+    inGame((gameName, game) => {
+      if (game.started && !game.ended) {
+        const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+        const player = 0 <= playerIndex ? game.players[playerIndex] : {}
+        func(gameName, game, playerIndex, player)
+
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} out of phase`)
+        socket.emit('errorMsg', `Error: action not currently possible.`)
+      }
+    })
+  }
+
+  function inGameCurrentPlayer(func) {
+    inGamePlayer((gameName, game, playerIndex, player) => {
+      if (player.current) {
+        func(gameName, game, playerIndex, player)
+      }
+      else {
+        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
+        socket.emit('errorMsg', 'Error: not your turn.')
+      }
+    })
+  }
+
   socket.on('startGame', () => inGame((gameName, game) => {
     if (!game.started) {
       if (canStart(game)) {
@@ -503,102 +530,81 @@ io.on('connection', socket => {
       socket.emit('checked', [])
   })
 
-  socket.on('preview', moves => inGame((gameName, game) => {
-    if (game.started && !game.ended) {
-      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
-      const player = 0 <= playerIndex ? game.players[playerIndex] : {}
-      if (player.current) {
-        if (validMovesOn(game.board, moves)) {
-          if (moves.some(([,t]) => t)) {
-            const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
-            if (onRackFitsBoard) {
-              const {invalid, words} = doMoves(moves, game.board)
-              socket.emit('preview', !invalid && words)
-            }
-          }
+  socket.on('preview', moves => inGameCurrentPlayer((gameName, game, playerIndex, player) => {
+    if (validMovesOn(game.board, moves)) {
+      if (moves.some(([,t]) => t)) {
+        const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
+        if (onRackFitsBoard) {
+          const {invalid, words} = doMoves(moves, game.board)
+          socket.emit('preview', !invalid && words)
         }
       }
-    }
-    else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried previewing out of phase`)
-      socket.emit('errorMsg', `Error: preview not currently possible.`)
     }
   }))
 
-  socket.on('play', moves => inGame((gameName, game) => {
-    if (game.started && !game.ended) {
-      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
-      const player = 0 <= playerIndex ? game.players[playerIndex] : {}
-      if (player.current) {
-        if (validMovesOn(game.board, moves)) {
-          const isExchange = moves.every(([,t]) => t === null)
-          const newRack = Array.from(player.rack)
-          const {onRackFitsBoard, played} =
-            checkOnRackFitsBoard(moves, isExchange, newRack)
-          if (onRackFitsBoard) {
-            let words = moves.length ?
-              `swapped ${moves.length} tile${moves.length === 1 ? '' : 's'}` :
-              'passed'
-            let invalid = false
-            let newBoard = game.board
-            if (isExchange) {
-              game.bag.push(...played)
-              if (played.length)
-                shuffleInPlace(game.bag)
-            }
-            else {
-              ({newBoard, invalid, words} = doMoves(moves, game.board))
-            }
-            if (!invalid) {
-              game.board = newBoard
-              player.score += Array.isArray(words) ? words.reduce((a,{s}) => a + s, 0) : 0
-              player.rack = newRack
-              fillRack(player.rack, game.bag)
-              delete player.current
-              if (!player.rack.length && !game.bag.length) {
-                game.ended = true
-                for (const other of game.players) {
-                  if (other.name === player.name) continue
-                  const s = other.rack.reduce((a,l) => a + pointsPerLetter[l], 0)
-                  other.score -= s
-                  player.score += s
-                  words.push({other: other.name, rack: other.rack, s})
-                }
-              }
-              else {
-                let nextIndex = playerIndex + 1
-                if (nextIndex === game.players.length) nextIndex = 0
-                game.players[nextIndex].current = true
-              }
-              game.log.push({name: player.name, words})
-              io.in(gameName).emit('updateBoard', game.board)
-              io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
-              io.in(gameName).emit('updateBag', bagInfo(game))
-              io.in(gameName).emit('updateLog', game.log.at(-1))
-            }
-            else {
-              socket.emit('errorMsg', invalid)
+  socket.on('play', moves => inGameCurrentPlayer((gameName, game, playerIndex, player) => {
+    if (validMovesOn(game.board, moves)) {
+      const isExchange = moves.every(([,t]) => t === null)
+      const newRack = Array.from(player.rack)
+      const {onRackFitsBoard, played} =
+        checkOnRackFitsBoard(moves, isExchange, newRack)
+      if (onRackFitsBoard) {
+        let words = moves.length ?
+          `swapped ${moves.length} tile${moves.length === 1 ? '' : 's'}` :
+          'passed'
+        let invalid = false
+        let newBoard = game.board
+        if (isExchange) {
+          game.bag.push(...played)
+          if (played.length)
+            shuffleInPlace(game.bag)
+        }
+        else {
+          ({newBoard, invalid, words} = doMoves(moves, game.board))
+        }
+        if (!invalid) {
+          game.board = newBoard
+          player.score += Array.isArray(words) ? words.reduce((a,{s}) => a + s, 0) : 0
+          player.rack = newRack
+          fillRack(player.rack, game.bag)
+          delete player.current
+          if (!player.rack.length && !game.bag.length) {
+            game.ended = true
+            for (const other of game.players) {
+              if (other.name === player.name) continue
+              const s = other.rack.reduce((a,l) => a + pointsPerLetter[l], 0)
+              other.score -= s
+              player.score += s
+              words.push({other: other.name, rack: other.rack, s})
             }
           }
           else {
-            console.log(`error: ${socket.playerName} in ${gameName} made a move that does not fit`)
-            socket.emit('errorMsg', 'Error: invalid move letters or targets.')
+            let nextIndex = playerIndex + 1
+            if (nextIndex === game.players.length) nextIndex = 0
+            game.players[nextIndex].current = true
           }
+          game.log.push({name: player.name, words})
+          io.in(gameName).emit('updateBoard', game.board)
+          io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
+          io.in(gameName).emit('updateBag', bagInfo(game))
+          io.in(gameName).emit('updateLog', game.log.at(-1))
         }
         else {
-          console.log(`error: ${socket.playerName} in ${gameName} made a malformed move`)
-          socket.emit('errorMsg', 'Error: invalid move type.')
+          socket.emit('errorMsg', invalid)
         }
       }
       else {
-        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
-        socket.emit('errorMsg', 'Error: it is not your turn.')
+        console.log(`error: ${socket.playerName} in ${gameName} made a move that does not fit`)
+        socket.emit('errorMsg', 'Error: invalid move letters or targets.')
       }
     }
     else {
-      console.log(`error: ${socket.playerName} in ${gameName} tried playing out of phase`)
-      socket.emit('errorMsg', `Error: playing is not currently possible.`)
+      console.log(`error: ${socket.playerName} in ${gameName} made a malformed move`)
+      socket.emit('errorMsg', 'Error: invalid move type.')
     }
+  }))
+
+  socket.on('undo', () => inGamePlayer((gameName, game, playerIndex, player) => {
   }))
 
   socket.on('disconnecting', () => {
