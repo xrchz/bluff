@@ -534,7 +534,6 @@ startButton.onclick = () => socket.emit('startGame')
 undoButton.onclick = () => socket.emit('toggleUndo')
 
 socket.on('updateUndo', undoers => {
-  console.log(`Got updateUndo with ${undoers}`)
   const n = playersList.children.length
   const thisPlayer = !spectateInput.checked && undoers.includes(nameInput.value)
   const verb = thisPlayer ? `Do Not Undo` : `Undo`
@@ -668,6 +667,9 @@ const addLogEntry = (data) => {
     const {ul, total} = createPlayList(words)
     span.textContent = `${name} scored ${total}, playing:`
     li.append(span, ul)
+  }
+  else if (words.swapped) {
+    li.textContent = `${name} swapped ${ntiles(words.swapped.length)}`
   }
   logList.prepend(li)
 }
