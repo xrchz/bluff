@@ -230,7 +230,8 @@ const checkOnRackFitsBoard = (moves, isExchange, newRack) => {
   return {onRackFitsBoard, played}
 }
 
-const doMoves = (moves, oldBoard) => {
+const doMoves = (moves, oldBoard, options) => {
+  const { norepeat } = options || {}
   // make a deep (enough) copy of the board
   const newBoard = []
   for (const row of oldBoard) {
@@ -278,11 +279,13 @@ const doMoves = (moves, oldBoard) => {
   // store also:
   // - score, start tile coordinates, direction
   // - whether it contains an existing tile
+  const allWords = []
   const words = []
   const processWord = (wordTiles, i, j, d) => {
     if (wordTiles.length <= 1) return
+    const word = wordTiles.map((t) => t.l)
+    allWords.push(word.join(''))
     if (wordTiles.some((t) => t.last)) {
-      const word = wordTiles.map((t) => t.l)
       if (inSowpods(word.join(''))) {
         words.push({w: word, i, j, d,
                     c: wordTiles.some((t) => !t.last),
@@ -320,6 +323,13 @@ const doMoves = (moves, oldBoard) => {
       }
     }
     if (invalid) break
+  }
+  if (!invalid) {
+    if (norepeat && words.some(({w}) => {
+          const s = w.join('')
+          return allWords.indexOf(s) !==
+                 allWords.lastIndexOf(s) }))
+      invalid = 'a word is repeated'
   }
   if (!invalid) {
     // words now contains all the newly placed words
@@ -393,6 +403,7 @@ io.on('connection', socket => {
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (game.started) {
           socket.emit('gameStarted')
+          socket.emit('updateNoRepeat', game.options?.norepeat)
           socket.emit('updateBoard', game.board)
           socket.emit('updatePlayers', {players: game.players, updateRacks: true})
           socket.emit('updateBag', bagInfo(game))
@@ -421,6 +432,7 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
+          socket.emit('updateNoRepeat', game.options?.norepeat)
           socket.emit('updateBoard', game.board)
           io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: socket.playerName})
           socket.emit('updateBag', bagInfo(game))
@@ -494,11 +506,18 @@ io.on('connection', socket => {
     })
   }
 
-  socket.on('startGame', () => inGame((gameName, game) => {
+  socket.on('updateNoRepeat', v => inGame((gameName, game) => {
+    if (!game.started) {
+      io.in(gameName).emit('updateNoRepeat', v)
+    }
+  }))
+
+  socket.on('startGame', (options) => inGame((gameName, game) => {
     if (!game.started) {
       if (canStart(game)) {
         console.log(`starting ${gameName}`)
         game.started = true
+        game.options = options
         game.log = []
         game.board = makeBoard()
         game.bag = makeBag()
@@ -510,6 +529,7 @@ io.on('connection', socket => {
         const current = game.players[Math.floor(Math.random() * game.players.length)]
         current.current = true
         io.in(gameName).emit('gameStarted')
+        io.in(gameName).emit('updateNoRepeat', game.options?.norepeat)
         io.in(gameName).emit('updateBoard', game.board)
         io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
         io.in(gameName).emit('updateBag', bagInfo(game))
@@ -539,7 +559,7 @@ io.on('connection', socket => {
       if (moves.some(([,t]) => t)) {
         const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
         if (onRackFitsBoard) {
-          const {invalid, words} = doMoves(moves, game.board)
+          const {invalid, words} = doMoves(moves, game.board, game.options)
           socket.emit('preview', !invalid && words)
         }
       }
@@ -562,7 +582,7 @@ io.on('connection', socket => {
             shuffleInPlace(game.bag)
         }
         else {
-          ({newBoard, invalid, words} = doMoves(moves, game.board))
+          ({newBoard, invalid, words} = doMoves(moves, game.board, game.options))
         }
         if (!invalid) {
           const lasts = game.board.flatMap((row, i) => row.flatMap((tile, j) => tile.last ? [[i,j]] : []))

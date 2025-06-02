@@ -154,6 +154,15 @@ a:hover {
   font-size: xx-large;
   margin-bottom: 0;
 }
+form {
+  display: flex;
+  align-items: center;
+  column-gap: 0.2em;
+}
+#options {
+  display: flex;
+  flex-direction: column;
+}
 ul.inline {
   list-style-type: none;
   padding: 0;

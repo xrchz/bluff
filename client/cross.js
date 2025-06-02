@@ -10,6 +10,7 @@ const joinButton = document.getElementById('join')
 const undoButton = document.getElementById('undo')
 const spectateInput = document.getElementById('spectate')
 const spectatorsList = document.getElementById('spectators')
+const norepeatInput = document.getElementById('norepeat')
 const playersList = document.getElementById('players')
 const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
@@ -74,7 +75,7 @@ socket.on('ensureLobby', () => {
   joinButton.hidden = false
   undoButton.hidden = true
   spectateInput.hidden = false
-  spectateInput.previousElementSibling.hidden = false
+  spectateInput.parentElement.hidden = false
   spectateInput.disabled = false
   startButton.hidden = true
   spectatorsList.innerHTML = ''
@@ -88,6 +89,7 @@ socket.on('ensureLobby', () => {
   logList.innerHTML = ''
   playButton.disabled = true
   swapInput.checked = false
+  norepeatInput.disabled = false
   playButton.value = 'Play'
   blankDiv.hidden = true
   history.replaceState('lobby', 'Lobby')
@@ -512,7 +514,7 @@ socket.on('joinedGame', data => {
   spectateInput.disabled = true
   joinButton.hidden = true
   if (!spectateInput.checked) {
-    spectateInput.previousElementSibling.hidden = true
+    spectateInput.parentElement.hidden = true
     spectateInput.hidden = true
   }
   errorMsg.innerHTML = ''
@@ -529,7 +531,15 @@ joinButton.parentElement.onsubmit = () => {
   return false
 }
 
-startButton.onclick = () => socket.emit('startGame')
+socket.on('updateNoRepeat', v => {
+  norepeatInput.checked = v
+})
+norepeatInput.addEventListener('change', (e) => {
+  socket.emit('updateNoRepeat', norepeatInput.checked)
+}, {passive: true})
+
+startButton.onclick = () => socket.emit('startGame',
+  {norepeat: norepeatInput.checked})
 
 undoButton.onclick = () => socket.emit('toggleUndo')
 
@@ -550,6 +560,7 @@ socket.on('gameStarted', () => {
   startButton.hidden = true
   joinButton.hidden = true
   undoButton.hidden = false
+  norepeatInput.disabled = true
   playArea.hidden = false
   bagDiv.hidden = false
   errorMsg.innerHTML = ''

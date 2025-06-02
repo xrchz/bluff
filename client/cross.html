@@ -13,8 +13,11 @@
       <label for=game>Game: </label><input id=game type=text maxlength=2 autocomplete=off />
       <input id=name type=text autocomplete=on placeholder="Name" />
       <input id=join type=submit value="Join" />
-      <label for=spectate>Spectate</label><input id=spectate type=checkbox />
       <input id=undo type=button value="Undo" hidden />
+      <div id=options>
+        <label><input id=spectate type=checkbox />Spectate</label>
+        <label><input id=norepeat type=checkbox />No repeated words</label>
+      </div>
     </form>
     <ul id=spectators class=inline></ul>
     <ul id=games hidden></ul>
