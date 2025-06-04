@@ -481,27 +481,26 @@ io.on('connection', socket => {
 
   function inGamePlayer(func) {
     inGame((gameName, game) => {
-      if (game.started && !game.ended) {
-        const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
-        const player = 0 <= playerIndex ? game.players[playerIndex] : {}
-        func(gameName, game, playerIndex, player)
-
-      }
-      else {
-        console.log(`error: ${socket.playerName} in ${gameName} out of phase`)
-        socket.emit('errorMsg', `Error: action not currently possible.`)
-      }
+      const playerIndex = game.players.findIndex(player => player.socketId === socket.id)
+      const player = 0 <= playerIndex ? game.players[playerIndex] : {}
+      func(gameName, game, playerIndex, player)
     })
   }
 
   function inGameCurrentPlayer(func) {
     inGamePlayer((gameName, game, playerIndex, player) => {
-      if (player.current) {
-        func(gameName, game, playerIndex, player)
+      if (game.started && !game.ended) {
+        if (player.current) {
+          func(gameName, game, playerIndex, player)
+        }
+        else {
+          console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
+          socket.emit('errorMsg', 'Error: not your turn.')
+        }
       }
       else {
-        console.log(`error: ${socket.playerName} in ${gameName} not found or not current`)
-        socket.emit('errorMsg', 'Error: not your turn.')
+        console.log(`error: ${socket.playerName} in ${gameName} out of phase`)
+        socket.emit('errorMsg', `Error: action not currently possible.`)
       }
     })
   }
