@@ -44,6 +44,9 @@ body {
 input, label {
   font-size: xx-large;
 }
+label {
+  font-weight: bold;
+}
 label:has(#swap) {
   font-weight: bold;
   display: flex;
