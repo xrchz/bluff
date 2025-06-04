@@ -166,7 +166,7 @@ function fillRack(rack, bag) {
 }
 
 const canStart = (game) =>
-  1 <= game.players.length && game.players.length <= 4
+  1 <= game.players.length && game.players.length <= 14
 
 const scoreWord = (word) => {
   let score = 0

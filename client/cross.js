@@ -11,6 +11,7 @@ const undoButton = document.getElementById('undo')
 const spectateInput = document.getElementById('spectate')
 const spectatorsList = document.getElementById('spectators')
 const norepeatInput = document.getElementById('norepeat')
+const oneplayerInput = document.getElementById('oneplayer')
 const playersList = document.getElementById('players')
 const gamesList = document.getElementById('games')
 const startButton = document.getElementById('start')
@@ -501,8 +502,17 @@ socket.on('updatePlayers', ({players, updateRacks}) => {
       }
     }
   }
+  if (playArea.hidden && !spectateInput.checked) {
+    oneplayerInput.parentElement.hidden = players.length !== 1
+    startButton.hidden = (players.length === 1 && !oneplayerInput.checked)
+  }
   errorMsg.innerHTML = ''
 })
+
+oneplayerInput.addEventListener('change', () => {
+  if (playersList.children.length === 1 && !spectateInput.checked)
+    startButton.hidden = !oneplayerInput.checked
+}, {passive: true})
 
 socket.on('joinedGame', data => {
   gameInput.value = data.gameName
@@ -553,7 +563,7 @@ socket.on('updateUndo', undoers => {
 
 socket.on('showStart', show => {
   if (!spectateInput.checked)
-    startButton.hidden = !show
+    startButton.hidden = !show || (playersList.children.length === 1 && !oneplayerInput.checked)
 })
 
 socket.on('gameStarted', () => {
@@ -561,6 +571,7 @@ socket.on('gameStarted', () => {
   joinButton.hidden = true
   undoButton.hidden = false
   norepeatInput.disabled = true
+  oneplayerInput.parentElement.hidden = true
   playArea.hidden = false
   bagDiv.hidden = false
   errorMsg.innerHTML = ''
