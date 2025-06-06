@@ -220,6 +220,13 @@ ul.inline > li {
 
 .last {
   color: var(--last-played-color);
+  animation: 1s pulse 5;
+}
+
+@keyframes pulse {
+  50% {
+    color: var(--tile-background-color);
+  }
 }
 
 #board div.cell.cursor-right::before {
