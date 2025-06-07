@@ -674,7 +674,7 @@ socket.on('updateBag', ({tiles, onRacks}) => {
 const createPlayList = (words) => {
   const ul = document.createElement('ul')
   let total = 0
-  for (const {w, s, other, rack} of words) {
+  for (const {w, s, other, rack, passer} of words) {
     const li = document.createElement('li')
     total += s
     const sp = `${s} point${s === 1 ? '' : 's'}`
@@ -682,7 +682,9 @@ const createPlayList = (words) => {
       Array.isArray(w) ?
       `${w.join('')} for ${sp}` :
       (Array.isArray(rack) ?
-        `the last tile, getting ${s} from ${other}'s rack "${rack.map(qbs).join('')}"` :
+        (passer ?
+         `${passer} loses ${s} for their rack "${rack.map(qbs).join('')}"` :
+         `the last tile, getting ${s} from ${other}'s rack "${rack.map(qbs).join('')}"`) :
         `their whole rack for ${s} bonus points`)
     ul.appendChild(li)
   }
@@ -723,7 +725,9 @@ const addLogEntry = (data) => {
   else if (Array.isArray(words)) {
     const span = document.createElement('span')
     const {ul, total} = createPlayList(words)
-    span.textContent = `${name} scored ${total}, playing:`
+    span.textContent = words.some(({passer}) => passer) ?
+      `Everyone passed twice:` :
+      `${name} scored ${total}, playing:`
     li.append(span, ul)
   }
   else if (words.swapped) {

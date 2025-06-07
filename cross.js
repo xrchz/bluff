@@ -358,6 +358,20 @@ const bagInfo = (game) => {
 
 const listUndoers = (players) => players.flatMap((p) => p.allowsUndo ? [p.name] : [])
 
+const twoPassesEach = (game, passer) => {
+  const passes = {[passer]: 1}
+  const logs = Array.from(game.log)
+  while (logs.length) {
+    const {name, words} = logs.pop()
+    if (words !== 'passed') break
+    passes[name] ||= 0
+    passes[name] += 1
+  }
+  for (const {name} of game.players)
+    if (!passes[name] || passes[name] < 2) return false
+  return true
+}
+
 io.on('connection', socket => {
   console.log(`new connection ${socket.id}`)
 
@@ -609,6 +623,15 @@ io.on('connection', socket => {
               words.push({other: other.name, rack: other.rack, s})
             }
           }
+          else if (!game.bag.length && twoPassesEach(game, player.name)) {
+            game.ended = true
+            words = []
+            for (const passer of game.players) {
+              const s = passer.rack.reduce((a,l) => a + pointsPerLetter[l], 0)
+              passer.score -= s
+              words.push({passer: passer.name, rack: passer.rack, s})
+            }
+          }
           else {
             let nextIndex = playerIndex + 1
             if (nextIndex === game.players.length) nextIndex = 0
@@ -663,11 +686,15 @@ io.on('connection', socket => {
               shuffleInPlace(game.bag)
           }
           else if (Array.isArray(words)) {
-            for (const {w,i,j,d,other,s} of words) {
+            for (const {w,i,j,d,other,passer,s} of words) {
               if (other) {
                 const otherPlayer = game.players.find((p) => p.name === other)
                 otherPlayer.score += s
                 lastPlayer.score -= s
+              }
+              else if (passer) {
+                const passerPlayer = game.players.find((p) => p.name === passer)
+                passerPlayer.score += s
               }
               else {
                 lastPlayer.score -= s
@@ -692,6 +719,7 @@ io.on('connection', socket => {
           console.log(`attempted undo in ${gameName} unsupported`)
           socket.emit('errorMsg', `Undo not supported in this game at this point.`)
         }
+        delete game.ended
         game.players.forEach((p) => delete p.allowsUndo)
         io.in(gameName).emit('updateBoard', game.board)
         io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
