@@ -528,6 +528,10 @@ socket.on('updatePlayers', ({players, updateRacks}) => {
           li.appendChild(span)
           rackList.appendChild(li)
         }
+        if (swapInput.checked) {
+          swapInput.checked = false
+          swapInput.dispatchEvent(new Event('change'))
+        }
       }
     }
   }
