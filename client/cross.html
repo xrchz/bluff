@@ -18,6 +18,12 @@
         <label><input id=spectate type=checkbox />Spectate</label>
         <label><input id=norepeat type=checkbox />No repeated words</label>
         <label hidden><input id=oneplayer type=checkbox />Single player</label>
+        <div id=turntime hidden>
+          <label><input type=number placeholder=∞ />s per turn</label>
+          <label><input name=turntime type=radio value='' />∞</label>
+          <label><input name=turntime type=radio value=30 />30</label>
+          <label><input name=turntime type=radio value=60 />60</label>
+        </div>
       </div>
     </form>
     <ul id=spectators class=inline></ul>

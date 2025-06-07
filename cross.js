@@ -230,8 +230,7 @@ const checkOnRackFitsBoard = (moves, isExchange, newRack) => {
   return {onRackFitsBoard, played}
 }
 
-const doMoves = (moves, oldBoard, options) => {
-  const { norepeat } = options || {}
+const doMoves = (moves, oldBoard, norepeat) => {
   // make a deep (enough) copy of the board
   const newBoard = []
   for (const row of oldBoard) {
@@ -403,7 +402,7 @@ io.on('connection', socket => {
         io.in(gameName).emit('updateSpectators', game.spectators)
         if (game.started) {
           socket.emit('gameStarted')
-          socket.emit('updateNoRepeat', game.options?.norepeat)
+          socket.emit('updateNoRepeat', game.norepeat)
           socket.emit('updateBoard', game.board)
           socket.emit('updatePlayers', {players: game.players, updateRacks: true})
           socket.emit('updateBag', bagInfo(game))
@@ -432,7 +431,7 @@ io.on('connection', socket => {
           socket.emit('joinedGame', { gameName: gameName, playerName: socket.playerName })
           socket.emit('updateSpectators', game.spectators)
           socket.emit('gameStarted')
-          socket.emit('updateNoRepeat', game.options?.norepeat)
+          socket.emit('updateNoRepeat', game.norepeat)
           socket.emit('updateBoard', game.board)
           io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: socket.playerName})
           socket.emit('updateBag', bagInfo(game))
@@ -516,7 +515,13 @@ io.on('connection', socket => {
       if (canStart(game)) {
         console.log(`starting ${gameName}`)
         game.started = true
-        game.options = options
+        game.norepeat = !!options?.norepeat
+        const turntimeString = options?.turntime || ''
+        const turntime = parseInt(turntimeString.replaceAll(/[^0-9]/g, ''))
+        if (!Number.isNaN(turntime) && 0 < turntime) {
+          game.turnsecs = turntime
+          game.paused = true
+        }
         game.log = []
         game.board = makeBoard()
         game.bag = makeBag()
@@ -524,11 +529,15 @@ io.on('connection', socket => {
           player.rack = []
           player.score = 0
           fillRack(player.rack, game.bag)
+          if (game.turnsecs)
+            player.secsleft = 0
         }
         const current = game.players[Math.floor(Math.random() * game.players.length)]
         current.current = true
+        if (game.turnsecs)
+          current.secsleft += game.turnsecs
         io.in(gameName).emit('gameStarted')
-        io.in(gameName).emit('updateNoRepeat', game.options?.norepeat)
+        io.in(gameName).emit('updateNoRepeat', game.norepeat)
         io.in(gameName).emit('updateBoard', game.board)
         io.in(gameName).emit('updatePlayers', {players: game.players, updateRacks: true})
         io.in(gameName).emit('updateBag', bagInfo(game))
@@ -558,7 +567,7 @@ io.on('connection', socket => {
       if (moves.some(([,t]) => t)) {
         const {onRackFitsBoard} = checkOnRackFitsBoard(moves, false, Array.from(player.rack))
         if (onRackFitsBoard) {
-          const {invalid, words} = doMoves(moves, game.board, game.options)
+          const {invalid, words} = doMoves(moves, game.board, game.norepeat)
           socket.emit('preview', !invalid && words)
         }
       }
@@ -581,7 +590,7 @@ io.on('connection', socket => {
             shuffleInPlace(game.bag)
         }
         else {
-          ({newBoard, invalid, words} = doMoves(moves, game.board, game.options))
+          ({newBoard, invalid, words} = doMoves(moves, game.board, game.norepeat))
         }
         if (!invalid) {
           const lasts = game.board.flatMap((row, i) => row.flatMap((tile, j) => tile.last ? [[i,j]] : []))

@@ -29,6 +29,31 @@ const swapInput = document.getElementById('swap')
 const blankDiv = document.getElementById('blank')
 const checkerForm = document.getElementById('checker')
 const checkerInput = checkerForm.querySelector('input[type=text]')
+const turntimeDiv = document.getElementById('turntime')
+
+const turntimeInputs = {}
+turntimeDiv.querySelectorAll('input[type=radio]').forEach((x) => {
+  turntimeInputs[x.value] = x
+})
+const turntimeCustom = turntimeDiv.querySelector('input[type=number]')
+
+const onChangeTurntime = (e) => {
+  const input = e.currentTarget
+  if (input.type === 'radio') {
+    if (input.value === '')
+      turntimeCustom.value = ''
+    else
+      turntimeCustom.value = input.value
+  }
+  else {
+    for (const [k, v] of Object.entries(turntimeInputs)) {
+      v.checked = (input.value == k)
+    }
+  }
+}
+
+turntimeDiv.querySelectorAll('input').forEach((x) =>
+  x.addEventListener('change', onChangeTurntime, {passive: true}))
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz'
 const boardSize = 15
@@ -93,6 +118,10 @@ socket.on('ensureLobby', () => {
   norepeatInput.disabled = false
   playButton.value = 'Play'
   blankDiv.hidden = true
+  turntimeDiv.hidden = true // TODO
+  Object.values(turntimeInputs).forEach((x) => x.parentElement.hidden = false)
+  turntimeInputs[''].checked = true
+  turntimeCustom.value = ''
   history.replaceState('lobby', 'Lobby')
 })
 
@@ -549,7 +578,8 @@ norepeatInput.addEventListener('change', (e) => {
 }, {passive: true})
 
 startButton.onclick = () => socket.emit('startGame',
-  {norepeat: norepeatInput.checked})
+  {norepeat: norepeatInput.checked,
+   turntime: turntimeCustom.value})
 
 undoButton.onclick = () => socket.emit('toggleUndo')
 
@@ -570,6 +600,8 @@ socket.on('gameStarted', () => {
   startButton.hidden = true
   joinButton.hidden = true
   undoButton.hidden = false
+  turntimeCustom.disabled = true
+  Object.values(turntimeInputs).forEach((x) => x.parentElement.hidden = true)
   norepeatInput.disabled = true
   oneplayerInput.parentElement.hidden = true
   playArea.hidden = false
