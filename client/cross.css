@@ -262,32 +262,32 @@ span.letter, span.points {
   z-index: 1;
 }
 
-#board div.cell:not(:has(span)) {
+#board div.cell:not(:has(span),.cursor-down,.cursor-right) {
   color: var(--background-color);
 }
 
 #board div.cell.dl {
   background-color: var(--cell-dl-color);
 }
-#board div.cell.dl:not(:has(span))::before {
+#board div.cell.dl:not(:has(span),.cursor-down,.cursor-right)::before {
   content: "2L";
 }
 #board div.cell.tl {
   background-color: var(--cell-tl-color);
 }
-#board div.cell.tl:not(:has(span))::before {
+#board div.cell.tl:not(:has(span),.cursor-down,.cursor-right)::before {
   content: "3L";
 }
 #board div.cell.dw {
   background-color: var(--cell-dw-color);
 }
-#board div.cell.dw:not(:has(span))::before {
+#board div.cell.dw:not(:has(span),.cursor-down,.cursor-right)::before {
   content: "2W";
 }
 #board div.cell.tw {
   background-color: var(--cell-tw-color);
 }
-#board div.cell.tw:not(:has(span))::before {
+#board div.cell.tw:not(:has(span),.cursor-down,.cursor-right)::before {
   content: "3W";
 }
 
