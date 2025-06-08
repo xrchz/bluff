@@ -118,6 +118,7 @@ socket.on('ensureLobby', () => {
   norepeatInput.disabled = false
   playButton.value = 'Play'
   blankDiv.hidden = true
+  oneplayerInput.parentElement.hidden = true
   turntimeDiv.hidden = true // TODO
   Object.values(turntimeInputs).forEach((x) => x.parentElement.hidden = false)
   turntimeInputs[''].checked = true
