@@ -94,8 +94,13 @@ const boardSize = 15
   blankDiv.append(...blankButtons)
 }
 
-socket.on('ensureLobby', () => {
+errorMsg.addEventListener('click', () => {
   errorMsg.innerHTML = ''
+  errorMsg.hidden = true
+})
+
+socket.on('ensureLobby', () => {
+  errorMsg.dispatchEvent(new Event('click'))
   gameInput.disabled = false
   nameInput.disabled = false
   joinButton.hidden = false
@@ -141,7 +146,7 @@ const onChangeJoining = (e) => {
   const a = Array.from(document.querySelectorAll('#games > li > a')).find(
     (a) => a.textContent === gameInput.value)
   if (a) {
-    const p = Array.from(a.parentElement.querySelectorAll('a.disconnected')).find(
+    const p = Array.from(a.parentElement.querySelectorAll('span.disconnected')).find(
       (a) => a.textContent === nameInput.value)
     if (p) p.classList.add('joining')
   }
@@ -167,9 +172,11 @@ socket.on('updateGames', games => {
     ul.classList.add('inline')
     for (const player of game.players) {
       a = ul.appendChild(document.createElement('li'))
+      const span = document.createElement('span')
+      span.textContent = player.name
       if (!player.socketId) {
         a = a.appendChild(document.createElement('a'))
-        a.classList.add('disconnected')
+        span.classList.add('disconnected')
         a.onclick = () => {
           if (gameInput.value === game.name && nameInput.value === player.name) {
             nameInput.value = ''
@@ -182,7 +189,13 @@ socket.on('updateGames', games => {
           }
         }
       }
-      a.textContent = player.name
+      a.appendChild(span)
+      if (typeof player.score === 'number') {
+        const span = document.createElement('span')
+        span.textContent = player.score.toString()
+        span.classList.add('score')
+        a.appendChild(span)
+      }
     }
   }
   gamesList.appendChild(fragment)
@@ -540,7 +553,7 @@ socket.on('updatePlayers', ({players, updateRacks}) => {
     oneplayerInput.parentElement.hidden = players.length !== 1
     startButton.hidden = (players.length === 1 && !oneplayerInput.checked)
   }
-  errorMsg.innerHTML = ''
+  errorMsg.dispatchEvent(new Event('click'))
 })
 
 oneplayerInput.addEventListener('change', () => {
@@ -561,7 +574,7 @@ socket.on('joinedGame', data => {
     spectateInput.parentElement.hidden = true
     spectateInput.hidden = true
   }
-  errorMsg.innerHTML = ''
+  errorMsg.dispatchEvent(new Event('click'))
   if (history.state === 'lobby')
     history.pushState(data, `Game ${data.gameName}`)
 })
@@ -611,7 +624,7 @@ socket.on('gameStarted', () => {
   oneplayerInput.parentElement.hidden = true
   playArea.hidden = false
   bagDiv.hidden = false
-  errorMsg.innerHTML = ''
+  errorMsg.dispatchEvent(new Event('click'))
 })
 
 socket.on('updateBoard', board => {
@@ -772,4 +785,5 @@ socket.on('checked', (words) => {
 
 socket.on('errorMsg', msg => {
   errorMsg.innerHTML = msg
+  errorMsg.hidden = false
 })

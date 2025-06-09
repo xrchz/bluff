@@ -2,7 +2,7 @@ body {
   --background-color:                   #fdf1ff;
   --text-color:                         DarkRed;
   --ended-color:                        IndianRed;
-  --prestart-background-color:          #fdf1ff;
+  --prestart-background-color:          #fffdf1;
   --blank-color:                        Crimson;
   --last-played-color:                  DarkBlue;
   --input-background-color:             #093a0d;
@@ -84,12 +84,18 @@ input[type=button], input[type=submit] {
 #spectators {
   color: var(--spectators-color);
 }
-.disconnected {
+span.disconnected:not(.score) {
   color: var(--disconnected-color);
   text-decoration: underline wavy;
 }
-.disconnected.joining {
+span.disconnected.joining {
   text-decoration: none;
+}
+#games span.score {
+  border-width: thin;
+  font-weight: normal;
+  font-size: smaller;
+  padding: 0;
 }
 span.score {
   margin-left: 0.5em;
@@ -196,6 +202,7 @@ ul.inline > li {
   flex-direction: column;
   align-items: center;
   row-gap: 2em;
+  margin-top: 2em;
 }
 
 #board {
@@ -411,4 +418,8 @@ span.points {
 }
 #bag li {
   font-family: monospace;
+}
+#errorMsg {
+  font-size: xx-large;
+  margin-bottom: 0;
 }
